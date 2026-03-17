@@ -31,10 +31,11 @@ export class AuthenticationService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    @Inject(authConfig.KEY) authenicationConfig: ConfigType<typeof authConfig>,
+    @Inject(authConfig.KEY)
+    private readonly authenicationConfig: ConfigType<typeof authConfig>,
     private readonly redisService: RedisService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
-  ) { }
+  ) {}
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findByEmail(email);
     if (!user) {
@@ -55,7 +56,7 @@ export class AuthenticationService {
       const accessTokenPayload = { sub: id, email, role };
       const refreshTokenPayload = { sub: id, email, role, type: 'refresh' };
 
-      const jwtConfig = authConfig().jwt;
+      const jwtConfig = this.authenicationConfig.jwt;
 
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.signAsync(accessTokenPayload, {

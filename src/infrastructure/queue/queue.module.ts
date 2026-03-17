@@ -8,7 +8,6 @@ import { SearchProcessor } from './search/search.processor';
 import { UploadProcessor } from './upload/upload.processor';
 import { CloudinaryModuleWrapper } from '../cloudinary/cloudinary.module';
 import { EmailModule } from 'src/common/modules/email/email.module';
-import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -36,9 +35,8 @@ import { SearchModule } from '../search/search.module';
     ),
     CloudinaryModuleWrapper,
     EmailModule,
-    SearchModule,
   ],
-  providers: [MailProcessor, SearchProcessor, UploadProcessor],
+  providers: [MailProcessor,  UploadProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

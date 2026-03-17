@@ -14,4 +14,4 @@ import redisConfig from 'src/config/redis.config';
   ],
   exports: [RedisModule, QueueModule, CloudinaryModuleWrapper, DbModule],
 })
-export class InfrastructureModule {}
+export class InfrastructureModule { }

@@ -5,18 +5,21 @@ import {
   ManyToOne,
   JoinColumn,
   BeforeInsert,
+  Relation,
 } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { Location } from '../../../common/locations/entities/location.entity';
-import { Attachment } from '../../../infrastructure/cloudinary/entities/attachment.entity';
+import { Attachment } from '../../../common/modules/attachment/entities/attachment.entity';
 
-export enum UserRole {
-  USER = 'User',
-  LOCAL_AUTHORITY = 'Local Authority',
-  ORGANIZATION = 'Organizations',
-  STORE = 'Stores',
-  ADMINISTRATOR = 'Administrator',
-}
+export const UserRoleValues = {
+  USER: 'User',
+  LOCAL_AUTHORITY: 'Local Authority',
+  ORGANIZATION: 'Organizations',
+  STORE: 'Stores',
+  ADMINISTRATOR: 'Administrator',
+} as const;
+
+export type UserRole = (typeof UserRoleValues)[keyof typeof UserRoleValues];
 
 @Entity('users')
 export class User {
@@ -37,8 +40,8 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.USER,
+    enum: UserRoleValues,
+    default: UserRoleValues.USER,
   })
   role: UserRole;
 
@@ -53,11 +56,11 @@ export class User {
 
   @ManyToOne(() => Location, { nullable: true })
   @JoinColumn({ name: 'locationId' })
-  location: Location;
+  location: Relation<Location>;
 
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'avatarAttachmentId' })
-  avatar: Attachment;
+  avatar: Relation<Attachment>;
 
   @BeforeInsert()
   generateId() {

@@ -18,9 +18,12 @@ export default registerAs(
     },
     oauth: {
       google: {
-        clientID: process.env.GOOGLE_OAUTH_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET!,
-        callbackURL: process.env.GOOGLE_OAUTH_CALLBACK_URL!,
+        clientID: process.env.GOOGLE_OAUTH_CLIENT_ID || 'defaultGoogleClientId',
+        clientSecret:
+          process.env.GOOGLE_OAUTH_CLIENT_SECRET || 'defaultGoogleClientSecret',
+        callbackURL:
+          process.env.GOOGLE_OAUTH_CALLBACK_URL ||
+          'http://localhost:3000/auth/google/callback',
         scope: ['email', 'profile'],
       },
     },

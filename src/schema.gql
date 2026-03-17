@@ -1,0 +1,125 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponse {
+  """JWT access token for authentication"""
+  accessToken: String!
+
+  """JWT refresh token for renewing access"""
+  refreshToken: String!
+
+  """Authenticated user details"""
+  user: User!
+}
+
+input LoginInput {
+  """User email address"""
+  email: String!
+
+  """User password"""
+  password: String!
+}
+
+type MessageResponse {
+  """Response message"""
+  message: String!
+}
+
+type Mutation {
+  """Delete current user account permanently"""
+  deleteAccount: MessageResponse!
+
+  """Send password reset email to user"""
+  forgotPassword(email: String!): MessageResponse!
+
+  """Login user and issue access and refresh tokens"""
+  login(loginInput: LoginInput!): AuthResponse!
+
+  """Refresh access and refresh tokens using a valid refresh token"""
+  refreshTokens: AuthResponse!
+
+  """Register a new user and send verification email"""
+  register(registerInput: RegisterInput!): MessageResponse!
+
+  """Resend verification email to user"""
+  resendVerification(email: String!): MessageResponse!
+
+  """Reset user password with the provided token"""
+  resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
+
+  """Update current user profile information"""
+  updateProfile(updateProfileInput: UpdateProfileInput!): User!
+
+  """Verify user email with the provided code"""
+  verifyEmail(verifyEmailInput: VerifyEmailInput!): MessageResponse!
+}
+
+type Query {
+  """Get current authenticated user profile"""
+  currentUser: User!
+}
+
+input RegisterInput {
+  """Confirm password for the new user, must match the password"""
+  confirmPassword: String!
+
+  """Email address for the new user"""
+  email: String!
+
+  """Password for the new user, must be strong and secure"""
+  password: String!
+
+  """Username for the new user"""
+  username: String!
+}
+
+input ResetPasswordInput {
+  """New password, must be strong and secure"""
+  password: String!
+
+  """Password reset token from email"""
+  token: String!
+}
+
+input UpdateProfileInput {
+  """New username for the user"""
+  username: String
+}
+
+type User {
+  """User biography/description"""
+  description: String
+
+  """User display name"""
+  displayName: String
+
+  """User email address"""
+  email: String!
+
+  """User unique identifier"""
+  id: String!
+
+  """Whether the user has verified their email"""
+  isMailVerified: Boolean!
+
+  """Whether the user account is verified"""
+  isVerified: Boolean!
+
+  """Location ID reference"""
+  locationId: String
+
+  """User reputation score"""
+  reputationScore: Int!
+
+  """User role"""
+  role: String!
+}
+
+input VerifyEmailInput {
+  """Verification code sent to email"""
+  code: String!
+
+  """User email address"""
+  email: String!
+}

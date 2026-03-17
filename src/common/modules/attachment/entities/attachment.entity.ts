@@ -5,9 +5,10 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
-import { User } from '../../../core/user/entities/user.entity';
+import { User } from '../../../../core/user/entities/user.entity';
 
 export const UploadStatusValues = {
   PENDING: 'PENDING',
@@ -37,7 +38,7 @@ export class Attachment {
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'uploadedBy' })
-  uploadedBy: User;
+  uploadedBy: Relation<User>;
 
   @Column({
     type: 'enum',
