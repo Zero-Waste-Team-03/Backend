@@ -34,7 +34,7 @@ export class AuthenticationService {
     @Inject(authConfig.KEY) authenicationConfig: ConfigType<typeof authConfig>,
     private readonly redisService: RedisService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
-  ) {}
+  ) { }
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findByEmail(email);
     if (!user) {
@@ -43,7 +43,7 @@ export class AuthenticationService {
     if (!user.isMailVerified) {
       throw new UnauthorizedException('Email not verified');
     }
-    const isPasswordValid = await compareHash(password, user.password);
+    const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
@@ -51,9 +51,9 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
-      const { id, email } = user;
-      const accessTokenPayload = { sub: id, email };
-      const refreshTokenPayload = { sub: id, email, type: 'refresh' };
+      const { id, email, role } = user;
+      const accessTokenPayload = { sub: id, email, role };
+      const refreshTokenPayload = { sub: id, email, role, type: 'refresh' };
 
       const jwtConfig = authConfig().jwt;
 
@@ -159,7 +159,7 @@ export class AuthenticationService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    user.password = await generateHash(password);
+    user.passwordHash = await generateHash(password);
     await this.userService.updateUser(user);
     await this.redisService.del(`password-reset:${token}`);
     return {

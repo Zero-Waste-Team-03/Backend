@@ -50,7 +50,7 @@ async function bootstrap() {
     //getTokenFromRequest: (req) => req.headers['x-csrf-token'], // A function that returns the token from the request
   };
   const { doubleCsrfProtection } = doubleCsrf(opts);
-  app.use(doubleCsrfProtection);
+  //  app.use(doubleCsrfProtection);
   //
   app.useGlobalInterceptors(new ResponseFormatterInterceptor());
   // //PIPES
@@ -115,7 +115,9 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-  app.setGlobalPrefix('api', { exclude: ['/api-docs', '/api-docs-json'] });
+  app.setGlobalPrefix('api', {
+    exclude: ['/api-docs', '/api-docs-json', '/health'],
+  });
 
   //RUNNING THE APPLICATION
   const port = process.env.PORT || 3000;

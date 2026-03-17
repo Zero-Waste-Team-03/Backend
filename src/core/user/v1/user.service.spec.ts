@@ -1,12 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
+import { USER_REPOSITORY } from '../repository/user.repository-interface';
 
 describe('UserService', () => {
   let service: UserService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService],
+      providers: [
+        UserService,
+        { provide: USER_REPOSITORY, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<UserService>(UserService);
