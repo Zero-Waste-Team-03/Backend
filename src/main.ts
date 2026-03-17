@@ -3,11 +3,10 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import helmet from 'helmet';
-import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
+// import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { ResponseFormatterInterceptor } from './common/interceptors/response-formatter.interceptor';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
-import { ExtendedRequest } from './core/authentication/types/extended-req.type';
 import { LoggerServiceBuilder } from './monitoring/logger/logger.service';
 import { AppClusterService } from './infrastructure/clusters/app.clusterize';
 async function bootstrap() {
@@ -36,20 +35,20 @@ async function bootstrap() {
     }),
   );
 
-  const opts: DoubleCsrfConfigOptions = {
-    getSecret: () => 'Secret', //TODO:generate a secret
-    getSessionIdentifier: (req: ExtendedRequest) => req.user.id.toString(), //TODO:figure this out    cookieName: '__Host-psifi.x-csrf-token', // The name of the cookie to be used, recommend using Host prefix.
-    cookieOptions: {
-      sameSite: 'lax', // Recommend you make this strict if posible
-      path: '/',
-      secure: false, //TODO:change in prod
-      httpOnly: false,
-    },
-    size: 64, // The size of the generated tokens in bits
-    ignoredMethods: ['GET', 'HEAD', 'OPTIONS'], // A list of request methods that will not be protected.
-    //getTokenFromRequest: (req) => req.headers['x-csrf-token'], // A function that returns the token from the request
-  };
-  const { doubleCsrfProtection } = doubleCsrf(opts);
+  // const opts: DoubleCsrfConfigOptions = {
+  //   getSecret: () => 'Secret', //TODO:generate a secret
+  //   getSessionIdentifier: (req: ExtendedRequest) => req.user.id.toString(), //TODO:figure this out    cookieName: '__Host-psifi.x-csrf-token', // The name of the cookie to be used, recommend using Host prefix.
+  //   cookieOptions: {
+  //     sameSite: 'lax', // Recommend you make this strict if posible
+  //     path: '/',
+  //     secure: false, //TODO:change in prod
+  //     httpOnly: false,
+  //   },
+  //   size: 64, // The size of the generated tokens in bits
+  //   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'], // A list of request methods that will not be protected.
+  //   //getTokenFromRequest: (req) => req.headers['x-csrf-token'], // A function that returns the token from the request
+  // };
+  // const { doubleCsrfProtection } = doubleCsrf(opts);
   //  app.use(doubleCsrfProtection);
   //
   app.useGlobalInterceptors(new ResponseFormatterInterceptor());

@@ -26,8 +26,8 @@ export default registerAs(
     debug: process.env.NODE_ENV !== 'production',
 
     csrfPrevention: process.env.NODE_ENV === 'production',
-    // Context function to attach request to GraphQL context
-    context: ({ req, res }) => ({ req, res }),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    context: ({ req, res }: { req: any; res: any }) => ({ req, res }),
 
     // Format errors to include relevant information
     formatError: (error) => {

@@ -33,14 +33,17 @@ export class LocalGuard extends AuthGuard('local') {
    * @param context - The execution context (HTTP or GraphQL)
    * @returns The request object containing body with email and password
    */
-  getRequest(context: ExecutionContext) {
+  getRequest(context: ExecutionContext): any {
     const ctx = GqlExecutionContext.create(context);
-    const request = ctx.getContext().req || context.switchToHttp().getRequest();
+    const request = (ctx.getContext<{ req?: any }>()?.req ||
+      context.switchToHttp().getRequest<any>()) as { body?: any };
 
     // For GraphQL, credentials come from args instead of body
     // We need to map them to the request body for passport-local strategy
-    if (ctx.getContext().req) {
-      const args = ctx.getArgs();
+    if (ctx.getContext<{ req?: any }>()?.req) {
+      const args = ctx.getArgs<{
+        loginInput?: { email?: string; password?: string };
+      }>();
       if (args.loginInput) {
         request.body = {
           email: args.loginInput.email,

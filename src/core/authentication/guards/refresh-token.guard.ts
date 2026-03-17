@@ -31,9 +31,13 @@ export class RefreshTokenGuard extends AuthGuard('refresh-token') {
    * @param context - The execution context (HTTP or GraphQL)
    * @returns The request object containing headers and user information
    */
-  getRequest(context: ExecutionContext) {
+  getRequest(context: ExecutionContext): any {
     const ctx = GqlExecutionContext.create(context);
     // If GraphQL context exists, use it; otherwise fall back to HTTP
-    return ctx.getContext().req || context.switchToHttp().getRequest();
+
+    return (
+      ctx.getContext<{ req?: any }>()?.req ||
+      context.switchToHttp().getRequest<any>()
+    );
   }
 }

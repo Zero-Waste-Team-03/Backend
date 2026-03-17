@@ -87,7 +87,8 @@ export class AuthenticationService {
         'User registered successfully. Please check your email for verification code.',
     };
   }
-  logOauthUser(profile: Profile): Promise<User> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  logOauthUser(_profile: Profile): Promise<User> {
     throw new Error('Method not implemented.');
   }
   private async generateAndSetOtp(user: User): Promise<string> {

@@ -8,4 +8,4 @@ import { AttachmentModule } from './attachment/attachment.module';
   imports: [MailerModule, AlsModule, DataLoaderModule, AttachmentModule],
   exports: [MailerModule, AlsModule, DataLoaderModule, AttachmentModule],
 })
-export class CommonModule { }
+export class CommonModule {}

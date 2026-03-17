@@ -10,7 +10,8 @@ export class UploadProcessor extends WorkerHost {
   constructor(private readonly cloudinaryService: CloudinaryService) {
     super();
   }
-  process(job: Job<UploadJobDto>, token?: string): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  process(job: Job<UploadJobDto>, _token?: string): Promise<any> {
     switch (job.name) {
       case UPLOAD_JOBS.UPLOAD_FILE:
         return this.cloudinaryService.uploadFile(

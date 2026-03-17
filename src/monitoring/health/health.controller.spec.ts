@@ -19,7 +19,10 @@ describe('HealthController', () => {
         { provide: TypeOrmHealthIndicator, useValue: { pingCheck: jest.fn() } },
         { provide: HttpHealthIndicator, useValue: { pingCheck: jest.fn() } },
         { provide: DiskHealthIndicator, useValue: { checkStorage: jest.fn() } },
-        { provide: MemoryHealthIndicator, useValue: { checkHeap: jest.fn(), checkRSS: jest.fn() } },
+        {
+          provide: MemoryHealthIndicator,
+          useValue: { checkHeap: jest.fn(), checkRSS: jest.fn() },
+        },
       ],
     }).compile();
 

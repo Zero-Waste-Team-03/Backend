@@ -25,7 +25,10 @@ export class UserType {
   @Field(() => String, { nullable: true, description: 'User display name' })
   displayName?: string;
 
-  @Field(() => String, { nullable: true, description: 'User biography/description' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'User biography/description',
+  })
   description?: string;
 
   @Field(() => String, { description: 'User role' })

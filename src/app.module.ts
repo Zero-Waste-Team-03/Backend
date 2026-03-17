@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -45,7 +46,8 @@ import dbConfig from './config/db.config';
       ) => ({
         ...graphqlConfiguration,
         // Override context to inject DataLoaders per request
-        context: ({ req, res }) => {
+
+        context: ({ req, res }: { req: any; res: any }) => {
           const loaders: IDataLoaders = {
             userLoader: userDataLoader.createLoader(),
           };

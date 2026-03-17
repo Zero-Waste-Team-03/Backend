@@ -1,4 +1,4 @@
-import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UserService } from './v1/user.service';
 import { UserType } from '../authentication/graphql/types/user.type';
@@ -7,7 +7,6 @@ import { MessageResponseType } from '../authentication/graphql/types/message-res
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { User } from './entities/user.entity';
-import { IDataLoaders } from '../../common/modules/dataloader/dataloader.interface';
 
 /**
  * GraphQL resolver for user operations

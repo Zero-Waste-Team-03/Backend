@@ -17,9 +17,10 @@ export function deepOmitBy<T extends Record<string, any> | any[]>(
   const result = omitBy(obj, predicate) as T;
 
   // Process nested objects recursively
-  for (const key in result) {
+  for (const key of Object.keys(result) as (keyof T)[]) {
     if (isObject(result[key])) {
-      result[key] = deepOmitBy(result[key], predicate);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      result[key] = deepOmitBy(result[key], predicate) as any;
     }
   }
 

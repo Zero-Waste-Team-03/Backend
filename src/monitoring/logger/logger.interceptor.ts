@@ -44,8 +44,11 @@ export class LoggerInterceptor implements NestInterceptor {
 
     if (isGraphQL) {
       // GraphQL context
-      request = gqlContext.getContext().req;
-      const info = gqlContext.getInfo();
+      request = gqlContext.getContext<{ req: Request }>().req;
+      const info = gqlContext.getInfo<{
+        fieldName: string;
+        operation: { operation: string };
+      }>();
       requestPath = `GraphQL/${info.fieldName}`;
       requestMethod = info.operation.operation.toUpperCase(); // query or mutation
     } else {
@@ -59,7 +62,7 @@ export class LoggerInterceptor implements NestInterceptor {
     //Allow client to pass requestId for better traceability across services
     //If not present, generate a new one
     //and set it in AsyncLocalStorage store and headers
-    const clientRequestId = request.headers['x-request-id'];
+    // const clientRequestId = request.headers['x-request-id'];
     const requestId = crypto.randomUUID();
 
     this.logger.log(
@@ -81,8 +84,9 @@ export class LoggerInterceptor implements NestInterceptor {
             // GraphQL always returns 200 for successful operations
             statusCode = 200;
           } else {
-            statusCode = context.switchToHttp().getResponse<Response>()
-              .statusCode;
+            statusCode = context
+              .switchToHttp()
+              .getResponse<Response>().statusCode;
           }
 
           const endTime = Date.now();

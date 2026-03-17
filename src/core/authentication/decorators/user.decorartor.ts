@@ -43,7 +43,7 @@ export const USER = createParamDecorator(
 
     // Check if this is a GraphQL request
     if (gqlCtx.getType() === 'graphql') {
-      request = gqlCtx.getContext().req;
+      request = gqlCtx.getContext<{ req: ExtendedRequest }>().req;
     } else {
       // Fall back to HTTP context
       request = ctx.switchToHttp().getRequest<ExtendedRequest>();

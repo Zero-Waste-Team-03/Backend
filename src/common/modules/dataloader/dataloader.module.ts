@@ -4,10 +4,10 @@ import { UserModule } from '../../../core/user/user.module';
 
 /**
  * DataLoader Module
- * 
+ *
  * Provides DataLoader services for batching and caching database queries
  * to solve N+1 query problems in GraphQL resolvers.
- * 
+ *
  * Note: DataLoader instances are created per-request in the GraphQL context,
  * not as singleton services. This module only provides the factory services.
  */

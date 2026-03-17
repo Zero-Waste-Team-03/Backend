@@ -5,16 +5,16 @@ import { User } from '../../../core/user/entities/user.entity';
 
 /**
  * DataLoader for User entity to solve N+1 query problem
- * 
+ *
  * Batches and caches User queries within a single GraphQL request
  * to prevent multiple database calls for the same user.
- * 
+ *
  * @example
  * // Instead of N queries:
  * // SELECT * FROM users WHERE id = 1
  * // SELECT * FROM users WHERE id = 2
  * // SELECT * FROM users WHERE id = 3
- * 
+ *
  * // DataLoader batches into 1 query:
  * // SELECT * FROM users WHERE id IN (1, 2, 3)
  */
@@ -24,9 +24,9 @@ export class UserDataLoader {
 
   /**
    * Creates a new DataLoader instance for batching user queries by ID
-   * 
+   *
    * Must be called once per GraphQL request to ensure proper caching scope
-   * 
+   *
    * @returns DataLoader instance for User entities
    */
   createLoader(): DataLoader<string, User | null> {

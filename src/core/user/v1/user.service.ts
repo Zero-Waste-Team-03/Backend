@@ -9,7 +9,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) { }
+  ) {}
 
   createUser(data: registerDto): Promise<User> {
     const user = this.userRepository.create(data);

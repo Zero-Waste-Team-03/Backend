@@ -20,4 +20,4 @@ import { User } from './entities/user.entity';
   providers: [UserService, UserResolver],
   exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

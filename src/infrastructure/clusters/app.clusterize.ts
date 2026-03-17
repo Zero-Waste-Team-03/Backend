@@ -1,6 +1,5 @@
 import cluster from 'cluster';
 
-
 const NUM_CPUS = parseInt(process.env.NUM_CPUS || '1', 10);
 /**
  *@name AppClusterService  
@@ -27,7 +26,8 @@ export class AppClusterService {
       for (let i = 0; i < NUM_CPUS; i++) {
         cluster.fork();
       }
-      cluster.on('exit', (worker, code, signal) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      cluster.on('exit', (worker, _code, _signal) => {
         // Auto Restart Dead Workers
         console.log(`Worker ${worker.process.pid} died. Restarting`);
         cluster.fork();
