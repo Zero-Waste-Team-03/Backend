@@ -25,6 +25,7 @@ export default registerAs(
     // Include stack traces in errors during development
     debug: process.env.NODE_ENV !== 'production',
 
+    csrfPrevention: process.env.NODE_ENV === 'production',
     // Context function to attach request to GraphQL context
     context: ({ req, res }) => ({ req, res }),
 
