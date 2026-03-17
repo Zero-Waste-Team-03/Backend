@@ -18,6 +18,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
+import dbConfig from './config/db.config';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
         authConfig,
         appConfig,
         elasticSearchConfig,
+        dbConfig,
         graphqlConfig,
       ],
     }),

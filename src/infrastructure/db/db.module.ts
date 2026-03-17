@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import dbConfig from 'src/config/db.config';
 
 /**
  * @description This module is responsible for database connection and ORM setup if an orm is used.
@@ -26,5 +29,13 @@ import { Module } from '@nestjs/common';
  *    })
  *    export class DbModule {}
  * */
-@Module({})
+@Module({
+  imports: [
+    TypeOrmModule.forRootAsync({
+      useFactory: (config: ConfigType<typeof dbConfig>) => config,
+      inject: [dbConfig.KEY],
+    }),
+  ],
+  exports: [TypeOrmModule],
+})
 export class DbModule {}
