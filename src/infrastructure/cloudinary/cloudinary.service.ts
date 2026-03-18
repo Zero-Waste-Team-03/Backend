@@ -37,7 +37,7 @@ export class CloudinaryService {
       const buffer = Buffer.isBuffer(file.buffer)
         ? file.buffer
         : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          Buffer.from((file.buffer as any).data);
+        Buffer.from((file.buffer as any).data);
       const stream = Readable.from([buffer]);
       this.logger.log(
         'Starting upload to Cloudinary...' + stream.readableLength,
@@ -72,6 +72,26 @@ export class CloudinaryService {
     } catch (e) {
       //TODO add better error handling
       this.logger.error(`Upload failed: ${e}`);
+      throw e;
+    }
+  }
+
+  async uploadFromUrl(
+    url: string,
+    options: UploadingOptions,
+  ): Promise<cloudinary.UploadApiResponse> {
+    try {
+      const time = new Date().getFullYear();
+      const folder = `${options.uploadType.toLowerCase()}s/${time}/`;
+
+      this.logger.log(`Starting upload to Cloudinary from URL: ${url}`);
+      const result = await cloudinary.v2.uploader.upload(url, {
+        folder: folder || undefined,
+        resource_type: 'auto',
+      });
+      return result;
+    } catch (e: any) {
+      this.logger.error(`Upload from URL failed: ${e.message || JSON.stringify(e)}`);
       throw e;
     }
   }

@@ -26,7 +26,7 @@ import { User } from 'src/core/user/entities/user.entity';
  */
 @Resolver()
 export class AuthenticationResolver {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(private readonly authenticationService: AuthenticationService) { }
 
   /**
    * Login user with email and password

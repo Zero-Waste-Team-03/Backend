@@ -49,9 +49,6 @@ export class User {
   reputationScore: number;
 
   @Column({ type: 'boolean', default: false })
-  isVerified: boolean;
-
-  @Column({ type: 'boolean', default: false })
   isMailVerified: boolean;
 
   @ManyToOne(() => Location, { nullable: true })

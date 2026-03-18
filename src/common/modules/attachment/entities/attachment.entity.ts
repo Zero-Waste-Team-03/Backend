@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   Relation,
+  BeforeInsert,
 } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { User } from '../../../../core/user/entities/user.entity';
@@ -21,8 +22,8 @@ export type UploadStatus =
   (typeof UploadStatusValues)[keyof typeof UploadStatusValues];
 @Entity('attachments')
 export class Attachment {
-  @PrimaryColumn('uuid', { default: () => uuidv7() })
-  id: string;
+  @PrimaryColumn('uuid')
+  id: string
 
   @Column({ type: 'varchar' })
   fileName: string;
@@ -33,7 +34,7 @@ export class Attachment {
   @Column({ type: 'int' })
   fileSize: number;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', nullable: true })
   url: string;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
@@ -47,9 +48,14 @@ export class Attachment {
   })
   uploadStatus: UploadStatus;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   jobId: string;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @BeforeInsert()
+  generateId() {
+    this.id = uuidv7();
+  }
 }

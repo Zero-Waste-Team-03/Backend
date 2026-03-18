@@ -17,17 +17,17 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       credentials: true,
     },
-    bufferLogs: true, //So nestjs can log things during init
+    //bufferLogs: true,
   });
 
   const logger = app.get(LoggerServiceBuilder).build();
-  app.useLogger(logger);
+  //app.useLogger(logger);
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
           styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
           fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
         },
@@ -104,7 +104,7 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   app.use(
-    '/api-docs',
+    '/docs',
     apiReference({
       theme: 'solarized',
       content: document,
@@ -115,7 +115,7 @@ async function bootstrap() {
     defaultVersion: '1',
   });
   app.setGlobalPrefix('api', {
-    exclude: ['/api-docs', '/api-docs-json', '/health'],
+    exclude: ['/health'],
   });
 
   //RUNNING THE APPLICATION
