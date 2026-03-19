@@ -38,8 +38,11 @@ export class Attachment {
   url: string;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'uploadedBy' })
+  @JoinColumn({ name: 'uploadedById' })
   uploadedBy: Relation<User>;
+
+  @Column('string')
+  uploadedById: string;
 
   @Column({
     type: 'enum',

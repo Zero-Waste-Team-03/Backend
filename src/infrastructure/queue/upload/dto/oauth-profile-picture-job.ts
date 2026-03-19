@@ -1,4 +1,4 @@
 export class OAuthProfilePictureJobDto {
   pictureUrl: string;
-  userId: string;
+  attachmentId: string;
 }

@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment } from './entities/attachment.entity';
+import { CreateAttachmentDto } from './dto/create-attachment.dto';
+import { UpdateAttachmentDto } from './dto/update-attachment.dto';
 
 @Injectable()
 export class AttachmentService {
@@ -12,7 +14,7 @@ export class AttachmentService {
 
   logger = new Logger(AttachmentService.name);
   async createAttachment(
-    attachmentData: Partial<Attachment>,
+    attachmentData: CreateAttachmentDto,
   ): Promise<Attachment> {
     const attachment = this.attachmentRepo.create(attachmentData);
     try {
@@ -25,5 +27,17 @@ export class AttachmentService {
 
   async getAttachmentById(id: string): Promise<Attachment | null> {
     return await this.attachmentRepo.findOne({ where: { id } });
+  }
+
+  async updateAttachment(
+    id: string,
+    attachmentData: UpdateAttachmentDto,
+  ): Promise<Attachment> {
+    await this.attachmentRepo.update(id, attachmentData);
+    const updatedAttachment = await this.getAttachmentById(id);
+    if (!updatedAttachment) {
+      throw new Error(`Attachment with id ${id} not found`);
+    }
+    return updatedAttachment;
   }
 }

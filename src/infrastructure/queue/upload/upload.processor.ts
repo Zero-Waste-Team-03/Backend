@@ -7,9 +7,9 @@ import { UploadJobDto } from './dto/upload-job.dto';
 import { CloudinaryService } from 'src/infrastructure/cloudinary/cloudinary.service';
 import { OAuthProfilePictureJobDto } from './dto/oauth-profile-picture-job';
 import { OnWorkerEvent } from '@nestjs/bullmq';
-import { UserService } from 'src/core/user/v1/user.service';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
+import { UploadApiResponse } from 'cloudinary';
 
 /**
  * Processor for handling file upload background jobs.
@@ -22,7 +22,6 @@ export class UploadProcessor extends WorkerHost {
 
   constructor(
     private readonly cloudinaryService: CloudinaryService,
-    private readonly userService: UserService,
     private readonly attachmentService: AttachmentService,
   ) {
     super();
@@ -35,16 +34,11 @@ export class UploadProcessor extends WorkerHost {
    * @param _token - Optional job token
    * @returns A promise that resolves with the result of the upload operation
    */
-  process(
-    job: Job<UploadJobDto | OAuthProfilePictureJobDto>,
-    _token?: string,
-  ): Promise<any> {
+  process(job: Job<UploadJobDto | OAuthProfilePictureJobDto>): Promise<any> {
     switch (job.name) {
       case UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE: {
         const data = job.data as OAuthProfilePictureJobDto;
-        this.logger.log(
-          `Uploading OAuth profile picture for user: ${data.userId}`,
-        );
+        this.logger.log(`Uploading attachment with id ${data.attachmentId}`);
         return this.cloudinaryService.uploadFromUrl(data.pictureUrl, {
           uploadType: 'USER',
         });
@@ -80,22 +74,19 @@ export class UploadProcessor extends WorkerHost {
    * @param result - The result returned from the process method (Cloudinary upload result)
    */
   @OnWorkerEvent('completed')
-  async onQueueComplete(job: Job<any>, result: any) {
+  async onQueueComplete(
+    job: Job<OAuthProfilePictureJobDto>,
+    result: UploadApiResponse,
+  ) {
     if (job.name === UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE) {
-      const data = job.data as OAuthProfilePictureJobDto;
-      const attachment = await this.attachmentService.createAttachment({
+      const data = job.data;
+      await this.attachmentService.updateAttachment(data.attachmentId, {
         url: result.secure_url,
-        fileName: result.original_filename || `avatar_${data.userId}`,
-        fileType: result.format || 'image/jpeg',
-        fileSize: result.bytes || 0,
         uploadStatus: UploadStatusValues.COMPLETED,
-        uploadedBy: { id: data.userId } as any,
-        jobId: job.id,
       });
-      await this.userService.updateUserWithoutReturn(data.userId, {
-        avatar: attachment,
-      });
-      this.logger.log(`Updated user avatar for user: ${data.userId}`);
+      this.logger.log(
+        `Updated user avatar for attachment: ${data.attachmentId}`,
+      );
     }
   }
 }

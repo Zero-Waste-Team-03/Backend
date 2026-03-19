@@ -23,11 +23,9 @@ import { v4 as uuidv4 } from 'uuid';
 import authConfig from 'src/config/auth.config';
 import { Profile } from 'passport-google-oauth20';
 import { UserService } from 'src/core/user/v1/user.service';
-import {
-  User,
-  UserRole,
-  UserRoleValues,
-} from 'src/core/user/entities/user.entity';
+import { User } from 'src/core/user/entities/user.entity';
+import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
+import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
 
 @Injectable()
 export class AuthenticationService {
@@ -39,25 +37,21 @@ export class AuthenticationService {
     private readonly authenicationConfig: ConfigType<typeof authConfig>,
 
     private readonly redisService: RedisService,
+    private readonly attachmentService: AttachmentService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
     @InjectQueue(QUEUE_NAME.UPLOAD) private readonly uploadQueue: Queue,
   ) {}
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findBasicAuthedUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException({ errCode: 'user_not_found' });
     }
     if (!user.isMailVerified) {
-      throw new UnauthorizedException('Email not verified');
-    }
-    if (!user.passwordHash) {
-      throw new UnauthorizedException(
-        'This account was created with social login. Please login with your social provider.',
-      );
+      throw new UnauthorizedException({ errCode: 'email_not_verified' });
     }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException({ errCode: 'invalid_password' });
     }
     return user;
   }
@@ -170,7 +164,7 @@ export class AuthenticationService {
       throw new BadRequestException('Invalid verification code');
     }
     user.isMailVerified = true;
-    await this.userService.updateUser(user);
+    await this.userService.updateUser(user.id, user);
     await this.redisService.del(`verification:${email}`);
     return {
       message: 'Email verified successfully.',
@@ -206,7 +200,7 @@ export class AuthenticationService {
       throw new NotFoundException('User not found');
     }
     user.passwordHash = await generateHash(password);
-    await this.userService.updateUser(user);
+    await this.userService.updateUser(user.id, user);
     await this.redisService.del(`password-reset:${token}`);
     return {
       message: 'Password reset successfully.',
@@ -220,11 +214,23 @@ export class AuthenticationService {
     userId: string;
     pictureUrl: string;
   }) {
+    const attachment = await this.attachmentService.createAttachment({
+      fileName: `avatar_${userId}`,
+      fileType: 'image/jpeg',
+      fileSize: 0,
+      uploadStatus: UploadStatusValues.PENDING,
+      uploadedById: userId,
+    });
+
+    await this.userService.updateUserWithoutReturn(userId, {
+      avatar: attachment,
+    });
+
     await this.uploadQueue.add(
       UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE,
       {
-        userId,
         pictureUrl,
+        attachmentId: attachment.id,
       },
       {
         attempts: 3,

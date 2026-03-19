@@ -55,9 +55,14 @@ export class User {
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 
+  @Column('string')
+  locationId?: string;
+
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'avatarAttachmentId' })
   avatar: Relation<Attachment>;
+
+  avatarAttachmentId?: string;
 
   @BeforeInsert()
   generateId() {

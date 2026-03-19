@@ -16,7 +16,6 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from './common/constants/queues';
-import basicAuth from 'express-basic-auth';
 import { LoggerServiceBuilder } from './monitoring/logger/logger.service';
 
 function setupBullBoard(app: INestApplication, configService: ConfigService) {
@@ -40,17 +39,6 @@ function setupBullBoard(app: INestApplication, configService: ConfigService) {
       }),
       serverAdapter,
     });
-
-    app.use(
-      bullBoardPath,
-      basicAuth({
-        users: {
-          admin: bullPassword,
-        },
-        challenge: true,
-      }),
-      serverAdapter.getRouter(),
-    );
   }
 
   if (configService.get<string>('NODE_ENV') !== 'production') {
@@ -148,10 +136,11 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+
   app.setGlobalPrefix('api', {
     exclude: ['/health'],
   });
-  //SWAGGER DOCS BUILDER
+
   const config = new DocumentBuilder()
     .setTitle('Core Api Documentation')
     .setDescription('The Api Documentation')
@@ -159,7 +148,11 @@ async function bootstrap() {
     .addBearerAuth()
     .addTag('Core')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+
+  const document = SwaggerModule.createDocument(app, config, {
+    ignoreGlobalPrefix: false,
+  });
+
   app.use(
     '/docs',
     apiReference({

@@ -1,12 +1,9 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import { User, UserRoleValues } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 export interface OAuthUserPayload {
   email: string;
@@ -25,12 +22,13 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async updateUser(data: Partial<User>) {
-    const { id } = data;
-    if (!id) throw new BadRequestException('id not included');
-    const { affected } = await this.userRepository.update(id, { ...data });
-    if (!affected) throw new BadRequestException('failed to update');
-    return await this.userRepository.findOneOrFail({ where: { id } });
+  async updateUser(id: string, data: UpdateUserDto) {
+    try {
+      await this.userRepository.update(id, { ...data });
+      return await this.userRepository.findOneOrFail({ where: { id } });
+    } catch (e) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
   }
 
   createOAuthUser(data: OAuthUserPayload): Promise<User> {
@@ -51,14 +49,25 @@ export class UserService {
     return this.userRepository.findOne({ where: { id } });
   }
 
+  async findBasicAuthedUserByEmail(email: string): Promise<User> {
+    try {
+      return await this.userRepository.findOneOrFail({
+        where: { email, passwordHash: '' }, //password empty cuz basic auth not oauth
+      });
+    } catch (e) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+  }
+
   async updateUserWithoutReturn(
     id: string,
-    data: Partial<User>,
+    data: UpdateUserDto,
   ): Promise<void> {
-    const { affected } = await this.userRepository.update(id, data);
-    if (affected === 0) {
-      throw new NotFoundException('User not found');
+    try {
+      await this.userRepository.update(id, data);
+      return;
+    } catch (e) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
     }
-    return;
   }
 }
