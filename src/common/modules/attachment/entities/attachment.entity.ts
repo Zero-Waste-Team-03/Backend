@@ -23,7 +23,7 @@ export type UploadStatus =
 @Entity('attachments')
 export class Attachment {
   @PrimaryColumn('uuid')
-  id: string
+  id: string;
 
   @Column({ type: 'varchar' })
   fileName: string;

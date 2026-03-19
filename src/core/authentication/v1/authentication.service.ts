@@ -23,8 +23,11 @@ import { v4 as uuidv4 } from 'uuid';
 import authConfig from 'src/config/auth.config';
 import { Profile } from 'passport-google-oauth20';
 import { UserService } from 'src/core/user/v1/user.service';
-import { User } from 'src/core/user/entities/user.entity';
-
+import {
+  User,
+  UserRole,
+  UserRoleValues,
+} from 'src/core/user/entities/user.entity';
 
 @Injectable()
 export class AuthenticationService {
@@ -38,7 +41,7 @@ export class AuthenticationService {
     private readonly redisService: RedisService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
     @InjectQueue(QUEUE_NAME.UPLOAD) private readonly uploadQueue: Queue,
-  ) { }
+  ) {}
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findByEmail(email);
     if (!user) {
@@ -114,26 +117,15 @@ export class AuthenticationService {
       resolvedUser = await this.userService.createOAuthUser({
         email,
         displayName,
-        isMailVerified: true,
-        passwordHash: '',
       });
 
       const googlePhotoUrl = profile.photos?.[0]?.value;
       if (googlePhotoUrl) {
-        await this.uploadQueue.add(UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE, {
+        await this.pushProfilePicToQueue({
           userId: resolvedUser.id,
           pictureUrl: googlePhotoUrl,
-        }, {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
-          },
-          removeOnComplete: true,
-          removeOnFail: false,
         });
       }
-
       this.logger.log(`Created new OAuth user: ${email}`);
     } else {
       resolvedUser = existingUser;
@@ -219,5 +211,30 @@ export class AuthenticationService {
     return {
       message: 'Password reset successfully.',
     };
+  }
+
+  async pushProfilePicToQueue({
+    userId,
+    pictureUrl,
+  }: {
+    userId: string;
+    pictureUrl: string;
+  }) {
+    await this.uploadQueue.add(
+      UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE,
+      {
+        userId,
+        pictureUrl,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
   }
 }

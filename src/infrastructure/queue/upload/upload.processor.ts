@@ -30,7 +30,7 @@ export class UploadProcessor extends WorkerHost {
 
   /**
    * Processes an incoming job from the upload queue.
-   * 
+   *
    * @param job - The job containing upload data (UploadJobDto or OAuthProfilePictureJobDto)
    * @param _token - Optional job token
    * @returns A promise that resolves with the result of the upload operation
@@ -75,14 +75,14 @@ export class UploadProcessor extends WorkerHost {
   /**
    * Event handler triggered when an upload job is successfully completed.
    * For OAuth profile pictures, it creates an attachment and updates the user's avatar.
-   * 
+   *
    * @param job - The completed job
    * @param result - The result returned from the process method (Cloudinary upload result)
    */
   @OnWorkerEvent('completed')
- async onQueueComplete(job: Job<any>, result: any) {
-  if (job.name === UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE) {
-    const data = job.data as OAuthProfilePictureJobDto;
+  async onQueueComplete(job: Job<any>, result: any) {
+    if (job.name === UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE) {
+      const data = job.data as OAuthProfilePictureJobDto;
       const attachment = await this.attachmentService.createAttachment({
         url: result.secure_url,
         fileName: result.original_filename || `avatar_${data.userId}`,
@@ -92,7 +92,9 @@ export class UploadProcessor extends WorkerHost {
         uploadedBy: { id: data.userId } as any,
         jobId: job.id,
       });
-      await this.userService.updateUserWithoutReturn(data.userId, { avatar: attachment });
+      await this.userService.updateUserWithoutReturn(data.userId, {
+        avatar: attachment,
+      });
       this.logger.log(`Updated user avatar for user: ${data.userId}`);
     }
   }

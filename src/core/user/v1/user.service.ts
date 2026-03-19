@@ -1,14 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
-import { User } from '../entities/user.entity';
+import { User, UserRoleValues } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 export interface OAuthUserPayload {
   email: string;
   displayName: string;
-  passwordHash: string;
-  isMailVerified: boolean;
 }
 
 @Injectable()
@@ -16,16 +18,28 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) { }
+  ) {}
 
-  createUser(data: registerDto): Promise<User> {
+  async createUser(data: registerDto): Promise<User> {
     const user = this.userRepository.create(data);
     return this.userRepository.save(user);
   }
 
+  async updateUser(data: Partial<User>) {
+    const { id } = data;
+    if (!id) throw new BadRequestException('id not included');
+    const { affected } = await this.userRepository.update(id, { ...data });
+    if (!affected) throw new BadRequestException('failed to update');
+    return await this.userRepository.findOneOrFail({ where: { id } });
+  }
 
   createOAuthUser(data: OAuthUserPayload): Promise<User> {
-    const user = this.userRepository.create(data);
+    const user = this.userRepository.create({
+      ...data,
+      role: UserRoleValues.USER,
+      passwordHash: '',
+      isMailVerified: true,
+    });
     return this.userRepository.save(user);
   }
 
@@ -37,7 +51,10 @@ export class UserService {
     return this.userRepository.findOne({ where: { id } });
   }
 
-  async updateUserWithoutReturn(id: string, data: Partial<User>): Promise<void> {
+  async updateUserWithoutReturn(
+    id: string,
+    data: Partial<User>,
+  ): Promise<void> {
     const { affected } = await this.userRepository.update(id, data);
     if (affected === 0) {
       throw new NotFoundException('User not found');
@@ -45,4 +62,3 @@ export class UserService {
     return;
   }
 }
-

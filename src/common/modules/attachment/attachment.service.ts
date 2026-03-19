@@ -10,14 +10,14 @@ export class AttachmentService {
     private readonly attachmentRepo: Repository<Attachment>,
   ) {}
 
-  logger = new Logger(AttachmentService.name)
+  logger = new Logger(AttachmentService.name);
   async createAttachment(
     attachmentData: Partial<Attachment>,
   ): Promise<Attachment> {
     const attachment = this.attachmentRepo.create(attachmentData);
-    try{
-     return await this.attachmentRepo.save(attachment);
-    } catch(e){
+    try {
+      return await this.attachmentRepo.save(attachment);
+    } catch (e) {
       this.logger.error(e);
       throw e;
     }

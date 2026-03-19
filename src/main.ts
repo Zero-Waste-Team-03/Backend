@@ -7,8 +7,57 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ResponseFormatterInterceptor } from './common/interceptors/response-formatter.interceptor';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
-import { LoggerServiceBuilder } from './monitoring/logger/logger.service';
 import { AppClusterService } from './infrastructure/clusters/app.clusterize';
+import { ExpressAdapter } from '@bull-board/express';
+import { RedisOptions } from 'ioredis';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bullmq';
+import { QUEUE_NAME } from './common/constants/queues';
+import basicAuth from 'express-basic-auth';
+import { LoggerServiceBuilder } from './monitoring/logger/logger.service';
+
+function setupBullBoard(app: INestApplication, configService: ConfigService) {
+  const bullBoardPath = '/bull-board';
+  const serverAdapter = new ExpressAdapter();
+  serverAdapter.setBasePath(bullBoardPath);
+
+  const bullPassword = configService.get<string>('BULL_PASSWORD');
+
+  if (bullPassword) {
+    const redisOptions: RedisOptions = {
+      host: configService.get<string>('REDIS_HOST') || 'localhost',
+      port: configService.get<number>('REDIS_PORT') || 6379,
+    };
+    createBullBoard({
+      queues: Object.values(QUEUE_NAME).map((queueName) => {
+        const bullQueue = new Queue(queueName, {
+          connection: redisOptions,
+        });
+        return new BullMQAdapter(bullQueue);
+      }),
+      serverAdapter,
+    });
+
+    app.use(
+      bullBoardPath,
+      basicAuth({
+        users: {
+          admin: bullPassword,
+        },
+        challenge: true,
+      }),
+      serverAdapter.getRouter(),
+    );
+  }
+
+  if (configService.get<string>('NODE_ENV') !== 'production') {
+    app.use(bullBoardPath, serverAdapter.getRouter());
+  }
+}
+
 async function bootstrap() {
   // the cors will be changed to the front end url  in production environnement
   const app = await NestFactory.create(AppModule, {
@@ -17,11 +66,11 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       credentials: true,
     },
-    //bufferLogs: true,
+    bufferLogs: true,
   });
 
   const logger = app.get(LoggerServiceBuilder).build();
-  //app.useLogger(logger);
+  process.env.NODE_ENV !== 'development' && app.useLogger(logger);
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -94,6 +143,14 @@ async function bootstrap() {
   process.on('uncaughtException', (err) => {
     logger.error('Uncaught Exception:', err);
   });
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+  app.setGlobalPrefix('api', {
+    exclude: ['/health'],
+  });
   //SWAGGER DOCS BUILDER
   const config = new DocumentBuilder()
     .setTitle('Core Api Documentation')
@@ -110,16 +167,16 @@ async function bootstrap() {
       content: document,
     }),
   );
-  app.enableVersioning({
-    type: VersioningType.URI,
-    defaultVersion: '1',
-  });
-  app.setGlobalPrefix('api', {
-    exclude: ['/health'],
-  });
+  const configService = app.get(ConfigService);
+  setupBullBoard(app, configService);
+
+  logger.log(
+    `Bull board on ${process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`}`,
+  );
 
   //RUNNING THE APPLICATION
   const port = process.env.PORT || 3000;
+
   await app.listen(port);
 }
 const cluserizeApp =

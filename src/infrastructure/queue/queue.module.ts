@@ -42,4 +42,4 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
   providers: [MailProcessor, UploadProcessor],
   exports: [BullModule],
 })
-export class QueueModule { }
+export class QueueModule {}

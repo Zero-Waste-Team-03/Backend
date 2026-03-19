@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards,Logger, Res } from '@nestjs/common';
+import { Controller, Get, UseGuards, Logger, Res } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { USER } from '../decorators/user.decorartor';
@@ -9,8 +9,8 @@ import { Response } from 'express';
 @ApiTags('Authentication - OAuth')
 @Controller('authentication')
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) { }
-  logger = new Logger(AuthenticationController.name)
+  constructor(private readonly authenticationService: AuthenticationService) {}
+  logger = new Logger(AuthenticationController.name);
   @ApiOperation({
     summary: 'Google OAuth2 login',
     description: 'Initiates the Google OAuth2 login flow.',
@@ -26,15 +26,18 @@ export class AuthenticationController {
   })
   @UseGuards(GoogleGuard)
   @Get('oauth/google/callback')
-async googleAuthRedirect(@USER() profile: Profile, @Res() res: Response) {
-  try {
-    const user = await this.authenticationService.logOauthUser(profile);
-    const tokens = await this.authenticationService.issueTokens(user);
-    const redirectTarget = process.env.OAUTH_REDIRECT_URL || 'http://localhost:5173/auth/callback';
-    res.redirect(`${redirectTarget}?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
-  } catch (e) {
-    this.logger.log(e);
-    throw e;
+  async googleAuthRedirect(@USER() profile: Profile, @Res() res: Response) {
+    try {
+      const user = await this.authenticationService.logOauthUser(profile);
+      const tokens = await this.authenticationService.issueTokens(user);
+      const redirectTarget =
+        process.env.OAUTH_REDIRECT_URL || 'http://localhost:5173/auth/callback';
+      res.redirect(
+        `${redirectTarget}?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+      );
+    } catch (e) {
+      this.logger.log(e);
+      throw e;
+    }
   }
-}
 }

@@ -6,4 +6,4 @@ import { LoggerModule } from './logger/logger.module';
   imports: [HealthModule, LoggerModule],
   exports: [HealthModule, LoggerModule],
 })
-export class MonitoringModule { }
+export class MonitoringModule {}
