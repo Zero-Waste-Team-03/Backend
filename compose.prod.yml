@@ -3,8 +3,8 @@ services:
     image: traefik:v3.0
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/certs
@@ -23,7 +23,7 @@ services:
       - proxy
 
   app_blue:
-    image: ${DOCKERHUB_USERNAME:-gapzero}/gapzero:latest
+    image: ${DOCKERHUB_USERNAME:-zakigoumri}/gapzero:latest
     restart: always
     env_file: .env
     networks:
@@ -34,14 +34,14 @@ services:
       redis:
         condition: service_healthy
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)"
-      - "traefik.http.routers.myapp.entrypoints=websecure"
-      - "traefik.http.routers.myapp.tls=true"
-      - "traefik.http.routers.myapp.tls.certresolver=myresolver"
-      - "traefik.http.services.myapp.loadbalancer.server.port=8080"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)'
+      - 'traefik.http.routers.myapp.entrypoints=websecure'
+      - 'traefik.http.routers.myapp.tls=true'
+      - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
+      - 'traefik.http.services.myapp.loadbalancer.server.port=8080'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -59,14 +59,14 @@ services:
       redis:
         condition: service_healthy
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)"
-      - "traefik.http.routers.myapp.entrypoints=websecure"
-      - "traefik.http.routers.myapp.tls=true"
-      - "traefik.http.routers.myapp.tls.certresolver=myresolver"
-      - "traefik.http.services.myapp.loadbalancer.server.port=8080"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)'
+      - 'traefik.http.routers.myapp.entrypoints=websecure'
+      - 'traefik.http.routers.myapp.tls=true'
+      - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
+      - 'traefik.http.services.myapp.loadbalancer.server.port=8080'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -81,7 +81,7 @@ services:
     networks:
       - proxy
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME:-postgres}"]
+      test: ['CMD', 'pg_isready', '-U', '${DB_USERNAME:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -92,7 +92,7 @@ services:
     networks:
       - proxy
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
