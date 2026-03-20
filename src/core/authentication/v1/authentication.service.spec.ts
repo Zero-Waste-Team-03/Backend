@@ -6,6 +6,7 @@ import authConfig from 'src/config/auth.config';
 import { RedisService } from 'nestjs-redis-client';
 import { getQueueToken } from '@nestjs/bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
+import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 
 describe('AuthenticationService', () => {
   let service: AuthenticationService;
@@ -18,7 +19,9 @@ describe('AuthenticationService', () => {
         { provide: JwtService, useValue: {} },
         { provide: authConfig.KEY, useValue: {} },
         { provide: RedisService, useValue: {} },
+        { provide: AttachmentService, useValue: {} },
         { provide: getQueueToken(QUEUE_NAME.MAIL), useValue: {} },
+        { provide: getQueueToken(QUEUE_NAME.UPLOAD), useValue: {} },
       ],
     }).compile();
 
