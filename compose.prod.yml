@@ -48,7 +48,7 @@ services:
       start_period: 30s
 
   app_green:
-    image: ${DOCKERHUB_USERNAME:-gapzero}/gapzero:latest
+    image: ${DOCKERHUB_USERNAME:-zakigoumri}/gapzero:latest
     restart: always
     env_file: .env
     networks:
