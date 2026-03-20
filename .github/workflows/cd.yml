@@ -1,0 +1,72 @@
+name: Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Blue-Green Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Deploy Scripts to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "compose.prod.yml,deploy.sh"
+          target: "/home/${{ secrets.VPS_USERNAME }}/zero-waste"
+
+      - name: Create .env on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /home/${{ secrets.VPS_USERNAME }}/zero-waste
+            cat > /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env << EOF
+            NODE_ENV=production
+            PORT=8080
+            DOMAIN=${{ secrets.DOMAIN }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DB_HOST=db
+            DB_PORT=5432
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            BULL_USER=${{ secrets.BULL_USER }}
+            BULL_PASSWORD=${{ secrets.BULL_PASSWORD }}
+            JWT_ACCESS_TOKEN_SECRET=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}
+            JWT_REFRESH_TOKEN_SECRET=${{ secrets.JWT_REFRESH_TOKEN_SECRET }}
+            GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+            GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+            GOOGLE_OAUTH_CALLBACK_URL=https://${{ secrets.DOMAIN }}/api/v1/authentication/oauth/google/callback
+            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+            SSL_EMAIL=${{ secrets.SSL_EMAIL }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            EOF
+
+      - name: Execute Deployment Script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.VPS_USERNAME }}/zero-waste
+            chmod +x deploy.sh
+            ./deploy.sh

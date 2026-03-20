@@ -37,9 +37,6 @@ export class UserType {
   @Field(() => Int, { description: 'User reputation score' })
   reputationScore: number;
 
-  @Field(() => Boolean, { description: 'Whether the user account is verified' })
-  isVerified: boolean;
-
   @Field(() => Boolean, {
     description: 'Whether the user has verified their email',
   })

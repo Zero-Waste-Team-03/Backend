@@ -23,7 +23,7 @@ export default registerAs(
           process.env.GOOGLE_OAUTH_CLIENT_SECRET || 'defaultGoogleClientSecret',
         callbackURL:
           process.env.GOOGLE_OAUTH_CALLBACK_URL ||
-          'http://localhost:3000/auth/google/callback',
+          'http://localhost:3000/api/v1/authentication/oauth/google/callback',
         scope: ['email', 'profile'],
       },
     },

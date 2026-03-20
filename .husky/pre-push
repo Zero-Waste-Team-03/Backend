@@ -1,0 +1,5 @@
+#!/bin/bash
+. "$(dirname "$0")/_/husky.sh"
+    echo "--- detected .env change, syncing to GitHub Secrets... ---"
+    chmod +x ./load_env_to_secrets.sh
+    ./load_env_to_secrets.sh

@@ -103,9 +103,6 @@ type User {
   """Whether the user has verified their email"""
   isMailVerified: Boolean!
 
-  """Whether the user account is verified"""
-  isVerified: Boolean!
-
   """Location ID reference"""
   locationId: String
 
