@@ -22,7 +22,15 @@ fi
 
 echo "Current active container: $OLD. Deploying to $NEW..."
 
-# 3. Run migrations on the new image before starting the new container
+# 3. Ensure infrastructure is running (network, db, redis, traefik)
+echo "Ensuring infrastructure services are up..."
+docker compose -f $PROD_COMPOSE up -d db redis traefik
+
+# Wait for DB to be ready (optional but recommended)
+echo "Waiting for database to be ready..."
+sleep 5
+
+# 4. Run migrations on the new image before starting the new container
 echo "Running database migrations..."
 # We use the prod .env file and run the pnpm migration script
 docker run --rm --network proxy --env-file .env $DOCKER_IMAGE:latest pnpm run migration:run
@@ -31,11 +39,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 4. Start the new container
+# 5. Start the new container
 echo "Starting $NEW..."
 docker compose -f $PROD_COMPOSE up -d $NEW
 
-# 5. Wait for the new container to pass its health check
+# 6. Wait for the new container to pass its health check
 echo "Waiting for $NEW to become healthy..."
 MAX_RETRIES=20
 WAIT_SECONDS=5
@@ -51,7 +59,7 @@ for i in $(seq 1 $MAX_RETRIES); do
     sleep $WAIT_SECONDS
 done
 
-# 6. If health check passed, stop the old container. Otherwise, rollback.
+# 7. If health check passed, stop the old container. Otherwise, rollback.
 if [ "$STATUS" == "healthy" ]; then
     echo "Success! Stopping old container $OLD..."
     docker compose -f $PROD_COMPOSE stop $OLD
