@@ -25,7 +25,7 @@ echo "Current active container: $OLD. Deploying to $NEW..."
 # 3. Run migrations on the new image before starting the new container
 echo "Running database migrations..."
 # We use the prod .env file and run the pnpm migration script
-docker run --rm --env-file .env $DOCKER_IMAGE:latest pnpm run migration:run
+docker run --rm --network proxy --env-file .env $DOCKER_IMAGE:latest pnpm run migration:run
 if [ $? -ne 0 ]; then
     echo "ERROR: Migration failed! Aborting deployment."
     exit 1
