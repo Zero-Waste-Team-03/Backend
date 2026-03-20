@@ -67,7 +67,6 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             cd /home/${{ secrets.VPS_USERNAME }}/zero-waste
             chmod +x deploy.sh
             ./deploy.sh
