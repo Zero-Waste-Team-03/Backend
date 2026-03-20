@@ -1,11 +1,5 @@
 #!/bin/bash
 . "$(dirname "$0")/_/husky.sh"
-
-# Sync .env to GitHub Secrets only if .env changed in the last commit
-if git diff --name-only HEAD~1 | grep -q "^.env$"; then
     echo "--- detected .env change, syncing to GitHub Secrets... ---"
     chmod +x ./load_env_to_secrets.sh
     ./load_env_to_secrets.sh
-else
-    echo "No .env change detected, skipping secret sync."
-fi

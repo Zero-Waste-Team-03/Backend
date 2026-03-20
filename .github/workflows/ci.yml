@@ -2,9 +2,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev, feat/*]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   lint-and-test:
@@ -14,17 +14,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-          run_install: false
 
       - name: Get pnpm store directory
         shell: bash
@@ -54,7 +54,7 @@ jobs:
   docker-build:
     name: Build & Push Docker Image
     needs: lint-and-test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/feat/'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -76,7 +76,7 @@ jobs:
           file: ./Dockerfile.production
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gapzero:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/gapzero:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

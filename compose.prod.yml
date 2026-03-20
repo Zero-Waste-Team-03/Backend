@@ -23,7 +23,7 @@ services:
       - proxy
 
   app_blue:
-    image: ${DOCKERHUB_USERNAME:-gapzero}/backend:latest
+    image: ${DOCKERHUB_USERNAME:-gapzero}/gapzero:latest
     restart: always
     env_file: .env
     networks:
@@ -48,7 +48,7 @@ services:
       start_period: 30s
 
   app_green:
-    image: ${DOCKERHUB_USERNAME:-gapzero}/backend:latest
+    image: ${DOCKERHUB_USERNAME:-gapzero}/gapzero:latest
     restart: always
     env_file: .env
     networks:

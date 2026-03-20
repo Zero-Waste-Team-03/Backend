@@ -3,8 +3,8 @@
 # Configuration
 # Default to gapzero/backend:latest if not specified
 DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-"gapzero"}
-DOCKER_IMAGE="${DOCKERHUB_USERNAME}/backend"
-PROD_COMPOSE="docker-compose.prod.yml"
+DOCKER_IMAGE="${DOCKERHUB_USERNAME}/gapzero"
+PROD_COMPOSE="compose.prod.yml"
 
 echo "--- Deploying latest $DOCKER_IMAGE ---"
 

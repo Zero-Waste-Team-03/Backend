@@ -11,7 +11,6 @@ import {
   UploadStatus,
   UploadStatusValues,
 } from '../entities/attachment.entity';
-import { User } from '../../../../core/user/entities/user.entity';
 
 /**
  * Data Transfer Object for creating an attachment.
