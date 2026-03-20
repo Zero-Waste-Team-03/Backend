@@ -90,9 +90,9 @@ export class CloudinaryService {
         resource_type: 'auto',
       });
       return result;
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.logger.error(
-        `Upload from URL failed: ${e.message || JSON.stringify(e)}`,
+        `Upload from URL failed: ${e instanceof Error ? e.message : JSON.stringify(e)}`,
       );
       throw e;
     }

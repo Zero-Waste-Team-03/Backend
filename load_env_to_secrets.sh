@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Configuration
-# Read the current repo name from git
 REPO=$(git config --get remote.origin.url | sed -e 's/git@github.com://' -e 's/https:\/\/github.com\///' -e 's/\.git//')
 
 if [ -z "$REPO" ]; then
@@ -11,7 +9,6 @@ fi
 
 echo "--- Syncing local .env to GitHub Secrets for $REPO ---"
 
-# Prerequisites: Check if gh CLI is installed and authenticated
 if ! command -v gh &> /dev/null; then
     echo "ERROR: GitHub CLI (gh) is not installed."
     exit 1

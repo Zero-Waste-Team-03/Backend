@@ -26,6 +26,7 @@ export class UserService {
     try {
       await this.userRepository.update(id, { ...data });
       return await this.userRepository.findOneOrFail({ where: { id } });
+      //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }
@@ -54,6 +55,7 @@ export class UserService {
       return await this.userRepository.findOneOrFail({
         where: { email, passwordHash: '' }, //password empty cuz basic auth not oauth
       });
+      //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }
@@ -66,6 +68,7 @@ export class UserService {
     try {
       await this.userRepository.update(id, data);
       return;
+      //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }

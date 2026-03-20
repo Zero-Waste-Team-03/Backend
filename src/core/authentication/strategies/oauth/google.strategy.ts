@@ -13,8 +13,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   ) {
     super(authConfiguration.oauth.google);
   }
-  async validate(
+  validate(
     accessToken: string,
+
     refreshToken: string,
     profile: Profile,
     done: VerifyCallback,
