@@ -1,0 +1,52 @@
+name: Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Blue-Green Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Deploy Scripts to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "docker-compose.prod.yml,deploy.sh"
+          target: "/home/${{ secrets.VPS_USERNAME }}/zero-waste"
+
+      - name: Create .env on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /home/${{ secrets.VPS_USERNAME }}/zero-waste
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env
+            echo "SSL_EMAIL=${{ secrets.SSL_EMAIL }}" >> /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env
+            echo "DOMAIN=${{ secrets.DOMAIN }}" >> /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> /home/${{ secrets.VPS_USERNAME }}/zero-waste/.env
+            # Add other necessary prod envs here...
+
+      - name: Execute Deployment Script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.VPS_USERNAME }}/zero-waste
+            chmod +x deploy.sh
+            ./deploy.sh
