@@ -75,4 +75,26 @@ export class CloudinaryService {
       throw e;
     }
   }
+
+  async uploadFromUrl(
+    url: string,
+    options: UploadingOptions,
+  ): Promise<cloudinary.UploadApiResponse> {
+    try {
+      const time = new Date().getFullYear();
+      const folder = `${options.uploadType.toLowerCase()}s/${time}/`;
+
+      this.logger.log(`Starting upload to Cloudinary from URL: ${url}`);
+      const result = await cloudinary.v2.uploader.upload(url, {
+        folder: folder || undefined,
+        resource_type: 'auto',
+      });
+      return result;
+    } catch (e: any) {
+      this.logger.error(
+        `Upload from URL failed: ${e.message || JSON.stringify(e)}`,
+      );
+      throw e;
+    }
+  }
 }

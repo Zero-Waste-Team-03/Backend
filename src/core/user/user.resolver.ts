@@ -93,7 +93,7 @@ export class UserResolver {
     }
 
     // Save and return updated user
-    const updatedUser = await this.userService.updateUser(currentUser);
+    const updatedUser = await this.userService.updateUser(currentUser.id, currentUser);
     return updatedUser;
   }
 

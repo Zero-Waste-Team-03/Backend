@@ -18,12 +18,14 @@ import { RedisService } from 'nestjs-redis-client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { Queue } from 'bullmq';
-import { MAIL_JOBS } from 'src/common/constants/jobs';
+import { MAIL_JOBS, UPLOAD_JOBS } from 'src/common/constants/jobs';
 import { v4 as uuidv4 } from 'uuid';
 import authConfig from 'src/config/auth.config';
 import { Profile } from 'passport-google-oauth20';
 import { UserService } from 'src/core/user/v1/user.service';
 import { User } from 'src/core/user/entities/user.entity';
+import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
+import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
 
 @Injectable()
 export class AuthenticationService {
@@ -33,20 +35,23 @@ export class AuthenticationService {
     private readonly jwtService: JwtService,
     @Inject(authConfig.KEY)
     private readonly authenicationConfig: ConfigType<typeof authConfig>,
+
     private readonly redisService: RedisService,
+    private readonly attachmentService: AttachmentService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
+    @InjectQueue(QUEUE_NAME.UPLOAD) private readonly uploadQueue: Queue,
   ) {}
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findBasicAuthedUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException({ errCode: 'user_not_found' });
     }
     if (!user.isMailVerified) {
-      throw new UnauthorizedException('Email not verified');
+      throw new UnauthorizedException({ errCode: 'email_not_verified' });
     }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException({ errCode: 'invalid_password' });
     }
     return user;
   }
@@ -57,7 +62,6 @@ export class AuthenticationService {
       const refreshTokenPayload = { sub: id, email, role, type: 'refresh' };
 
       const jwtConfig = this.authenicationConfig.jwt;
-
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.signAsync(accessTokenPayload, {
           expiresIn: jwtConfig.accessTokenExpiresIn,
@@ -87,10 +91,44 @@ export class AuthenticationService {
         'User registered successfully. Please check your email for verification code.',
     };
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  logOauthUser(_profile: Profile): Promise<User> {
-    throw new Error('Method not implemented.');
+
+  async logOauthUser(profile: Profile): Promise<User> {
+    const email = profile.emails?.[0]?.value;
+    if (!email) {
+      throw new UnauthorizedException(
+        'Google account does not have a verified email address.',
+      );
+    }
+
+    const existingUser = await this.userService.findByEmail(email);
+    let resolvedUser: User;
+
+    if (!existingUser) {
+      const displayName =
+        profile.displayName ||
+        `${profile.name?.givenName ?? ''} ${profile.name?.familyName ?? ''}`.trim();
+
+      resolvedUser = await this.userService.createOAuthUser({
+        email,
+        displayName,
+      });
+
+      const googlePhotoUrl = profile.photos?.[0]?.value;
+      if (googlePhotoUrl) {
+        await this.pushProfilePicToQueue({
+          userId: resolvedUser.id,
+          pictureUrl: googlePhotoUrl,
+        });
+      }
+      this.logger.log(`Created new OAuth user: ${email}`);
+    } else {
+      resolvedUser = existingUser;
+      this.logger.log(`Linked existing user via OAuth: ${email}`);
+    }
+
+    return resolvedUser;
   }
+
   private async generateAndSetOtp(user: User): Promise<string> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redisService.set(`verification:${user.email}`, otp, 600);
@@ -126,7 +164,7 @@ export class AuthenticationService {
       throw new BadRequestException('Invalid verification code');
     }
     user.isMailVerified = true;
-    await this.userService.updateUser(user);
+    await this.userService.updateUser(user.id, user);
     await this.redisService.del(`verification:${email}`);
     return {
       message: 'Email verified successfully.',
@@ -162,10 +200,47 @@ export class AuthenticationService {
       throw new NotFoundException('User not found');
     }
     user.passwordHash = await generateHash(password);
-    await this.userService.updateUser(user);
+    await this.userService.updateUser(user.id, user);
     await this.redisService.del(`password-reset:${token}`);
     return {
       message: 'Password reset successfully.',
     };
+  }
+
+  async pushProfilePicToQueue({
+    userId,
+    pictureUrl,
+  }: {
+    userId: string;
+    pictureUrl: string;
+  }) {
+    const attachment = await this.attachmentService.createAttachment({
+      fileName: `avatar_${userId}`,
+      fileType: 'image/jpeg',
+      fileSize: 0,
+      uploadStatus: UploadStatusValues.PENDING,
+      uploadedById: userId,
+    });
+
+    await this.userService.updateUserWithoutReturn(userId, {
+      avatar: attachment,
+    });
+
+    await this.uploadQueue.add(
+      UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE,
+      {
+        pictureUrl,
+        attachmentId: attachment.id,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
   }
 }

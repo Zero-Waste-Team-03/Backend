@@ -7,6 +7,8 @@ import { MailProcessor } from './mail/mail.processor';
 import { UploadProcessor } from './upload/upload.processor';
 import { CloudinaryModuleWrapper } from '../cloudinary/cloudinary.module';
 import { EmailModule } from 'src/common/modules/email/email.module';
+import { UserModule } from 'src/core/user/user.module';
+import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { EmailModule } from 'src/common/modules/email/email.module';
     ),
     CloudinaryModuleWrapper,
     EmailModule,
+    UserModule,
+    AttachmentModule,
   ],
   providers: [MailProcessor, UploadProcessor],
   exports: [BullModule],

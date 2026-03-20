@@ -13,6 +13,7 @@ import { UserModule } from '../user/user.module';
 import { AuthenticationController } from './v1/authentication.controller';
 import { AuthenticationService } from './v1/authentication.service';
 import { AuthenticationResolver } from './authentication.resolver';
+import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 
 /**
  * Authentication module
@@ -33,6 +34,7 @@ import { AuthenticationResolver } from './authentication.resolver';
     }),
     UserModule,
     QueueModule,
+    AttachmentModule,
   ],
   controllers: [AuthenticationController],
   providers: [

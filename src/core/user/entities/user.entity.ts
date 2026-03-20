@@ -49,18 +49,20 @@ export class User {
   reputationScore: number;
 
   @Column({ type: 'boolean', default: false })
-  isVerified: boolean;
-
-  @Column({ type: 'boolean', default: false })
   isMailVerified: boolean;
 
   @ManyToOne(() => Location, { nullable: true })
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 
+  @Column('string')
+  locationId?: string;
+
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'avatarAttachmentId' })
   avatar: Relation<Attachment>;
+
+  avatarAttachmentId?: string;
 
   @BeforeInsert()
   generateId() {

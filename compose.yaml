@@ -15,12 +15,12 @@ services:
       - 80
       - 443
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=true"
-      - "--entrypoints.web.address=:80"
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
-      - "--accesslog=true"
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=true'
+      - '--entrypoints.web.address=:80'
+      - '--api.dashboard=true'
+      - '--api.insecure=true'
+      - '--accesslog=true'
     ports:
       - 80:80
       - 4443:443
@@ -31,18 +31,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.${NODE_ENV:-dev}
-    expose:
-      - 8080
+    ports:
+      # need it to test oauth
+      - 8080:8080
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`api.localhost`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.service=app"
-      - "traefik.http.services.app.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.app-compress.compress=true"
-      - "traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760"
-      - "traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152"
-      - "traefik.http.routers.app.middlewares=app-compress,app-buffer"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.app.rule=Host(`api.localhost`)'
+      - 'traefik.http.routers.app.entrypoints=web'
+      - 'traefik.http.routers.app.service=app'
+      - 'traefik.http.services.app.loadbalancer.server.port=8080'
+      - 'traefik.http.middlewares.app-compress.compress=true'
+      - 'traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760'
+      - 'traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152'
+      - 'traefik.http.routers.app.middlewares=app-compress,app-buffer'
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +61,7 @@ services:
       # Warn: This is only exposed for dev purposes
       - 6380:6379
     healthcheck:
-      test: [ 'CMD', 'redis-cli', 'ping' ]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,11 +78,9 @@ services:
     expose:
       - 5432
     healthcheck:
-      test: [ 'CMD', 'pg_isready' ]
+      test: ['CMD', 'pg_isready']
       interval: 10s
       timeout: 5s
       retries: 5
 volumes:
   db-data:
-
-
