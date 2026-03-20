@@ -2,9 +2,13 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [main, dev, feat/*]
+    branches: [main, dev]
   pull_request:
     branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-test:
@@ -54,7 +58,7 @@ jobs:
   docker-build:
     name: Build & Push Docker Image
     needs: lint-and-test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

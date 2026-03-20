@@ -29,6 +29,12 @@ while IFS='=' read -r key value; do
     key=$(echo "$key" | xargs)
     value=$(echo "$value" | xargs)
 
+    # Skip GitHub reserved names
+    if [[ "$key" == GITHUB_* ]]; then
+        echo "Skipping $key (reserved name)..."
+        continue
+    fi
+
     echo "Syncing $key..."
     echo -n "$value" | gh secret set "$key" --repo "$REPO"
 done < .env
