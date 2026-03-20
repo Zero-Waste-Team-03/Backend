@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Configuration
-# Default to gapzero/backend:latest if not specified
-DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-"gapzero"}
+DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-"zakigoumri"}
 DOCKER_IMAGE="${DOCKERHUB_USERNAME}/gapzero"
 PROD_COMPOSE="compose.prod.yml"
 
