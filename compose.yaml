@@ -31,6 +31,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.${NODE_ENV:-dev}
+    env_file:
+      - .env.local
     ports:
       # need it to test oauth
       - 8080:8080
@@ -72,7 +74,7 @@ services:
       # Warn: This is only exposed for dev purposes
       - 5433:5432
     env_file:
-      - .env
+      - .env.local
     volumes:
       - db-data:/var/lib/postgresql/data
     expose:
