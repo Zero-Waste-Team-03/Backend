@@ -57,8 +57,11 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  const logger = app.get(LoggerServiceBuilder).build();
-  process.env.NODE_ENV !== 'development' && app.useLogger(logger);
+  const configService = app.get(ConfigService);
+  const logger = app
+    .get(LoggerServiceBuilder)
+    .build(configService.get('NODE_ENV') || 'development');
+  app.useLogger(logger);
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -160,7 +163,6 @@ async function bootstrap() {
       content: document,
     }),
   );
-  const configService = app.get(ConfigService);
   setupBullBoard(app, configService);
 
   logger.log(

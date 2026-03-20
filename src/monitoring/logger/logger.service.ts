@@ -27,7 +27,8 @@ export class LoggerServiceBuilder {
     }
     return info;
   }
-  build(): LoggerService {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  build(env: string): LoggerService {
     return WinstonModule.createLogger({
       levels: Winston.config.npm.levels,
       transports: [
