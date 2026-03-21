@@ -1,4 +1,5 @@
 export interface LoggerStore {
   requestId?: string;
-  meta?: Record<string, any>;
+  userId?: string;
+  ipAddress?: string;
 }
