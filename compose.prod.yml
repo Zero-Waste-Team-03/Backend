@@ -73,15 +73,19 @@ services:
       start_period: 30s
 
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     restart: always
     env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-postgres}
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - proxy
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', '${DB_USERNAME:-postgres}']
+      test: ['CMD', 'pg_isready', '-U', '${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5
