@@ -29,6 +29,12 @@ while IFS='=' read -r key value; do
     key=$(echo "$key" | xargs)
     value=$(echo "$value" | xargs)
 
+    # Skip empty values to avoid creating blank secrets
+    if [ -z "$value" ]; then
+        echo "Skipping $key (empty value)..."
+        continue
+    fi
+
     # Skip GitHub reserved names
     if [[ "$key" == GITHUB_* ]]; then
         echo "Skipping $key (reserved name)..."
