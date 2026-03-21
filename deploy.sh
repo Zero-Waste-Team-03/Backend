@@ -30,15 +30,6 @@ docker compose -f $PROD_COMPOSE up -d db redis traefik
 echo "Waiting for database to be ready..."
 sleep 5
 
-# 4. Run migrations on the new image before starting the new container
-echo "Running database migrations..."
-# We use the prod .env file and run the pnpm migration script
-docker run --rm --network proxy --env-file .env $DOCKER_IMAGE:latest pnpm run migration:run
-if [ $? -ne 0 ]; then
-    echo "ERROR: Migration failed! Aborting deployment."
-    exit 1
-fi
-
 # 5. Start the new container
 echo "Starting $NEW..."
 docker compose -f $PROD_COMPOSE up -d $NEW
