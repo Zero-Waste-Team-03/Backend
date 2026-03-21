@@ -43,8 +43,8 @@ jobs:
           infisical export \
             --token=${{ secrets.INFISICAL_TOKEN }} \
             --projectId=${{ secrets.INFISICAL_PROJECT_ID }} \
-            --env=production \
-            --format=dotenv > .env
+            --env=prod \
+            --format=dotenv | sed 's/^export //; s/"//g' > .env
 
       - name: Copy .env to VPS
         uses: appleboy/scp-action@v0.1.7
