@@ -71,8 +71,13 @@ jobs:
             --projectId=${{ secrets.INFISICAL_PROJECT_ID }} \
             --env=prod \
             --format=dotenv | sed 's/^export //; s/"//g' >> $GITHUB_ENV
-      - name: Debug env vars
-        run: env
+      - name: Debug Infisical output
+        run: |
+          infisical export \
+            --token=${{ secrets.INFISICAL_TOKEN }} \
+            --projectId=${{ secrets.INFISICAL_PROJECT_ID }} \
+            --env=prod \
+            --format=dotenv | cut -d= -f1
       - name: Set up Docker BuildX
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
