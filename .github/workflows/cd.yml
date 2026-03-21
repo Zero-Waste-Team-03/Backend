@@ -43,7 +43,7 @@ jobs:
           infisical export \
             --token=${{ secrets.INFISICAL_TOKEN }} \
             --projectId=${{ secrets.INFISICAL_PROJECT_ID }} \
-            --env=prod \
+            --env=production \
             --format=dotenv | sed 's/^export //; s/"//g' > .env
 
       - name: Copy .env to VPS
