@@ -33,6 +33,9 @@ services:
       dockerfile: Dockerfile.${NODE_ENV:-dev}
     env_file:
       - .env.local
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
     ports:
       # need it to test oauth
       - 8080:8080
