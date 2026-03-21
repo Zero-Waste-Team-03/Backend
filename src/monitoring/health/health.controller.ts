@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import {
   DiskHealthIndicator,
   HealthCheck,
@@ -9,7 +9,7 @@ import {
 } from '@nestjs/terminus';
 import { ApiExcludeController } from '@nestjs/swagger';
 
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 @ApiExcludeController()
 export class HealthController {
   constructor(
@@ -26,7 +26,7 @@ export class HealthController {
     return this.health.check([
       () => this.typeOrmHealthIndicator.pingCheck('database'),
       () => this.memory.checkHeap('memory heap', 150 * 1024 * 1024), // 150 MB
-      () => this.memory.checkRSS('memory RSS', 150 * 1024 * 1024), // 150 MB
+      () => this.memory.checkRSS('memory RSS', 512 * 1024 * 1024), // 512 MB
     ]);
   }
 }
