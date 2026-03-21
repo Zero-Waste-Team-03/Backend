@@ -62,6 +62,9 @@ USER node
 # Copy package.json so that package manager commands can be used.
 COPY --chown=node:node package.json .
 COPY --chown=node:node tsconfig.json .
+COPY --chown=node:node tsconfig.build.json .
+COPY --chown=node:node nest-cli.json .
+COPY --chown=node:node pm2.ecosystem.js .
 
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
