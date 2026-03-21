@@ -28,7 +28,19 @@ docker compose -f $PROD_COMPOSE up -d db redis traefik
 
 # Wait for DB to be ready (optional but recommended)
 echo "Waiting for database to be ready..."
-sleep 5
+MAX_DB_RETRIES=30
+DB_WAIT_SECONDS=2
+DB_STATUS=""
+for i in $(seq 1 $MAX_DB_RETRIES); do
+    DB_CONTAINER_ID=$(docker compose -f $PROD_COMPOSE ps -q db)
+    DB_STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$DB_CONTAINER_ID" 2>/dev/null || echo "")
+    if [ "$DB_STATUS" == "healthy" ]; then
+        echo "Database is healthy."
+        break
+    fi
+    echo "Database status: ${DB_STATUS:-unknown}... Waiting ($i/$MAX_DB_RETRIES)"
+    sleep $DB_WAIT_SECONDS
+done
 
 # 4. Start the new container
 echo "Starting $NEW..."
@@ -40,8 +52,14 @@ MAX_RETRIES=20
 WAIT_SECONDS=5
 STATUS="starting"
 
+# Resolve the actual container id created by compose and inspect its health
+CONTAINER_ID=$(docker compose -f $PROD_COMPOSE ps -q $NEW)
 for i in $(seq 1 $MAX_RETRIES); do
-    STATUS=$(docker inspect --format='{{.State.Health.Status}}' $NEW 2>/dev/null)
+    # Refresh container id if not yet available
+    if [ -z "$CONTAINER_ID" ]; then
+        CONTAINER_ID=$(docker compose -f $PROD_COMPOSE ps -q $NEW)
+    fi
+    STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_ID" 2>/dev/null || echo "")
     if [ "$STATUS" == "healthy" ]; then
         echo "$NEW is healthy! Traffic will now start shifting."
         break
