@@ -30,7 +30,7 @@ docker compose -f $PROD_COMPOSE up -d db redis traefik
 echo "Waiting for database to be ready..."
 sleep 5
 
-# 4. Start the new container
+# 5. Start the new container
 echo "Starting $NEW..."
 docker compose -f $PROD_COMPOSE up -d $NEW
 
