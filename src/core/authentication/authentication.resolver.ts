@@ -5,7 +5,6 @@ import { AuthResponseType } from './graphql/types/auth-response.type';
 import { MessageResponseType } from './graphql/types/message-response.type';
 import { LoginInput } from './graphql/inputs/login.input';
 import { RegisterInput } from './graphql/inputs/register.input';
-import { VerifyEmailInput } from './graphql/inputs/verify-email.input';
 import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
 import { LocalGuard } from './guards/local.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
@@ -65,28 +64,40 @@ export class AuthenticationResolver {
   /**
    * Register a new user
    *
-   * @param registerInput - User registration details (username, email, password)
+   * @param registerInput - User registration details
+   * @param otp - Verification code previously sent to email
    * @returns Success message
    *
    * @example
    * mutation {
-   *   register(registerInput: {
-   *     username: "johndoe"
-   *     email: "john@example.com"
-   *     password: "StrongPass123!"
-   *     confirmPassword: "StrongPass123!"
+   *   register(
+   *     otp: "123456"
+   *     registerInput: {
+   *       displayName: "John Doe"
+   *       email: "john@example.com"
+   *       password: "StrongPass123!"
+   *       confirmPassword: "StrongPass123!"
+   *       location: {
+   *         latitude: 36.7525
+   *         longitude: 3.042
+   *         city: "Algiers"
+   *         country: "Algeria"
+   *       }
+   *     }
    *   }) {
    *     message
    *   }
    * }
    */
   @Mutation(() => MessageResponseType, {
-    description: 'Register a new user and send verification email',
+    description:
+      'Register a new user using a previously sent verification code',
   })
   async register(
     @Args('registerInput') registerInput: RegisterInput,
+    @Args('otp') otp: string,
   ): Promise<MessageResponseType> {
-    return this.authenticationService.registerUser(registerInput);
+    return this.authenticationService.registerUser(registerInput, otp);
   }
 
   /**
@@ -120,53 +131,25 @@ export class AuthenticationResolver {
   }
 
   /**
-   * Resend email verification code
+   * Send email verification code
    *
    * @param email - User email address
    * @returns Success message
    *
    * @example
    * mutation {
-   *   resendVerification(email: "user@example.com") {
+   *   sendVerification(email: "user@example.com") {
    *     message
    *   }
    * }
    */
   @Mutation(() => MessageResponseType, {
-    description: 'Resend verification email to user',
+    description: 'Send verification email for registration flow',
   })
-  async resendVerification(
+  async sendVerification(
     @Args('email') email: string,
   ): Promise<MessageResponseType> {
-    return this.authenticationService.resendVerificationCode(email);
-  }
-
-  /**
-   * Verify user email with verification code
-   *
-   * @param verifyEmailInput - Email and verification code
-   * @returns Success message
-   *
-   * @example
-   * mutation {
-   *   verifyEmail(verifyEmailInput: {
-   *     email: "user@example.com"
-   *     code: "123456"
-   *   }) {
-   *     message
-   *   }
-   * }
-   */
-  @Mutation(() => MessageResponseType, {
-    description: 'Verify user email with the provided code',
-  })
-  async verifyEmail(
-    @Args('verifyEmailInput') verifyEmailInput: VerifyEmailInput,
-  ): Promise<MessageResponseType> {
-    return this.authenticationService.verifyEmail(
-      verifyEmailInput.email,
-      verifyEmailInput.code,
-    );
+    return this.authenticationService.sendVerificationCode(email);
   }
 
   /**

@@ -2,9 +2,9 @@ import {
   Injectable,
   Logger,
   UnauthorizedException,
-  NotFoundException,
   BadRequestException,
   Inject,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   compareHash,
@@ -90,12 +90,19 @@ export class AuthenticationService {
       throw new Error('Failed to issue tokens');
     }
   }
-  async registerUser(data: registerDto) {
-    const user = await this.userService.createUser(data);
-    await this.sendVerificationCode(user);
+  async registerUser(data: registerDto, otp: string) {
+    const storedCode = await this.redisService.get<string>(
+      `verification:${data.email}`,
+    );
+    if (!storedCode || storedCode !== otp) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    await this.userService.createUser(data);
+    await this.redisService.del(`verification:${data.email}`);
+
     return {
-      message:
-        'User registered successfully. Please check your email for verification code.',
+      message: 'User registered successfully.',
     };
   }
 
@@ -136,45 +143,21 @@ export class AuthenticationService {
     return resolvedUser;
   }
 
-  private async generateAndSetOtp(user: User): Promise<string> {
+  private async generateAndSetOtp(email: string): Promise<string> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.redisService.set(`verification:${user.email}`, otp, 600);
+    await this.redisService.set(`verification:${email}`, otp, 600);
     return otp;
   }
 
-  async sendVerificationCode(user: User) {
-    const otp = await this.generateAndSetOtp(user);
+  async sendVerificationCode(email: string) {
+    const otp = await this.generateAndSetOtp(email);
     await this.mailQueue.add(MAIL_JOBS.SEND_VERIFICATION_MAIL, {
-      to: user.email,
+      to: email,
       code: otp,
     });
-  }
 
-  async resendVerificationCode(email: string) {
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    await this.sendVerificationCode(user);
     return {
       message: 'Verification code sent successfully. Please check your email.',
-    };
-  }
-
-  async verifyEmail(email: string, code: string) {
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    const storedCode = await this.redisService.get(`verification:${email}`);
-    if (storedCode !== code) {
-      throw new BadRequestException('Invalid verification code');
-    }
-    user.isMailVerified = true;
-    await this.userService.updateUser(user.id, user);
-    await this.redisService.del(`verification:${email}`);
-    return {
-      message: 'Email verified successfully.',
     };
   }
 

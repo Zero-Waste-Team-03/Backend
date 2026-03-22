@@ -2,19 +2,73 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsNumber,
+  IsOptional,
   IsString,
   IsStrongPassword,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Match } from './Match.decorator';
 
-export class registerDto {
-  @IsString()
-  @IsNotEmpty()
+export class RegisterLocationDto {
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: 'Latitude for user location',
+  })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: 'Longitude for user location',
+  })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
   @ApiProperty({
     type: String,
-    description: 'Username for the new user',
+    required: false,
+    description: 'Neighborhood for user location',
   })
-  username: string;
+  @IsOptional()
+  @IsString()
+  neighborhood?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'City for user location',
+  })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Country for user location',
+  })
+  @IsOptional()
+  @IsString()
+  country?: string;
+}
+
+export class registerDto {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Display name for the new user',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  displayName?: string;
+
   @ApiProperty({
     type: String,
     description: 'Email address for the new user',
@@ -34,4 +88,12 @@ export class registerDto {
     description: 'Confirm password for the new user, must match the password',
   })
   confirmPassword: string;
+
+  @ApiProperty({
+    type: RegisterLocationDto,
+    description: 'Location payload for user registration',
+  })
+  @ValidateNested()
+  @Type(() => RegisterLocationDto)
+  location: RegisterLocationDto;
 }

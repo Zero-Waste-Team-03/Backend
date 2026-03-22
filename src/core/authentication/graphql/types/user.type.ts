@@ -1,4 +1,5 @@
 import { Field, ObjectType, Int } from '@nestjs/graphql';
+import { LocationType } from './location.type';
 
 export enum UserRoleType {
   USER = 'User',
@@ -44,4 +45,10 @@ export class UserType {
 
   @Field(() => String, { nullable: true, description: 'Location ID reference' })
   locationId?: string;
+
+  @Field(() => LocationType, {
+    nullable: true,
+    description: 'Location details associated with user',
+  })
+  location?: LocationType;
 }

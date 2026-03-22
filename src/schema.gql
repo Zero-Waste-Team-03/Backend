@@ -13,6 +13,26 @@ type AuthResponse {
   user: User!
 }
 
+type Location {
+  """Location city"""
+  city: String
+
+  """Location country"""
+  country: String
+
+  """Location unique identifier"""
+  id: String!
+
+  """Location latitude"""
+  latitude: Float
+
+  """Location longitude"""
+  longitude: Float
+
+  """Location neighborhood"""
+  neighborhood: String
+}
+
 input LoginInput {
   """User email address"""
   email: String!
@@ -39,20 +59,17 @@ type Mutation {
   """Refresh access and refresh tokens using a valid refresh token"""
   refreshTokens: AuthResponse!
 
-  """Register a new user and send verification email"""
-  register(registerInput: RegisterInput!): MessageResponse!
-
-  """Resend verification email to user"""
-  resendVerification(email: String!): MessageResponse!
+  """Register a new user using a previously sent verification code"""
+  register(otp: String!, registerInput: RegisterInput!): MessageResponse!
 
   """Reset user password with the provided token"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
 
+  """Send verification email for registration flow"""
+  sendVerification(email: String!): MessageResponse!
+
   """Update current user profile information"""
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
-
-  """Verify user email with the provided code"""
-  verifyEmail(verifyEmailInput: VerifyEmailInput!): MessageResponse!
 }
 
 type Query {
@@ -64,14 +81,34 @@ input RegisterInput {
   """Confirm password for the new user, must match the password"""
   confirmPassword: String!
 
+  """Display name for the new user"""
+  displayName: String
+
   """Email address for the new user"""
   email: String!
 
+  """Location payload for user registration"""
+  location: RegisterLocationInput!
+
   """Password for the new user, must be strong and secure"""
   password: String!
+}
 
-  """Username for the new user"""
-  username: String!
+input RegisterLocationInput {
+  """City for user location"""
+  city: String
+
+  """Country for user location"""
+  country: String
+
+  """Latitude for user location"""
+  latitude: Float
+
+  """Longitude for user location"""
+  longitude: Float
+
+  """Neighborhood for user location"""
+  neighborhood: String
 }
 
 input ResetPasswordInput {
@@ -83,8 +120,8 @@ input ResetPasswordInput {
 }
 
 input UpdateProfileInput {
-  """New username for the user"""
-  username: String
+  """New display name for the user"""
+  displayName: String
 }
 
 type User {
@@ -103,6 +140,9 @@ type User {
   """Whether the user has verified their email"""
   isMailVerified: Boolean!
 
+  """Location details associated with user"""
+  location: Location
+
   """Location ID reference"""
   locationId: String
 
@@ -111,12 +151,4 @@ type User {
 
   """User role"""
   role: String!
-}
-
-input VerifyEmailInput {
-  """Verification code sent to email"""
-  code: String!
-
-  """User email address"""
-  email: String!
 }

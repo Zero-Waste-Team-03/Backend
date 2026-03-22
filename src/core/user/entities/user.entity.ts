@@ -51,17 +51,18 @@ export class User {
   @Column({ type: 'boolean', default: false })
   isMailVerified: boolean;
 
-  @ManyToOne(() => Location, { nullable: true })
+  @ManyToOne(() => Location, { nullable: false })
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 
-  @Column('string')
-  locationId?: string;
+  @Column('uuid')
+  locationId: string;
 
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'avatarAttachmentId' })
   avatar: Relation<Attachment>;
 
+  @Column('uuid', { nullable: true })
   avatarAttachmentId?: string;
 
   @BeforeInsert()
