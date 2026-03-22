@@ -49,4 +49,18 @@ export class EmailService {
       this.logger.error('Error sending password reset email:', error);
     }
   }
+
+  async sendPasswordChangedAlertEmail(to: string): Promise<void> {
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject: 'Security Alert: Password Changed',
+        template: './password-changed-alert',
+        context: {},
+      });
+      this.logger.log(`Password changed alert email sent to ${to}`);
+    } catch (error) {
+      this.logger.error('Error sending password changed alert email:', error);
+    }
+  }
 }

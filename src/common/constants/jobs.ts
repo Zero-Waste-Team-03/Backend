@@ -15,6 +15,7 @@ export const MAIL_JOBS = {
   SEND_MAIL: 'send-mail',
   SEND_VERIFICATION_MAIL: 'send-verification-mail',
   SEND_PASSWORD_RESET_MAIL: 'send-password-reset-mail',
+  SEND_PASSWORD_CHANGED_ALERT: 'send-password-changed-alert',
 };
 
 export const UPLOAD_JOBS = {

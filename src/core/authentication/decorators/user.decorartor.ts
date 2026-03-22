@@ -56,6 +56,7 @@ export const USER = createParamDecorator(
 
     // If data is provided, return the specific property
     if (data) {
+      //eslint-disable-next-line
       return user[data];
     }
 

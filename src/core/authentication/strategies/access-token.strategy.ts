@@ -1,9 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import authConfig from 'src/config/auth.config';
+import { UserService } from 'src/core/user/v1/user.service';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
@@ -12,6 +13,7 @@ export class AccessTokenStrategy extends PassportStrategy(
 ) {
   constructor(
     @Inject(authConfig.KEY) configService: ConfigType<typeof authConfig>,
+    private readonly userService: UserService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -20,7 +22,11 @@ export class AccessTokenStrategy extends PassportStrategy(
     });
   }
 
-  validate(payload: AccessTokenPayload): AccessTokenPayload['user'] {
-    return payload.user;
+  async validate(payload: AccessTokenPayload) {
+    const user = await this.userService.findById(payload.sub);
+    if (!user || user.resetVersion !== payload.resetVersion) {
+      throw new UnauthorizedException('Session expired. Please log in again.');
+    }
+    return user;
   }
 }
