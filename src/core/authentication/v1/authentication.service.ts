@@ -57,9 +57,15 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
-      const { id, email, role } = user;
-      const accessTokenPayload = { sub: id, email, role };
-      const refreshTokenPayload = { sub: id, email, role, type: 'refresh' };
+      const { id, email, role, resetVersion } = user;
+      const accessTokenPayload = { sub: id, email, role, resetVersion };
+      const refreshTokenPayload = {
+        sub: id,
+        email,
+        role,
+        resetVersion,
+        type: 'refresh',
+      };
 
       const jwtConfig = this.authenicationConfig.jwt;
       const [accessToken, refreshToken] = await Promise.all([
@@ -176,6 +182,11 @@ export class AuthenticationService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    if (!user.passwordHash || user.passwordHash === '') {
+      throw new BadRequestException(
+        'Cannot reset password for OAuth users. Please log in with your provider.',
+      );
+    }
     const token = uuidv4();
     await this.redisService.set(`password-reset:${token}`, user.email, 600);
     await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_RESET_MAIL, {
@@ -200,10 +211,22 @@ export class AuthenticationService {
       throw new NotFoundException('User not found');
     }
     user.passwordHash = await generateHash(password);
+    user.resetVersion += 1;
     await this.userService.updateUser(user.id, user);
     await this.redisService.del(`password-reset:${token}`);
+    await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_CHANGED_ALERT, {
+      to: user.email,
+    });
     return {
       message: 'Password reset successfully.',
+    };
+  }
+
+  async logoutFromAllDevices(user: User) {
+    user.resetVersion += 1;
+    await this.userService.updateUser(user.id, user);
+    return {
+      message: 'Logged out from all devices successfully.',
     };
   }
 

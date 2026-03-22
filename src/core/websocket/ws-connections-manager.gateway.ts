@@ -40,13 +40,14 @@ export class WsConnectionsManagerGateway
     const userPayload: AccessTokenPayload['user'] = {
       id: user.id,
       email: user.email,
+      role: user.role,
     };
     const getuserRooms = this.getUserRoomFromSocket(client);
     client['user'] = userPayload;
     await client.join(getuserRooms);
   }
   getUserRoomFromSocket(client: Socket): string {
-    const user = client['user'] as AccessTokenPayload['user'];
+    const user = client['user'];
     if (!user) {
       client.disconnect(true);
     }
@@ -54,7 +55,7 @@ export class WsConnectionsManagerGateway
     return userRoom;
   }
   getUserFromSocket(client: Socket): AccessTokenPayload['user'] {
-    return client['user'] as AccessTokenPayload['user'];
+    return client['user'];
   }
 
   extractTokenFromSocket(client: Socket): string | null {
