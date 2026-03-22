@@ -4,10 +4,14 @@ import {
   ExceptionFilter,
   HttpException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { GqlArgumentsHost, GqlContextType } from '@nestjs/graphql';
 import { GraphQLError, GraphQLResolveInfo } from 'graphql';
 import { Response } from 'express';
+import { ALERTING_SERVICE } from 'src/monitoring/alerting/alerting.module';
+import { AlertingService } from 'src/monitoring/alerting/interfaces/alerting.interface';
+import { isError } from 'lodash';
 
 /**
  * Global exception filter that handles {@link HttpException} for both
@@ -25,6 +29,11 @@ import { Response } from 'express';
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
+  constructor(
+    @Inject(ALERTING_SERVICE)
+    private readonly alertingService: AlertingService,
+  ) {}
+
   catch(exception: HttpException, host: ArgumentsHost) {
     const status = exception.getStatus();
     const message = exception.message || 'Internal server error';
@@ -32,6 +41,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.warn(`HTTP Exception: Status ${status} - Message: ${message}`);
     if (exception.cause) {
       this.logger.error(exception.cause);
+    }
+
+    // Send alert for internal server errors
+    if (status >= 500) {
+      this.alertingService
+        .sendAlert(`Internal Server Error: ${message}`)
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send alert: ${isError(err) ? err.message : err}`,
+          ),
+        );
     }
 
     /** Handle GraphQL context */
