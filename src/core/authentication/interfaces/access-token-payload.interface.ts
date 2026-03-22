@@ -1,7 +1,6 @@
 export interface AccessTokenPayload {
   sub: string; // User ID
-  user: {
-    id: string;
-    email: string;
-  };
+  email: string;
+  role: string;
+  resetVersion: number;
 }

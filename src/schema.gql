@@ -36,6 +36,9 @@ type Mutation {
   """Login user and issue access and refresh tokens"""
   login(loginInput: LoginInput!): AuthResponse!
 
+  """Logout from all devices by invalidating all active sessions"""
+  logoutFromAllDevices: MessageResponse!
+
   """Refresh access and refresh tokens using a valid refresh token"""
   refreshTokens: AuthResponse!
 

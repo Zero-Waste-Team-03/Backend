@@ -9,6 +9,7 @@ import { VerifyEmailInput } from './graphql/inputs/verify-email.input';
 import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
 import { LocalGuard } from './guards/local.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { AccessTokenGuard } from './guards/access-token.guard';
 import { USER } from './decorators/user.decorartor';
 import { User } from 'src/core/user/entities/user.entity';
 
@@ -217,5 +218,21 @@ export class AuthenticationResolver {
       resetPasswordInput.token,
       resetPasswordInput.password,
     );
+  }
+
+  /**
+   * Logout from all devices
+   *
+   * @param user - User object populated by AccessTokenGuard
+   * @returns Success message
+   */
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => MessageResponseType, {
+    description: 'Logout from all devices by invalidating all active sessions',
+  })
+  async logoutFromAllDevices(
+    @USER() user: User,
+  ): Promise<MessageResponseType> {
+    return this.authenticationService.logoutFromAllDevices(user);
   }
 }
