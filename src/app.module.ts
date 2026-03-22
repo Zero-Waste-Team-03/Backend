@@ -20,6 +20,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
+import { HttpExceptionFilter } from './common/filter/httpException.filter';
+import { APP_FILTER } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -64,6 +66,12 @@ import dbConfig from './config/db.config';
     CoreModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
