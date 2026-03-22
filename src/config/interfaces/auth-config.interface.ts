@@ -6,6 +6,7 @@ export interface AuthConfig {
     refreshTokenSecret: string;
     accessTokenExpiresIn: number;
     refreshTokenExpiresIn: number;
+    ignoreExpiration: boolean;
   };
   oauth: {
     google: StrategyOptionsGoogle;

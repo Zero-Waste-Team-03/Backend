@@ -6,6 +6,7 @@ import { isString } from 'node:util';
 import { AccessTokenPayload } from '../authentication/interfaces/access-token-payload.interface';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/v1/user.service';
+import { AuthenticatedSocket } from './types/authenticated-socket.type';
 
 export class WsConnectionsManagerGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -32,21 +33,26 @@ export class WsConnectionsManagerGateway
       client.disconnect();
       return;
     }
-    const user = await this.validateUser(payload.sub);
+    const user = await this.validateUser(payload.id);
     if (!user) {
       client.disconnect();
       return;
     }
-    const userPayload: AccessTokenPayload['user'] = {
+    const userPayload: AccessTokenPayload = {
       id: user.id,
       email: user.email,
       role: user.role,
+      resetVersion: user.resetVersion,
     };
-    const getuserRooms = this.getUserRoomFromSocket(client);
+
     client['user'] = userPayload;
+    //Type cast since we already attached user payload to socket
+    const getuserRooms = this.getUserRoomFromSocket(
+      client as AuthenticatedSocket,
+    );
     await client.join(getuserRooms);
   }
-  getUserRoomFromSocket(client: Socket): string {
+  getUserRoomFromSocket(client: AuthenticatedSocket): string {
     const user = client['user'];
     if (!user) {
       client.disconnect(true);
@@ -54,7 +60,7 @@ export class WsConnectionsManagerGateway
     const userRoom = `user_${user.id}`;
     return userRoom;
   }
-  getUserFromSocket(client: Socket): AccessTokenPayload['user'] {
+  getUserFromSocket(client: AuthenticatedSocket): AccessTokenPayload {
     return client['user'];
   }
 
