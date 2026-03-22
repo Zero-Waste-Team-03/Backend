@@ -11,5 +11,6 @@ export default registerAs(
       ignoreUserAgents: [/^curl\//i],
     },
     slackWebhookUrl: process.env.SLACK_WEBHOOK || '',
+    environment: process.env.NODE_ENV || 'development',
   }),
 );

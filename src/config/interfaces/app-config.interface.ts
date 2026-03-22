@@ -6,4 +6,5 @@ export interface AppConfig {
     ignoreUserAgents: RegExp[];
   };
   slackWebhookUrl: string;
+  environment: string;
 }
