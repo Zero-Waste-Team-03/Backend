@@ -59,24 +59,19 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
-<<<<<<< HEAD
-      const { id, email, role } = user;
-      const accessTokenPayload: AccessTokenPayload = { id, email, role };
+      const { id, email, role, resetVersion } = user;
+      const accessTokenPayload: AccessTokenPayload = {
+        id,
+        email,
+        role,
+        resetVersion,
+      };
       const refreshTokenPayload: RefreshTokenPayload = {
         id,
         email,
         role,
-        refreshTokenId: uuidv4(),
-=======
-      const { id, email, role, resetVersion } = user;
-      const accessTokenPayload = { sub: id, email, role, resetVersion };
-      const refreshTokenPayload = {
-        sub: id,
-        email,
-        role,
         resetVersion,
-        type: 'refresh',
->>>>>>> 0c28f06f97e6a662ac92a1ed87b8b09f5b9b78aa
+        refreshTokenId: uuidv4(),
       };
 
       const jwtConfig = this.authenicationConfig.jwt;

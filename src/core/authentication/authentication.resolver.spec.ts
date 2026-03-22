@@ -1,126 +1,106 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthenticationResolver } from './authentication.resolver';
 import { AuthenticationService } from './v1/authentication.service';
+import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
+import { User } from '../user/entities/user.entity';
 
 describe('AuthenticationResolver', () => {
   let resolver: AuthenticationResolver;
-  let authService: {
+  let service: {
     registerUser: jest.Mock;
     sendVerificationCode: jest.Mock;
+    resetPassword: jest.Mock;
+    logoutFromAllDevices: jest.Mock;
   };
 
   beforeEach(async () => {
-    authService = {
+    service = {
       registerUser: jest.fn(),
       sendVerificationCode: jest.fn(),
-      import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
+      resetPassword: jest.fn(),
+      logoutFromAllDevices: jest.fn(),
+    };
 
-      describe('AuthenticationResolver', () => {
-      let resolver: AuthenticationResolver;
-      let service: AuthenticationService;
-
-      beforeEach(async () => {
-        // Mock AuthenticationService
-        const mockAuthenticationService = {
-          resetPassword: jest.fn(),
-          logoutFromAllDevices: jest.fn(),
-        };
-
-        const module: TestingModule = await Test.createTestingModule({
-          providers: [
-            AuthenticationResolver,
-<<<<<<< HEAD
-            { provide: AuthenticationService, useValue: authService },
-=======
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthenticationResolver,
         {
           provide: AuthenticationService,
-          useValue: mockAuthenticationService,
+          useValue: service,
         },
->>>>>>> 0c28f06f97e6a662ac92a1ed87b8b09f5b9b78aa
-          ],
-        }).compile();
+      ],
+    }).compile();
 
-        resolver = module.get<AuthenticationResolver>(AuthenticationResolver);
-<<<<<<< HEAD
-      });
+    resolver = module.get<AuthenticationResolver>(AuthenticationResolver);
+  });
 
-      it('register forwards register input and otp', async () => {
-        const registerInput = {
-          email: 'user@example.com',
-          password: 'StrongPass123!',
-          confirmPassword: 'StrongPass123!',
-          location: { city: 'Algiers' },
-        };
-        authService.registerUser.mockResolvedValue({ message: 'ok' });
-
-        await resolver.register(registerInput, '123456');
-
-        expect(authService.registerUser).toHaveBeenCalledWith(
-          registerInput,
-          '123456',
-        );
-      });
-
-      it('sendVerification forwards email', async () => {
-        authService.sendVerificationCode.mockResolvedValue({ message: 'ok' });
-
-        await resolver.sendVerification('user@example.com');
-
-        expect(authService.sendVerificationCode).toHaveBeenCalledWith(
-          'user@example.com',
-        );
-=======
-    service = module.get<AuthenticationService>(AuthenticationService);
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(resolver).toBeDefined();
   });
 
-  describe('resetPassword', () => {
-    it('should call authenticationService.resetPassword with correct parameters and return message', async () => {
-      // Arrange
-      const resetPasswordInput: ResetPasswordInput = {
-        token: 'valid-token-uuid',
-        password: 'NewStrongPassword123!',
-      };
-      const expectedResponse = { message: 'Password reset successfully.' };
-      jest.spyOn(service, 'resetPassword').mockResolvedValue(expectedResponse);
+  it('register forwards register input and otp', async () => {
+    const registerInput = {
+      email: 'user@example.com',
+      password: 'StrongPass123!',
+      confirmPassword: 'StrongPass123!',
+      location: { city: 'Algiers' },
+    };
+    const expectedResponse = { message: 'ok' };
+    service.registerUser.mockResolvedValue(expectedResponse);
 
-      // Act
-      const result = await resolver.resetPassword(resetPasswordInput);
+    const result = await resolver.register(registerInput, '123456');
 
-      // Assert
-      expect(service.resetPassword).toHaveBeenCalledWith(
-        resetPasswordInput.token,
-        resetPasswordInput.password,
-      );
-      expect(result).toEqual(expectedResponse);
-    });
+    expect(service.registerUser).toHaveBeenCalledWith(registerInput, '123456');
+    expect(result).toEqual(expectedResponse);
   });
 
-  describe('logoutFromAllDevices', () => {
-    it('should call authenticationService.logoutFromAllDevices and return message', async () => {
-      // Arrange
-      const user = {
-        id: 'uuid',
-        email: 'test@example.com',
-        resetVersion: 0,
-      } as any;
-      const expectedResponse = {
-        message: 'Logged out from all devices successfully.',
-      };
-      jest
-        .spyOn(service, 'logoutFromAllDevices')
-        .mockResolvedValue(expectedResponse);
+  it('sendVerification forwards email', async () => {
+    const expectedResponse = { message: 'ok' };
+    service.sendVerificationCode.mockResolvedValue(expectedResponse);
 
-      // Act
-      const result = await resolver.logoutFromAllDevices(user);
+    const result = await resolver.sendVerification('user@example.com');
 
-      // Assert
-      expect(service.logoutFromAllDevices).toHaveBeenCalledWith(user);
-      expect(result).toEqual(expectedResponse);
-    });
->>>>>>> 0c28f06f97e6a662ac92a1ed87b8b09f5b9b78aa
-      });
-    });
+    expect(service.sendVerificationCode).toHaveBeenCalledWith(
+      'user@example.com',
+    );
+    expect(result).toEqual(expectedResponse);
+  });
+
+  it('resetPassword forwards token and password', async () => {
+    const resetPasswordInput: ResetPasswordInput = {
+      token: 'valid-token-uuid',
+      password: 'NewStrongPassword123!',
+    };
+    const expectedResponse = { message: 'Password reset successfully.' };
+    service.resetPassword.mockResolvedValue(expectedResponse);
+
+    const result = await resolver.resetPassword(resetPasswordInput);
+
+    expect(service.resetPassword).toHaveBeenCalledWith(
+      resetPasswordInput.token,
+      resetPasswordInput.password,
+    );
+    expect(result).toEqual(expectedResponse);
+  });
+
+  it('logoutFromAllDevices forwards user and returns message', async () => {
+    const user = {
+      id: 'uuid',
+      email: 'test@example.com',
+      resetVersion: 0,
+    } as User;
+    const expectedResponse = {
+      message: 'Logged out from all devices successfully.',
+    };
+    service.logoutFromAllDevices.mockResolvedValue(expectedResponse);
+
+    const result = await resolver.logoutFromAllDevices(user);
+
+    expect(service.logoutFromAllDevices).toHaveBeenCalledWith(user);
+    expect(result).toEqual(expectedResponse);
+  });
+});
