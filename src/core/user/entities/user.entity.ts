@@ -58,8 +58,8 @@ export class User {
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 
-  @Column('uuid')
-  locationId: string;
+  @Column('uuid', { nullable: true })
+  locationId?: string;
 
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'avatarAttachmentId' })
