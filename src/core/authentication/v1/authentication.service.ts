@@ -59,7 +59,13 @@ export class AuthenticationService {
     try {
       const { id, email, role, resetVersion } = user;
       const accessTokenPayload = { sub: id, email, role, resetVersion };
-      const refreshTokenPayload = { sub: id, email, role, resetVersion, type: 'refresh' };
+      const refreshTokenPayload = {
+        sub: id,
+        email,
+        role,
+        resetVersion,
+        type: 'refresh',
+      };
 
       const jwtConfig = this.authenicationConfig.jwt;
       const [accessToken, refreshToken] = await Promise.all([

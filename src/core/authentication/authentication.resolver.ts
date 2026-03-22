@@ -230,9 +230,7 @@ export class AuthenticationResolver {
   @Mutation(() => MessageResponseType, {
     description: 'Logout from all devices by invalidating all active sessions',
   })
-  async logoutFromAllDevices(
-    @USER() user: User,
-  ): Promise<MessageResponseType> {
+  logoutFromAllDevices(@USER() user: User): Promise<MessageResponseType> {
     return this.authenticationService.logoutFromAllDevices(user);
   }
 }

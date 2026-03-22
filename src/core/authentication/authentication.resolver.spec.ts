@@ -57,9 +57,17 @@ describe('AuthenticationResolver', () => {
   describe('logoutFromAllDevices', () => {
     it('should call authenticationService.logoutFromAllDevices and return message', async () => {
       // Arrange
-      const user = { id: 'uuid', email: 'test@example.com', resetVersion: 0 } as any;
-      const expectedResponse = { message: 'Logged out from all devices successfully.' };
-      jest.spyOn(service, 'logoutFromAllDevices').mockResolvedValue(expectedResponse);
+      const user = {
+        id: 'uuid',
+        email: 'test@example.com',
+        resetVersion: 0,
+      } as any;
+      const expectedResponse = {
+        message: 'Logged out from all devices successfully.',
+      };
+      jest
+        .spyOn(service, 'logoutFromAllDevices')
+        .mockResolvedValue(expectedResponse);
 
       // Act
       const result = await resolver.logoutFromAllDevices(user);
