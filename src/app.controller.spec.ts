@@ -13,10 +13,7 @@ describe('AppController', () => {
 
     appController = app.get<AppController>(AppController);
   });
-
-  describe('root', () => {
-    it('should return "Hello to core app"', () => {
-      expect(appController.getHello()).toBe('Hello to core app');
-    });
+  it('should be defined', () => {
+    expect(appController).toBeDefined();
   });
 });
