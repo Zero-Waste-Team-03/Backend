@@ -6,7 +6,6 @@ import helmet from 'helmet';
 // import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { ResponseFormatterInterceptor } from './common/interceptors/response-formatter.interceptor';
-import { HttpExceptionFilter } from './common/filter/httpException.filter';
 import { AppClusterService } from './infrastructure/clusters/app.clusterize';
 import { ExpressAdapter } from '@bull-board/express';
 import { RedisOptions } from 'ioredis';
@@ -103,7 +102,7 @@ async function bootstrap() {
   );
 
   //FILTERS
-  app.useGlobalFilters(new HttpExceptionFilter());
+
   // app.useGlobalFilters(new CustomWsExceptionFilter());
   //app.useGlobalFilters(new ElasticSearchExceptionFilter()); //TODO:figure out what error to catch
   //--
