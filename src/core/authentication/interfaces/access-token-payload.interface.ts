@@ -1,6 +1,11 @@
+import { UserRole } from 'src/core/user/entities/user.entity';
+
 export interface AccessTokenPayload {
   sub: string; // User ID
-  email: string;
-  role: string;
+  user: {
+    id: string;
+    role: UserRole;
+    email: string;
+  };
   resetVersion: number;
 }

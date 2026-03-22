@@ -40,6 +40,7 @@ export class WsConnectionsManagerGateway
     const userPayload: AccessTokenPayload['user'] = {
       id: user.id,
       email: user.email,
+      role: user.role,
     };
     const getuserRooms = this.getUserRoomFromSocket(client);
     client['user'] = userPayload;
