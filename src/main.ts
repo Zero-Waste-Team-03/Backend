@@ -50,7 +50,7 @@ async function bootstrap() {
   // the cors will be changed to the front end url  in production environnement
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: process.env.FRONTENT_URL || 'http://localhost:5372',
+      origin: process.env.CORS_ORIGINS?.split(',') || '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       credentials: true,
     },
@@ -60,6 +60,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app
     .get(LoggerServiceBuilder)
+    .setJob('CoreApi')
     .build(configService.get('NODE_ENV') || 'development');
   app.useLogger(logger);
   app.use(

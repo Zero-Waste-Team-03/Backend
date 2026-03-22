@@ -41,7 +41,6 @@ export class LoggerInterceptor implements NestInterceptor {
     let request: Request;
     let requestPath: string;
     let requestMethod: string;
-
     if (isGraphQL) {
       // GraphQL context
       request = gqlContext.getContext<{ req: Request }>().req;
@@ -70,6 +69,7 @@ export class LoggerInterceptor implements NestInterceptor {
     );
     const store = {
       requestId: requestId,
+      userIp: userIp,
     };
     //Execute the request within the AsyncLocalStorage context
     // so that the store is available throughout the request lifecycle

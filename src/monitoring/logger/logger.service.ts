@@ -3,8 +3,8 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { ASYNC_STORAGE } from 'src/common/constants/injection';
 import { LoggerStore } from './interfaces/logger_store.interface';
 import { WinstonModule } from 'nest-winston';
-
-import * as Winston from 'winston';
+import LokiTransport from 'winston-loki';
+import winston, * as Winston from 'winston';
 export class LoggerServiceBuilder {
   //This will be used for more complex transports like loki
   private job: string;
@@ -20,36 +20,77 @@ export class LoggerServiceBuilder {
    * @param info Winston log info object
    * @return formatted log info object
    **/
-  private formatInfo(info: Winston.Logform.TransformableInfo) {
+  private formatInfo(
+    info: Winston.Logform.TransformableInfo & {
+      context: Record<string, any> | string;
+    },
+  ) {
     const store = this.als.getStore();
-    if (store && store.requestId) {
-      info.requestId = store.requestId;
+    if (store) {
+      if (typeof info.context !== 'object' || info.context === null) {
+        info.context = { service: info.context };
+      }
+      info.context['ipAdress'] = store.ipAddress;
+      info.context['userId'] = store.userId;
+      info.context['requestId'] = store.requestId;
     }
     return info;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   build(env: string): LoggerService {
+    const transports: Winston.transport[] = [
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.colorize(),
+          winston.format.simple(),
+          winston.format.timestamp(),
+          winston.format.printf(
+            ({
+              timestamp,
+              level,
+              message,
+            }: {
+              timestamp: string;
+              level: string;
+              message: string;
+            }) => {
+              return `${timestamp} ${level}: ${message}`;
+            },
+          ),
+        ),
+        level: process.env.LOG_LEVEL || 'info',
+      }),
+    ];
+    if (env !== 'developement') {
+      transports.push(
+        new LokiTransport({
+          format: winston.format.combine(
+            winston.format(
+              (
+                info: winston.Logform.TransformableInfo & {
+                  context: Record<string, any> | string;
+                },
+              ) => {
+                return this.formatInfo(info);
+              },
+            )(),
+            winston.format.timestamp(),
+            winston.format.errors({ stack: true }),
+            winston.format.json(),
+          ),
+          host: process.env.LOKI_HOST ?? 'http://localhost:3100',
+          labels: {
+            job: this.job,
+            environment: env,
+          },
+          json: true,
+          level: 'info',
+          replaceTimestamp: true,
+        }),
+      );
+    }
     return WinstonModule.createLogger({
       levels: Winston.config.npm.levels,
-      transports: [
-        // Add more transports here like loki, file, etc.,
-        new Winston.transports.Console({
-          format: Winston.format.combine(
-            Winston.format((info) => this.formatInfo(info))(),
-            Winston.format.timestamp(),
-            Winston.format.colorize(),
-            Winston.format.json(),
-            Winston.format.printf((info) => {
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              return `[${info.timestamp}] [${info.level}]${
-                // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
-                info.requestId ? ` [requestId: ${info.requestId}]` : ''
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              } : ${info.message}`;
-            }),
-          ),
-        }),
-      ],
+      transports,
     });
   }
 }

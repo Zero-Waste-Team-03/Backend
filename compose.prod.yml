@@ -21,7 +21,38 @@ services:
       - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
     networks:
       - proxy
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/loki.yaml
+    expose:
+      - 3100
+    volumes:
+      - ./loki.yaml:/etc/loki/loki.yaml
+      - loki-data:/loki
+    networks:
+      -  proxy
 
+  grafana:
+    image: grafana/grafana:12.4.1
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN:-localhost}`)'
+      - 'traefik.http.routers.grafana.entrypoints=websecure'
+      - 'traefik.http.routers.grafana.tls=true'
+      - 'traefik.http.routers.grafana.tls.certresolver=myresolver'
+      - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
+    expose:
+      - 3000
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+    networks:
+      - proxy
   app_blue:
     image: ${DOCKERHUB_USERNAME:-zakigoumri}/gapzero:latest
     restart: always
@@ -35,7 +66,7 @@ services:
         condition: service_healthy
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)'
+      - 'traefik.http.routers.myapp.rule=Host(`api.${DOMAIN:-localhost}`)'
       - 'traefik.http.routers.myapp.entrypoints=websecure'
       - 'traefik.http.routers.myapp.tls=true'
       - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
@@ -59,7 +90,7 @@ services:
         condition: service_healthy
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.myapp.rule=Host(`${DOMAIN:-api.localhost}`)'
+      - 'traefik.http.routers.myapp.rule=Host(`api.${DOMAIN:-localhost}`)'
       - 'traefik.http.routers.myapp.entrypoints=websecure'
       - 'traefik.http.routers.myapp.tls=true'
       - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
@@ -101,3 +132,5 @@ networks:
 
 volumes:
   db-data:
+  loki-data:
+  grafana-data:
