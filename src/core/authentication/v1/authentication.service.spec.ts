@@ -80,7 +80,7 @@ describe('AuthenticationService', () => {
     redisService.get.mockResolvedValue('123456');
     userService.createUser.mockResolvedValue({ id: 'user-id' });
 
-    const result = await service.registerUser(data as any, '123456');
+    const result = await service.registerUser(data, '123456');
 
     expect(redisService.get).toHaveBeenCalledWith(
       'verification:user@example.com',
@@ -104,9 +104,9 @@ describe('AuthenticationService', () => {
 
     redisService.get.mockResolvedValue('654321');
 
-    await expect(
-      service.registerUser(data as any, '123456'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.registerUser(data, '123456')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(userService.createUser).not.toHaveBeenCalled();
     expect(redisService.del).not.toHaveBeenCalled();
   });
@@ -124,6 +124,7 @@ describe('AuthenticationService', () => {
       'send-verification-mail',
       expect.objectContaining({
         to: 'user@example.com',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         code: expect.stringMatching(/^\d{6}$/),
       }),
     );

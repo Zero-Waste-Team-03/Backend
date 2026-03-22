@@ -34,7 +34,7 @@ describe('AuthenticationResolver', () => {
     };
     authService.registerUser.mockResolvedValue({ message: 'ok' });
 
-    await resolver.register(registerInput as any, '123456');
+    await resolver.register(registerInput, '123456');
 
     expect(authService.registerUser).toHaveBeenCalledWith(
       registerInput,

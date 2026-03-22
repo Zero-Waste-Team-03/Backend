@@ -69,6 +69,7 @@ describe('Authentication GraphQL (e2e)', () => {
       })
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(response.body.data.sendVerification.message).toContain(
       'Verification code sent successfully',
     );
@@ -112,12 +113,14 @@ describe('Authentication GraphQL (e2e)', () => {
       })
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(response.body.data.register.message).toBe(
       'User registered successfully.',
     );
     expect(authService.registerUser).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'user@example.com',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         location: expect.objectContaining({ city: 'Algiers' }),
       }),
       '123456',
@@ -141,6 +144,7 @@ describe('Authentication GraphQL (e2e)', () => {
       })
       .expect(400);
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(response.body.errors[0].message).toContain(
       'Cannot query field "verifyEmail" on type "Mutation"',
     );
