@@ -1,7 +1,7 @@
+import { UserRole } from 'src/core/user/entities/user.entity';
+
 export interface AccessTokenPayload {
-  sub: string; // User ID
-  user: {
-    id: string;
-    email: string;
-  };
+  id: string;
+  email: string;
+  role: UserRole;
 }

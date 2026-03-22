@@ -26,6 +26,8 @@ import { UserService } from 'src/core/user/v1/user.service';
 import { User } from 'src/core/user/entities/user.entity';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
+import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
+import { RefreshTokenPayload } from '../interfaces/refresh-token.dto';
 
 @Injectable()
 export class AuthenticationService {
@@ -58,8 +60,13 @@ export class AuthenticationService {
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
       const { id, email, role } = user;
-      const accessTokenPayload = { sub: id, email, role };
-      const refreshTokenPayload = { sub: id, email, role, type: 'refresh' };
+      const accessTokenPayload: AccessTokenPayload = { id, email, role };
+      const refreshTokenPayload: RefreshTokenPayload = {
+        id,
+        email,
+        role,
+        refreshTokenId: uuidv4(),
+      };
 
       const jwtConfig = this.authenicationConfig.jwt;
       const [accessToken, refreshToken] = await Promise.all([

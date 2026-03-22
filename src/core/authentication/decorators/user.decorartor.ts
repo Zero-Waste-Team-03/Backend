@@ -33,10 +33,7 @@ import { AccessTokenPayload } from '../interfaces/access-token-payload.interface
  * myEmail(@USER('email') email: string) { ... }
  */
 export const USER = createParamDecorator(
-  (
-    data: keyof AccessTokenPayload['user'] | undefined,
-    ctx: ExecutionContext,
-  ) => {
+  (data: keyof AccessTokenPayload | undefined, ctx: ExecutionContext) => {
     // Try to get GraphQL context first
     const gqlCtx = GqlExecutionContext.create(ctx);
     let request: ExtendedRequest;
