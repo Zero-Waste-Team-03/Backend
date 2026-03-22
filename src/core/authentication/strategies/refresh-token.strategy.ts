@@ -24,7 +24,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
   }
 
   async validate(payload: RefreshTokenPayload): Promise<User | null> {
-    const user = await this.userService.findById(payload.sub);
+    const user = await this.userService.findById(payload.id);
     if (!user || user.resetVersion !== payload.resetVersion) {
       throw new UnauthorizedException('Refresh token invalid.');
     }

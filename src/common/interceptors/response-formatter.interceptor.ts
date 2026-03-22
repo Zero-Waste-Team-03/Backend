@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { map, Observable } from 'rxjs';
 
 @Injectable()
@@ -13,11 +14,15 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
     next: CallHandler<any>,
   ): Observable<any> | Promise<Observable<any>> {
     return next.handle().pipe(
-      map((data) => {
+      map((data: unknown) => {
+        const gqlContext = GqlExecutionContext.create(context);
+        const isGraphQL = gqlContext.getType() === 'graphql';
+
+        if (isGraphQL) return data; // Don't format GraphQL responses, return as is
+
         return {
           success: true,
           timeStamp: new Date().toISOString(),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data,
         };
       }),

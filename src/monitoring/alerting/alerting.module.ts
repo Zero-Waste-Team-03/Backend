@@ -16,7 +16,7 @@ export const ALERTING_SERVICE = 'AlertingService';
         httpService: HttpService,
       ): SlackService => {
         const url = configService.slackWebhookUrl;
-        if (!url) {
+        if (!url && configService.environment === 'production') {
           throw new Error('Slack webhook URL is not configured in app config.');
         }
         return new SlackService(url, httpService);

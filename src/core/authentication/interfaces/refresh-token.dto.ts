@@ -1,12 +1,12 @@
+import { UserRole } from 'src/core/user/entities/user.entity';
+
 export interface RefreshTokenPayload {
-  sub: string; // User ID
-  type: string;
-  user: {
-    id: string;
-    email: string;
-    role: string;
-  };
+  id: string; // User ID
+  email: string; // User email
+  refreshTokenId: string; // Unique identifier for the refresh token
+  role: UserRole; // User role
+  iat?: number; // Issued at time (optional)
+  exp?: number; // Expiration time (optional)
+
   resetVersion: number;
-  iat?: number;
-  exp?: number;
 }

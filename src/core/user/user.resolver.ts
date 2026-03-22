@@ -61,7 +61,7 @@ export class UserResolver {
    * @example
    * mutation {
    *   updateProfile(updateProfileInput: {
-   *     username: "newusername"
+   *     displayName: "New Name"
    *   }) {
    *     id
    *     email
@@ -85,11 +85,8 @@ export class UserResolver {
       throw new Error('User not found');
     }
 
-    // Update fields from input
-    if (updateProfileInput.username !== undefined) {
-      // Note: In real implementation, you might want to add a 'username' field
-      // to the User entity. For now, this is a placeholder.
-      // currentUser.username = updateProfileInput.username;
+    if (updateProfileInput.displayName !== undefined) {
+      currentUser.displayName = updateProfileInput.displayName;
     }
 
     // Save and return updated user

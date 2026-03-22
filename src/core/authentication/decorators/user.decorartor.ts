@@ -33,10 +33,7 @@ import { AccessTokenPayload } from '../interfaces/access-token-payload.interface
  * myEmail(@USER('email') email: string) { ... }
  */
 export const USER = createParamDecorator(
-  (
-    data: keyof AccessTokenPayload['user'] | undefined,
-    ctx: ExecutionContext,
-  ) => {
+  (data: keyof AccessTokenPayload | undefined, ctx: ExecutionContext) => {
     // Try to get GraphQL context first
     const gqlCtx = GqlExecutionContext.create(ctx);
     let request: ExtendedRequest;
@@ -56,7 +53,6 @@ export const USER = createParamDecorator(
 
     // If data is provided, return the specific property
     if (data) {
-      //eslint-disable-next-line
       return user[data];
     }
 

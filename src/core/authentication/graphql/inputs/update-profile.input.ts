@@ -7,7 +7,7 @@ import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
  * @example
  * mutation {
  *   updateProfile(updateProfileInput: {
- *     username: "newusername"
+ *     displayName: "New Name"
  *   }) {
  *     id
  *     email
@@ -19,12 +19,12 @@ import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
 export class UpdateProfileInput {
   @Field(() => String, {
     nullable: true,
-    description: 'New username for the user',
+    description: 'New display name for the user',
   })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  username?: string;
+  displayName?: string;
 
   // Add more fields as needed for profile updates
 }
