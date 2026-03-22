@@ -51,7 +51,10 @@ export class User {
   @Column({ type: 'boolean', default: false })
   isMailVerified: boolean;
 
-  @ManyToOne(() => Location, { nullable: false })
+  @Column({ type: 'int', default: 0 })
+  resetVersion: number;
+
+  @ManyToOne(() => Location, { nullable: true })
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 

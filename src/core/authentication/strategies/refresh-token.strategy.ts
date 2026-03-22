@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -24,6 +24,10 @@ export class RefreshTokenStrategy extends PassportStrategy(
   }
 
   async validate(payload: RefreshTokenPayload): Promise<User | null> {
-    return this.userService.findById(payload.id);
+    const user = await this.userService.findById(payload.id);
+    if (!user || user.resetVersion !== payload.resetVersion) {
+      throw new UnauthorizedException('Refresh token invalid.');
+    }
+    return user;
   }
 }

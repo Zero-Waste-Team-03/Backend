@@ -9,8 +9,7 @@ import { UserService } from '../user/v1/user.service';
 import { AuthenticatedSocket } from './types/authenticated-socket.type';
 
 export class WsConnectionsManagerGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(WsConnectionsManagerGateway.name);
   @Inject(UserService)
   private readonly userService: UserService;
@@ -42,6 +41,7 @@ export class WsConnectionsManagerGateway
       id: user.id,
       email: user.email,
       role: user.role,
+      resetVersion: user.resetVersion,
     };
 
     client['user'] = userPayload;

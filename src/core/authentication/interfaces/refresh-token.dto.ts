@@ -7,4 +7,6 @@ export interface RefreshTokenPayload {
   role: UserRole; // User role
   iat?: number; // Issued at time (optional)
   exp?: number; // Expiration time (optional)
+
+  resetVersion: number;
 }

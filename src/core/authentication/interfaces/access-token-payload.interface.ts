@@ -4,4 +4,5 @@ export interface AccessTokenPayload {
   id: string;
   email: string;
   role: UserRole;
+  resetVersion: number;
 }

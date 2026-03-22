@@ -9,7 +9,7 @@ this document provides a technical overview of the Current codeBase, including i
 - **BullMq**: A Node.js library for handling distributed jobs and messages in Node.js applications using Redis.
 - **Passport**: An authentication middleware for Node.js, used to handle various authentication strategies.
 - **ElasticSearch**: A distributed, RESTful search and analytics engine capable of addressing a growing number of use cases.
-
+- **PNPM**: A fast, disk-efficient package manager.
 
 # Folder Structure
 - **src**: Contains the main application code.

@@ -59,6 +59,7 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
+<<<<<<< HEAD
       const { id, email, role } = user;
       const accessTokenPayload: AccessTokenPayload = { id, email, role };
       const refreshTokenPayload: RefreshTokenPayload = {
@@ -66,6 +67,16 @@ export class AuthenticationService {
         email,
         role,
         refreshTokenId: uuidv4(),
+=======
+      const { id, email, role, resetVersion } = user;
+      const accessTokenPayload = { sub: id, email, role, resetVersion };
+      const refreshTokenPayload = {
+        sub: id,
+        email,
+        role,
+        resetVersion,
+        type: 'refresh',
+>>>>>>> 0c28f06f97e6a662ac92a1ed87b8b09f5b9b78aa
       };
 
       const jwtConfig = this.authenicationConfig.jwt;
@@ -166,6 +177,11 @@ export class AuthenticationService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    if (!user.passwordHash || user.passwordHash === '') {
+      throw new BadRequestException(
+        'Cannot reset password for OAuth users. Please log in with your provider.',
+      );
+    }
     const token = uuidv4();
     await this.redisService.set(`password-reset:${token}`, user.email, 600);
     await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_RESET_MAIL, {
@@ -190,10 +206,22 @@ export class AuthenticationService {
       throw new NotFoundException('User not found');
     }
     user.passwordHash = await generateHash(password);
+    user.resetVersion += 1;
     await this.userService.updateUser(user.id, user);
     await this.redisService.del(`password-reset:${token}`);
+    await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_CHANGED_ALERT, {
+      to: user.email,
+    });
     return {
       message: 'Password reset successfully.',
+    };
+  }
+
+  async logoutFromAllDevices(user: User) {
+    user.resetVersion += 1;
+    await this.userService.updateUser(user.id, user);
+    return {
+      message: 'Logged out from all devices successfully.',
     };
   }
 
