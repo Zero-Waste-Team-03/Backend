@@ -1,13 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthenticationResolver } from './authentication.resolver';
-import { AuthenticationService } from './v1/authentication.service';
-import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
+import { TestingModule, Test } from '@nestjs/testing';
 import { User } from '../user/entities/user.entity';
+import { AuthenticationResolver } from './authentication.resolver';
+import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
+import { AuthenticationService } from './v1/authentication.service';
 
 describe('AuthenticationResolver', () => {
   let resolver: AuthenticationResolver;
   let service: {
     registerUser: jest.Mock;
+    changePassword: jest.Mock;
     sendVerificationCode: jest.Mock;
     resetPassword: jest.Mock;
     logoutFromAllDevices: jest.Mock;
@@ -17,6 +18,7 @@ describe('AuthenticationResolver', () => {
     service = {
       registerUser: jest.fn(),
       sendVerificationCode: jest.fn(),
+      changePassword: jest.fn(),
       resetPassword: jest.fn(),
       logoutFromAllDevices: jest.fn(),
     };
@@ -70,25 +72,26 @@ describe('AuthenticationResolver', () => {
     expect(result).toEqual(expectedResponse);
   });
 
-  it('should change password if passowrd matches and the user is authenticated', async () => {
-    const expectedReponse = { message: 'Password reset successfully.' };
-    service.resetPassword.mockResolvedValue(expectedReponse);
+  it('should change password if password matches and the user is authenticated', async () => {
+    const expectedResponse = { message: 'Password changed successfully.' };
+    service.changePassword.mockResolvedValue(expectedResponse);
 
     const changePasswordInput = {
       userId: 'uuid',
       currentPassword: 'CurrentPass',
       newPassword: 'NewStrongPassword123!',
     };
-    const result = await resolver.changePassword(
+    const result = await resolver.changePassword(changePasswordInput.userId, {
+      currentPassword: changePasswordInput.currentPassword,
+      newPassword: changePasswordInput.newPassword,
+    });
+    expect(service.changePassword).toHaveBeenCalledWith(
       changePasswordInput.userId,
       changePasswordInput.currentPassword,
       changePasswordInput.newPassword,
+      undefined,
     );
-    expect(service.resetPassword).toHaveBeenCalledWith(
-      changePasswordInput.userId,
-      changePasswordInput.newPassword,
-    );
-    expect(result).toEqual(expectedReponse);
+    expect(result).toEqual(expectedResponse);
   });
   it('resetPassword forwards token and password', async () => {
     const resetPasswordInput: ResetPasswordInput = {
