@@ -15,7 +15,6 @@ export default registerAs(
   (): ApolloDriverConfig => ({
     // Code First approach - schema is generated from TypeScript classes
     autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-
     // Sort schema fields alphabetically for consistency
     sortSchema: true,
 

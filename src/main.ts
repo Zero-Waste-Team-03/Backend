@@ -48,12 +48,14 @@ function setupBullBoard(app: INestApplication, configService: ConfigService) {
 async function bootstrap() {
   // the cors will be changed to the front end url  in production environnement
   const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  app.enableCors({
     cors: {
-      origin: process.env.CORS_ORIGINS?.split(',') || '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,
     },
-    bufferLogs: true,
   });
 
   const configService = app.get(ConfigService);
