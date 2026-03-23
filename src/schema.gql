@@ -62,8 +62,16 @@ type Mutation {
   """Refresh access and refresh tokens using a valid refresh token"""
   refreshTokens: AuthResponse!
 
-  """Register a new user using a previously sent verification code"""
-  register(otp: String!, registerInput: RegisterInput!): MessageResponse!
+  """
+  Register a new user using a previously sent verification code, so this mutation should be called after sendVerification mutation
+  """
+  register(
+    """
+    The value of the otp obtained from the email after calling sendVerificationMail mutatuion
+    """
+    otp: String!
+    registerInput: RegisterInput!
+  ): MessageResponse!
 
   """Reset user password with the provided token"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!

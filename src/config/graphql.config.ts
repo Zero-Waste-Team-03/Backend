@@ -20,6 +20,7 @@ export default registerAs(
 
     // Enable GraphQL Playground in development
     playground: true,
+    introspection: true,
 
     // Include stack traces in errors during development
     debug: process.env.NODE_ENV !== 'production',
