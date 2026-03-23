@@ -223,4 +223,37 @@ export class AuthenticationResolver {
   logoutFromAllDevices(@USER() user: User): Promise<MessageResponseType> {
     return this.authenticationService.logoutFromAllDevices(user);
   }
+  /* *
+   * Change password for authenticated user
+   * *
+   * @param userId - ID of the authenticated user
+   * @param currentPassword - Current password for verification
+   * @param newPassword - New password to set
+   * @param logoutFromOtherDevices - Optional flag to logout from other devices after password change
+   * @returns Success message
+   * */
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => MessageResponseType, {
+    description:
+      'Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password',
+  })
+  async changePassword(
+    @USER('id') userId: string,
+    @Args('currentPassword') currentPassword: string,
+    @Args('newPassword') newPassword: string,
+    @Args('logoutFromOtherDevices', {
+      description:
+        'If the user whishes to logout from all other devics after password changes this will eventually log out all the users up to 5 mins interval ',
+      defaultValue: false,
+      nullable: true,
+    })
+    logoutFromOtherDevices: boolean = false,
+  ): Promise<MessageResponseType> {
+    return this.authenticationService.changePassword(
+      userId,
+      currentPassword,
+      newPassword,
+      logoutFromOtherDevices,
+    );
+  }
 }

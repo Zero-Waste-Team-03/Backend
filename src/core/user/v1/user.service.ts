@@ -99,6 +99,18 @@ export class UserService {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }
   }
+  async getHashedPassword(
+    userId: string,
+  ): Promise<{ passwordHash: string; resetVersion: number }> {
+    const user = await this.userRepository.findOne({
+      select: { passwordHash: true, resetVersion: true },
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+    return { passwordHash: user.passwordHash, resetVersion: user.resetVersion };
+  }
   async deleteUser(id: string): Promise<MessageResponseType> {
     const deleteResult = await this.userRepository.softDelete(id);
     if (deleteResult.affected === 0) {

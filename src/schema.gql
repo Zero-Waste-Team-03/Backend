@@ -47,6 +47,19 @@ type MessageResponse {
 }
 
 type Mutation {
+  """
+  Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password
+  """
+  changePassword(
+    currentPassword: String!
+
+    """
+    If the user whishes to logout from all other devics after password changes this will eventually log out all the users up to 5 mins interval 
+    """
+    logoutFromOtherDevices: Boolean = false
+    newPassword: String!
+  ): MessageResponse!
+
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
 
