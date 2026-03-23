@@ -57,6 +57,36 @@ export class AuthenticationService {
     }
     return user;
   }
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    logoutFromDevices: boolean = true,
+  ) {
+    const { passwordHash, resetVersion } =
+      await this.userService.getHashedPassword(userId);
+    const isCurrentPasswordValid = await compareHash(
+      currentPassword,
+      passwordHash,
+    );
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException({ errCode: 'invalid_current_password' });
+    }
+    const newHashedPassword = await generateHash(newPassword);
+    const updateData: Partial<User> = {
+      passwordHash: newHashedPassword,
+    };
+    if (logoutFromDevices) {
+      updateData.resetVersion = resetVersion + 1;
+    }
+    const { email } = await this.userService.updateUser(userId, updateData);
+    await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_CHANGED_ALERT, {
+      to: email,
+    });
+    return {
+      message: 'Password changed successfully.',
+    };
+  }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
       const { id, email, role, resetVersion } = user;
