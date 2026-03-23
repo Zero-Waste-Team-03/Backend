@@ -30,7 +30,7 @@ services:
       - ./loki.yaml:/etc/loki/loki.yaml
       - loki-data:/loki
     networks:
-      -  proxy
+      - proxy
 
   grafana:
     image: grafana/grafana:12.4.1
@@ -44,14 +44,58 @@ services:
     expose:
       - 3000
     environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: 'Admin'
     volumes:
       - grafana-data:/var/lib/grafana
     depends_on:
       - loki
     networks:
       - proxy
+
+  dbgate:
+    image: dbgate/dbgate:alpine
+    restart: always
+    env_file: .env
+    expose:
+      - 3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - dbgate-data:/root/.dbgate
+    environment:
+      PORT: 3000
+      CONNECTIONS: pg,redis
+      SKIP_ALL_AUTH: 1
+
+      LABEL_pg: Postgres
+      SERVER_pg: db
+      USER_pg: ${POSTGRES_USER:-postgres}
+      PASSWORD_pg: ${POSTGRES_PASSWORD:-password}
+      PORT_pg: 5432
+      DATABASE_pg: ${POSTGRES_DB:-postgres}
+      ENGINE_pg: postgres@dbgate-plugin-postgres
+
+      LABEL_redis: Redis
+      SERVER_redis: redis
+      PORT_redis: 6379
+      ENGINE_redis: redis@dbgate-plugin-redis
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.dbgate.rule=Host(`dbgate.${DOMAIN:-localhost}`)'
+      - 'traefik.http.routers.dbgate.entrypoints=websecure'
+      - 'traefik.http.routers.dbgate.tls=true'
+      - 'traefik.http.routers.dbgate.tls.certresolver=myresolver'
+      - 'traefik.http.middlewares.dbgate-auth.basicauth.removeheader=true'
+      - 'traefik.http.routers.dbgate.middlewares=dbgate-auth'
+      - 'traefik.http.middlewares.dbgate-auth.basicauth.users=${TRAEFIK_DBGATE_USERS}'
+      - 'traefik.http.services.dbgate.loadbalancer.server.port=3000'
+    networks:
+      - proxy
+
   app_blue:
     image: ${DOCKERHUB_USERNAME:-zakigoumri}/gapzero:latest
     restart: always
@@ -133,3 +177,4 @@ volumes:
   db-data:
   loki-data:
   grafana-data:
+  dbgate-data:

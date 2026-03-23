@@ -6,7 +6,7 @@ export default registerAs(
   (): AuthConfig => ({
     jwt: {
       ignoreExpiration:
-        (process.env.JWT_IGNORE_EXPIRATION || 'false') === 'true',
+        (process.env.JWT_IGNORE_EXPIRATION || 'true') === 'true',
       accessTokenSecret:
         process.env.JWT_ACCESS_TOKEN_SECRET || 'defaultAccessTokenSecret',
       refreshTokenSecret:
