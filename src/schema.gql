@@ -59,7 +59,9 @@ type Mutation {
   """Logout from all devices by invalidating all active sessions"""
   logoutFromAllDevices: MessageResponse!
 
-  """Refresh access and refresh tokens using a valid refresh token"""
+  """
+  Refresh access and refresh tokens using a valid refresh token, the refresh token should be sent in the Authorization header as a Bearer token
+  """
   refreshTokens: AuthResponse!
 
   """
