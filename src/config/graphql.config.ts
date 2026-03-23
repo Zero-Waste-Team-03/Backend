@@ -20,7 +20,7 @@ export default registerAs(
     sortSchema: true,
 
     // Enable GraphQL Playground in development
-    playground: process.env.NODE_ENV !== 'production',
+    playground: true,
 
     // Include stack traces in errors during development
     debug: process.env.NODE_ENV !== 'production',
