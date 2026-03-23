@@ -28,6 +28,7 @@ import { AttachmentService } from 'src/common/modules/attachment/attachment.serv
 import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import { RefreshTokenPayload } from '../interfaces/refresh-token.dto';
+import { MessageResponseType } from '../graphql/types/message-response.type';
 
 @Injectable()
 export class AuthenticationService {

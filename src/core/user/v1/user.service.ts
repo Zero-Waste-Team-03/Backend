@@ -6,6 +6,7 @@ import { Not, Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { generateHash } from 'src/common/utils/authentication/hash.utils';
+import { MessageResponseType } from 'src/core/authentication/graphql/types/message-response.type';
 
 export interface OAuthUserPayload {
   email: string;
@@ -93,9 +94,16 @@ export class UserService {
     try {
       await this.userRepository.update(id, data);
       return;
-      //eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }
+  }
+  async deleteUser(id: string): Promise<MessageResponseType> {
+    const deleteResult = await this.userRepository.softDelete(id);
+    if (deleteResult.affected === 0) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+    return { message: 'User deleted successfully' };
   }
 }

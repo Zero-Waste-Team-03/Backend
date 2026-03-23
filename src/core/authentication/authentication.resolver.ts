@@ -178,6 +178,9 @@ export class AuthenticationResolver {
   ): Promise<MessageResponseType> {
     return this.authenticationService.forgotPassword(email);
   }
+  @Mutation(() => MessageResponseType, {
+    description: 'Delete user account permanently',
+  })
 
   /**
    * Reset password with reset token
