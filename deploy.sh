@@ -24,7 +24,7 @@ echo "Current active container: $OLD. Deploying to $NEW..."
 
 # 3. Ensure infrastructure is running (network, db, redis, traefik)
 echo "Ensuring infrastructure services are up..."
-docker compose -f $PROD_COMPOSE up -d db redis traefik loki grafana
+docker compose -f $PROD_COMPOSE up -d db redis traefik loki grafana dbgate
 
 # Wait for DB to be ready (optional but recommended)
 echo "Waiting for database to be ready..."
