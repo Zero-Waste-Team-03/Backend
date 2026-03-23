@@ -52,7 +52,9 @@ async function bootstrap() {
   });
   app.enableCors({
     cors: {
-      origin: '*',
+      origin: process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',')
+        : '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,
     },

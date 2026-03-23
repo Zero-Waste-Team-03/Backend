@@ -129,7 +129,7 @@ export class AuthenticationResolver {
   @UseGuards(RefreshTokenGuard)
   @Mutation(() => AuthResponseType, {
     description:
-      'Refresh access and refresh tokens using a valid refresh token',
+      'Refresh access and refresh tokens using a valid refresh token, the refresh token should be sent in the Authorization header as a Bearer token',
   })
   async refreshTokens(@USER() user: User): Promise<AuthResponseType> {
     return this.authenticationService.issueTokens(user);
