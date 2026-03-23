@@ -25,7 +25,7 @@ export default registerAs(
     // Include stack traces in errors during development
     debug: process.env.NODE_ENV !== 'production',
 
-    csrfPrevention: process.env.NODE_ENV === 'production',
+    csrfPrevention: (process.env.PREVENT_CSRF || 'true') === 'true',
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     context: ({ req, res }: { req: any; res: any }) => ({ req, res }),
 
