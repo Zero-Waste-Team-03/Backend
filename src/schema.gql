@@ -75,7 +75,7 @@ type Mutation {
     registerInput: RegisterInput!
   ): MessageResponse!
 
-  """Reset user password with the provided token"""
+  """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
 
   """Send verification email for registration flow"""

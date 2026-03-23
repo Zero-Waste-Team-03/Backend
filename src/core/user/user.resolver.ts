@@ -118,16 +118,6 @@ export class UserResolver {
     description: 'Delete current user account permanently',
   })
   async deleteAccount(@USER() user: User): Promise<MessageResponseType> {
-    const currentUser = await this.userService.findById(user.id);
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
-
-    // Note: Implement deleteUser method in UserService
-    // await this.userService.deleteUser(user.id);
-
-    return {
-      message: 'Account deleted successfully',
-    };
+    return this.userService.deleteUser(user.id);
   }
 }
