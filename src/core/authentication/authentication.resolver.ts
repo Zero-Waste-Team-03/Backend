@@ -92,11 +92,15 @@ export class AuthenticationResolver {
    */
   @Mutation(() => MessageResponseType, {
     description:
-      'Register a new user using a previously sent verification code',
+      'Register a new user using a previously sent verification code, so this mutation should be called after sendVerification mutation',
   })
   async register(
     @Args('registerInput') registerInput: RegisterInput,
-    @Args('otp') otp: string,
+    @Args('otp', {
+      description:
+        'The value of the otp obtained from the email after calling sendVerificationMail mutatuion',
+    })
+    otp: string,
   ): Promise<MessageResponseType> {
     return this.authenticationService.registerUser(registerInput, otp);
   }
