@@ -1,12 +1,14 @@
 import { INestApplication } from '@nestjs/common';
+import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { Query, Resolver } from '@nestjs/graphql';
+import { GqlExecutionContext, Query, Resolver } from '@nestjs/graphql';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthenticationResolver } from '../src/core/authentication/authentication.resolver';
 import { AuthenticationService } from '../src/core/authentication/v1/authentication.service';
+import { AccessTokenGuard } from '../src/core/authentication/guards/access-token.guard';
 
 @Resolver()
 class TestQueryResolver {
@@ -21,6 +23,19 @@ describe('Authentication GraphQL (e2e)', () => {
   const authService = {
     registerUser: jest.fn(),
     sendVerificationCode: jest.fn(),
+    changePassword: jest.fn(),
+  };
+  const accessTokenGuard: CanActivate = {
+    canActivate(context: ExecutionContext): boolean {
+      const gqlContext = GqlExecutionContext.create(context);
+      const requestContext = gqlContext.getContext<{
+        req?: { user?: { id: string } };
+      }>();
+      if (requestContext.req) {
+        requestContext.req.user = { id: 'user-123' };
+      }
+      return true;
+    },
   };
 
   beforeEach(async () => {
@@ -37,7 +52,10 @@ describe('Authentication GraphQL (e2e)', () => {
         AuthenticationResolver,
         { provide: AuthenticationService, useValue: authService },
       ],
-    }).compile();
+    })
+      .overrideGuard(AccessTokenGuard)
+      .useValue(accessTokenGuard)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -147,6 +165,83 @@ describe('Authentication GraphQL (e2e)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(response.body.errors[0].message).toContain(
       'Cannot query field "verifyEmail" on type "Mutation"',
+    );
+  });
+
+  it('changePassword mutation accepts current/new password and uses default logoutFromOtherDevices=false', async () => {
+    authService.changePassword.mockResolvedValue({
+      message: 'Password changed successfully.',
+    });
+
+    const query = `
+      mutation ChangePassword($changePasswordInput: ChangePasswordInput!) {
+        changePassword(changePasswordInput: $changePasswordInput) {
+          message
+        }
+      }
+    `;
+
+    const response = await request(app.getHttpServer())
+      .post('/graphql')
+      .send({
+        query,
+        variables: {
+          changePasswordInput: {
+            currentPassword: 'OldPass123!',
+            newPassword: 'NewPass123!',
+          },
+        },
+      })
+      .expect(200);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.data.changePassword.message).toBe(
+      'Password changed successfully.',
+    );
+    expect(authService.changePassword).toHaveBeenCalledWith(
+      'user-123',
+      'OldPass123!',
+      'NewPass123!',
+      false,
+    );
+  });
+
+  it('changePassword mutation accepts logoutFromOtherDevices argument', async () => {
+    authService.changePassword.mockResolvedValue({
+      message: 'Password changed successfully.',
+    });
+
+    const query = `
+      mutation ChangePassword($changePasswordInput: ChangePasswordInput!) {
+        changePassword(changePasswordInput: $changePasswordInput) {
+          message
+        }
+      }
+    `;
+
+    const response = await request(app.getHttpServer())
+      .post('/graphql')
+      .send({
+        query,
+        variables: {
+          changePasswordInput: {
+            currentPassword: 'OldPass123!',
+            newPassword: 'NewPass123!',
+            logoutFromOtherDevices: true,
+          },
+        },
+      })
+      .expect(200);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.data.changePassword.message).toBe(
+      'Password changed successfully.',
+    );
+    expect(authService.changePassword).toHaveBeenCalledWith(
+      'user-123',
+      'OldPass123!',
+      'NewPass123!',
+      true,
     );
   });
 });

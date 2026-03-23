@@ -11,6 +11,7 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { USER } from './decorators/user.decorartor';
 import { User } from 'src/core/user/entities/user.entity';
+import { ChangePasswordInput } from './graphql/inputs/change-password.input';
 
 /**
  * GraphQL resolver for authentication operations
@@ -178,6 +179,9 @@ export class AuthenticationResolver {
   ): Promise<MessageResponseType> {
     return this.authenticationService.forgotPassword(email);
   }
+  @Mutation(() => MessageResponseType, {
+    description: 'Delete user account permanently',
+  })
 
   /**
    * Reset password with reset token
@@ -219,5 +223,35 @@ export class AuthenticationResolver {
   })
   logoutFromAllDevices(@USER() user: User): Promise<MessageResponseType> {
     return this.authenticationService.logoutFromAllDevices(user);
+  }
+  /* *
+   * Change password for authenticated user
+   * *
+   * @param userId - ID of the authenticated user
+   * @param currentPassword - Current password for verification
+   * @param newPassword - New password to set
+   * @param logoutFromOtherDevices - Optional flag to logout from other devices after password change
+   * @returns Success message
+   * */
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => MessageResponseType, {
+    description:
+      'Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password',
+  })
+  async changePassword(
+    @USER('id') userId: string,
+    @Args('changePasswordInput')
+    {
+      currentPassword,
+      newPassword,
+      logoutFromOtherDevices,
+    }: ChangePasswordInput,
+  ): Promise<MessageResponseType> {
+    return this.authenticationService.changePassword(
+      userId,
+      currentPassword,
+      newPassword,
+      logoutFromOtherDevices,
+    );
   }
 }

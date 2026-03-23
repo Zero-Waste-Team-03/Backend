@@ -70,6 +70,26 @@ describe('AuthenticationResolver', () => {
     expect(result).toEqual(expectedResponse);
   });
 
+  it('should change password if passowrd matches and the user is authenticated', async () => {
+    const expectedReponse = { message: 'Password reset successfully.' };
+    service.resetPassword.mockResolvedValue(expectedReponse);
+
+    const changePasswordInput = {
+      userId: 'uuid',
+      currentPassword: 'CurrentPass',
+      newPassword: 'NewStrongPassword123!',
+    };
+    const result = await resolver.changePassword(
+      changePasswordInput.userId,
+      changePasswordInput.currentPassword,
+      changePasswordInput.newPassword,
+    );
+    expect(service.resetPassword).toHaveBeenCalledWith(
+      changePasswordInput.userId,
+      changePasswordInput.newPassword,
+    );
+    expect(result).toEqual(expectedReponse);
+  });
   it('resetPassword forwards token and password', async () => {
     const resetPasswordInput: ResetPasswordInput = {
       token: 'valid-token-uuid',

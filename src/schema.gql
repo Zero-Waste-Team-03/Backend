@@ -13,6 +13,19 @@ type AuthResponse {
   user: User!
 }
 
+input ChangePasswordInput {
+  """Current password of the user"""
+  currentPassword: String!
+
+  """
+  If the user whishes to logout from all other devics after password changes this will eventually log out all the users up to 5 mins interval 
+  """
+  logoutFromOtherDevices: Boolean = false
+
+  """New password to set for the user"""
+  newPassword: String!
+}
+
 type Location {
   """Location city"""
   city: String
@@ -47,6 +60,11 @@ type MessageResponse {
 }
 
 type Mutation {
+  """
+  Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password
+  """
+  changePassword(changePasswordInput: ChangePasswordInput!): MessageResponse!
+
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
 
@@ -75,7 +93,7 @@ type Mutation {
     registerInput: RegisterInput!
   ): MessageResponse!
 
-  """Reset user password with the provided token"""
+  """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
 
   """Send verification email for registration flow"""
