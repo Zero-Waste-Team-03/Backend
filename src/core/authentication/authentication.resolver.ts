@@ -11,6 +11,7 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { USER } from './decorators/user.decorartor';
 import { User } from 'src/core/user/entities/user.entity';
+import { ChangePasswordInput } from './graphql/inputs/change-password.input';
 
 /**
  * GraphQL resolver for authentication operations
@@ -239,15 +240,12 @@ export class AuthenticationResolver {
   })
   async changePassword(
     @USER('id') userId: string,
-    @Args('currentPassword') currentPassword: string,
-    @Args('newPassword') newPassword: string,
-    @Args('logoutFromOtherDevices', {
-      description:
-        'If the user whishes to logout from all other devics after password changes this will eventually log out all the users up to 5 mins interval ',
-      defaultValue: false,
-      nullable: true,
-    })
-    logoutFromOtherDevices: boolean = false,
+    @Args('changePasswordInput')
+    {
+      currentPassword,
+      newPassword,
+      logoutFromOtherDevices,
+    }: ChangePasswordInput,
   ): Promise<MessageResponseType> {
     return this.authenticationService.changePassword(
       userId,

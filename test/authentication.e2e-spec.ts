@@ -174,8 +174,8 @@ describe('Authentication GraphQL (e2e)', () => {
     });
 
     const query = `
-      mutation ChangePassword($currentPassword: String!, $newPassword: String!) {
-        changePassword(currentPassword: $currentPassword, newPassword: $newPassword) {
+      mutation ChangePassword($changePasswordInput: ChangePasswordInput!) {
+        changePassword(changePasswordInput: $changePasswordInput) {
           message
         }
       }
@@ -186,8 +186,10 @@ describe('Authentication GraphQL (e2e)', () => {
       .send({
         query,
         variables: {
-          currentPassword: 'OldPass123!',
-          newPassword: 'NewPass123!',
+          changePasswordInput: {
+            currentPassword: 'OldPass123!',
+            newPassword: 'NewPass123!',
+          },
         },
       })
       .expect(200);
@@ -210,16 +212,8 @@ describe('Authentication GraphQL (e2e)', () => {
     });
 
     const query = `
-      mutation ChangePassword(
-        $currentPassword: String!
-        $newPassword: String!
-        $logoutFromOtherDevices: Boolean
-      ) {
-        changePassword(
-          currentPassword: $currentPassword
-          newPassword: $newPassword
-          logoutFromOtherDevices: $logoutFromOtherDevices
-        ) {
+      mutation ChangePassword($changePasswordInput: ChangePasswordInput!) {
+        changePassword(changePasswordInput: $changePasswordInput) {
           message
         }
       }
@@ -230,9 +224,11 @@ describe('Authentication GraphQL (e2e)', () => {
       .send({
         query,
         variables: {
-          currentPassword: 'OldPass123!',
-          newPassword: 'NewPass123!',
-          logoutFromOtherDevices: true,
+          changePasswordInput: {
+            currentPassword: 'OldPass123!',
+            newPassword: 'NewPass123!',
+            logoutFromOtherDevices: true,
+          },
         },
       })
       .expect(200);
