@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { AuthenticationService } from './authentication.service';
+import { AuthenticationService } from 'src/core/authentication/v1/authentication.service';
 import { UserService } from 'src/core/user/v1/user.service';
 import { JwtService } from '@nestjs/jwt';
 import authConfig from 'src/config/auth.config';

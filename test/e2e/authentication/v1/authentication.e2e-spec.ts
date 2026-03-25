@@ -6,9 +6,12 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GqlExecutionContext, Query, Resolver } from '@nestjs/graphql';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
-import { AuthenticationResolver } from '../src/core/authentication/authentication.resolver';
-import { AuthenticationService } from '../src/core/authentication/v1/authentication.service';
-import { AccessTokenGuard } from '../src/core/authentication/guards/access-token.guard';
+import { AuthenticationResolver } from 'src/core/authentication/authentication.resolver';
+import { AuthenticationService } from 'src/core/authentication/v1/authentication.service';
+import { AccessTokenGuard } from 'src/core/authentication/guards/access-token.guard';
+import { ConfigModule } from '@nestjs/config';
+import authConfig from 'src/config/auth.config';
+import cloudinaryConfig from 'src/config/cloud.config';
 
 @Resolver()
 class TestQueryResolver {
@@ -41,6 +44,24 @@ describe('Authentication GraphQL (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [
+            () => ({
+              [authConfig.KEY]: {
+                jwt: {
+                  accessTokenSecret: 'secret',
+                  accessTokenExpiresIn: '1h',
+                },
+              },
+              [cloudinaryConfig.KEY]: {
+                cloudName: 'test-cloud',
+                apiKey: 'test-key',
+                apiSecret: 'test-secret',
+              },
+            }),
+          ],
+        }),
         GraphQLModule.forRoot<ApolloDriverConfig>({
           driver: ApolloDriver,
           autoSchemaFile: true,
@@ -51,6 +72,23 @@ describe('Authentication GraphQL (e2e)', () => {
         TestQueryResolver,
         AuthenticationResolver,
         { provide: AuthenticationService, useValue: authService },
+        {
+          provide: authConfig.KEY,
+          useValue: {
+            jwt: {
+              accessTokenSecret: 'secret',
+              accessTokenExpiresIn: '1h',
+            },
+          },
+        },
+        {
+          provide: cloudinaryConfig.KEY,
+          useValue: {
+            cloudName: 'test-cloud',
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          },
+        },
       ],
     })
       .overrideGuard(AccessTokenGuard)
