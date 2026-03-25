@@ -93,7 +93,6 @@ export class UploadService {
   }
 
   async deleteFile(id: string) {
-    //eslint-disable-next-line
     const attachment = await this.attachmentService.getAttachmentUrl(id);
     if (!attachment) {
       throw new BadRequestException(`Attachment ${id} not found`);
