@@ -5,6 +5,7 @@ import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleGuard } from './guards/oauth/google.guard';
 import { GoogleStrategy } from './strategies/oauth/google.strategy';
@@ -48,7 +49,8 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
     GoogleGuard,
     GoogleStrategy,
     RefreshTokenGuard,
+    RolesGuard,
   ],
-  exports: [AccessTokenGuard],
+  exports: [AccessTokenGuard, RolesGuard],
 })
 export class AuthenticationModule {}
