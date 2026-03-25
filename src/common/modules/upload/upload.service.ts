@@ -92,8 +92,8 @@ export class UploadService {
     });
   }
 
-  async deleteFile(id: string) {
-    const attachment = await this.attachmentService.getAttachmentUrl(id);
+  async deleteFile(id: string, userId?: string) {
+    const attachment = await this.attachmentService.getAttachmentUrl(id, userId);
     if (!attachment) {
       throw new BadRequestException(`Attachment ${id} not found`);
     }
@@ -111,12 +111,12 @@ export class UploadService {
     return { jobId: job.id };
   }
 
-  async deleteFiles(ids: string[]) {
+  async deleteFiles(ids: string[], userId?: string) {
     if (!ids || ids.length === 0)
       throw new BadRequestException('Ids are required');
 
     const attachments = await Promise.all(
-      ids.map((id) => this.attachmentService.getAttachmentUrl(id)),
+      ids.map((id) => this.attachmentService.getAttachmentUrl(id, userId)),
     );
 
     const missing = ids.filter((_, i) => !attachments[i]);

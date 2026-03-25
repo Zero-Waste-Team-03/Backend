@@ -95,14 +95,20 @@ export class UploadController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a single file by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  async deleteFile(@Param('id', ParseUUIDPipe) id: string) {
-    return this.uploadService.deleteFile(id);
+  async deleteFile(
+    @Param('id', ParseUUIDPipe) id: string,
+    @USER('id') userId: string,
+  ) {
+    return this.uploadService.deleteFile(id, userId);
   }
 
   @Delete()
   @ApiOperation({ summary: 'Delete multiple files by IDs' })
   @ApiBody({ type: DeleteFilesDto })
-  async deleteFiles(@Body() body: DeleteFilesDto) {
-    return this.uploadService.deleteFiles(body.ids);
+  async deleteFiles(
+    @Body() body: DeleteFilesDto,
+    @USER('id') userId: string,
+  ) {
+    return this.uploadService.deleteFiles(body.ids, userId);
   }
 }

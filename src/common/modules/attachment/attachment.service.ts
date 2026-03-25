@@ -45,9 +45,10 @@ export class AttachmentService {
 
   async getAttachmentUrl(
     id: string,
+    uploadedById?: string,
   ): Promise<{ url: string; id: string } | null> {
     const attachment = await this.attachmentRepo.findOne({
-      where: { id },
+      where: { id, ...(uploadedById !== undefined && { uploadedById }) },
       select: { url: true, id: true },
     });
     return attachment || null;

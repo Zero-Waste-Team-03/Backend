@@ -134,6 +134,25 @@ describe('UploadController (e2e)', () => {
           );
         });
     });
+    it('should upload multiple files', async () => {
+      mockUploadService.uploadFiles.mockResolvedValue({
+        attachmentIds: ['1', '2'],
+        jobId: 'job1',
+      });
+
+      return request(app.getHttpServer())
+        .post('/upload/files')
+        .attach('files', Buffer.from('test content1'), 'test1.txt')
+        .attach('files', Buffer.from('test content2'), 'test2.txt')
+        .expect(201)
+        .expect(() => {
+          expect(mockUploadService.uploadFiles).toHaveBeenCalledWith(
+            expect.arrayContaining([expect.any(Object)]),
+            'test-user-id',
+            undefined,
+          );
+        });
+    });
   });
 
   describe('DELETE /upload/:id', () => {
@@ -146,6 +165,23 @@ describe('UploadController (e2e)', () => {
         .expect(() => {
           expect(mockUploadService.deleteFile).toHaveBeenCalledWith(
             '550e8400-e29b-41d4-a716-446655440000',
+            'test-user-id',
+          );
+        });
+    });
+  });
+
+  describe('DELETE /upload', () => {
+    it('should delete multiple files', async () => {
+      mockUploadService.deleteFiles.mockResolvedValue({ success: true });
+
+      return request(app.getHttpServer())
+        .delete('/upload')
+        .send({ ids: ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'] })
+        .expect(200)
+        .expect(() => {
+          expect(mockUploadService.deleteFiles).toHaveBeenCalledWith(
+            ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'],
             'test-user-id',
           );
         });
