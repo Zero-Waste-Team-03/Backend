@@ -42,13 +42,12 @@ export class CloudinaryService {
       this.logger.log(
         'Starting upload to Cloudinary...' + stream.readableLength,
       );
-      // Return a promise to handle the upload_stream result
       return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.v2.uploader.upload_stream(
           {
             folder: folder || undefined,
 
-            resource_type: 'auto', // Automatically detect file type (image, video, etc.)
+            resource_type: 'auto',
           },
           (
             error: cloudinary.UploadApiErrorResponse | undefined,
@@ -62,11 +61,11 @@ export class CloudinaryService {
               this.logger.error('Upload failed: No result returned');
               return reject(new Error('No result returned from Cloudinary'));
             }
+            this.logger.log('Upload successful: ' + result.secure_url);
             resolve(result);
           },
         );
 
-        // Pipe the file buffer stream to Cloudinary
         stream.pipe(uploadStream);
       });
     } catch (e) {
@@ -95,6 +94,47 @@ export class CloudinaryService {
         `Upload from URL failed: ${e instanceof Error ? e.message : JSON.stringify(e)}`,
       );
       throw e;
+    }
+  }
+
+  async deleteFile(publicId: string): Promise<{ result: string }> {
+    try {
+      this.logger.log(`Deleting file from Cloudinary: ${publicId}`);
+      const result = (await cloudinary.v2.uploader.destroy(publicId)) as {
+        result: string;
+      };
+      if (result.result !== 'ok' && result.result !== 'not found') {
+        throw new Error(
+          `Failed to delete file from Cloudinary: ${result.result}`,
+        );
+      }
+      return result;
+    } catch (e: unknown) {
+      this.logger.error(
+        `Delete failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      throw e;
+    }
+  }
+
+  extractPublicIdFromUrl(url: string): string | null {
+    try {
+      const parts = url.split('/');
+      const uploadIndex = parts.indexOf('upload');
+      if (uploadIndex === -1) return null;
+
+      // The public ID starts after the version (e.g., v1234567)
+      // If the part after 'upload' starts with 'v' and is followed by digits, it's the version
+      let publicIdStart = uploadIndex + 2;
+      if (!parts[uploadIndex + 1].match(/^v\d+$/)) {
+        publicIdStart = uploadIndex + 1;
+      }
+
+      const publicIdWithExtension = parts.slice(publicIdStart).join('/');
+      return publicIdWithExtension.replace(/\.[^/.]+$/, '');
+    } catch (e) {
+      this.logger.error(`Failed to extract public ID from URL: ${url}`, e);
+      return null;
     }
   }
 }

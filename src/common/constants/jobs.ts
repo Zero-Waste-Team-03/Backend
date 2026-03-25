@@ -20,6 +20,8 @@ export const MAIL_JOBS = {
 
 export const UPLOAD_JOBS = {
   UPLOAD_FILE: 'upload-file',
+  UPLOAD_FILES: 'upload-files',
   DELETE_FILE: 'delete-file',
+  DELETE_FILES: 'delete-files',
   UPLOAD_OAUTH_PROFILE_PICTURE: 'upload-oauth-profile-picture',
 };

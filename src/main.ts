@@ -65,7 +65,7 @@ async function bootstrap() {
     .get(LoggerServiceBuilder)
     .setJob('CoreApi')
     .build(configService.get('NODE_ENV') || 'development');
-  app.useLogger(logger);
+  //app.useLogger(logger);
   app.use(
     helmet({
       contentSecurityPolicy: {

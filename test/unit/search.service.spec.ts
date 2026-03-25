@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { SearchService } from './search.service';
+import { SearchService } from 'src/infrastructure/search/search.service';
 
 describe('SearchService', () => {
   let service: SearchService;
