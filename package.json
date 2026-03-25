@@ -23,6 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:all": "pnpm test && pnpm test:e2e",
     "prepare": "husky",
     "env:sync": "bash ./load_env_to_secrets.sh"
   },
@@ -136,19 +137,19 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
+    "rootDir": ".",
+    "testRegex": "test/unit/.*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/$1",
-      "^uuid$": "<rootDir>/../test/mocks/uuid.ts"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^uuid$": "<rootDir>/test/mocks/uuid.ts"
     }
   }
 }

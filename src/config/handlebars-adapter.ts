@@ -26,14 +26,13 @@ export class HandlebarsAdapter {
     config?: Record<string, unknown>,
   ) {
     // Handlebars helper gets options as last argument; use function signature
-     
+
     handlebars.registerHelper('concat', function (...args: any[]) {
       // last argument is Handlebars options object
       args.pop();
       return args.join('');
     } as any);
     if (helpers) {
-       
       handlebars.registerHelper(helpers as any);
     }
     if (config) Object.assign(this.config, config);
@@ -63,7 +62,7 @@ export class HandlebarsAdapter {
       if (!this.precompiledTemplates[templateName]) {
         try {
           const tpl = fs.readFileSync(templatePath, 'utf-8');
-           
+
           this.precompiledTemplates[templateName] = handlebars.compile(
             tpl,
             get(options, 'options', {}) as any,
@@ -107,7 +106,7 @@ export class HandlebarsAdapter {
           (runtimeOptions as any).partials.dir as string,
           path.dirname(templatePath),
         );
-         
+
         handlebars.registerPartial(
           path.join(templateDir, tName as string),
           fs.readFileSync(templatePath, 'utf-8'),

@@ -1,8 +1,8 @@
 import { TestingModule, Test } from '@nestjs/testing';
-import { User } from '../user/entities/user.entity';
-import { AuthenticationResolver } from './authentication.resolver';
-import { ResetPasswordInput } from './graphql/inputs/reset-password.input';
-import { AuthenticationService } from './v1/authentication.service';
+import { User } from 'src/core/user/entities/user.entity';
+import { AuthenticationResolver } from 'src/core/authentication/authentication.resolver';
+import { ResetPasswordInput } from 'src/core/authentication/graphql/inputs/reset-password.input';
+import { AuthenticationService } from 'src/core/authentication/v1/authentication.service';
 
 describe('AuthenticationResolver', () => {
   let resolver: AuthenticationResolver;
