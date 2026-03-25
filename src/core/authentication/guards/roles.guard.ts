@@ -1,21 +1,17 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from 'src/core/user/entities/user.entity';
-
-interface RequestWithUser {
-  user?: AccessTokenPayload;
-}
-
+import { ExtendedRequest } from '../types/extended-req.type';
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private readonly logger = new Logger(RolesGuard.name);
   constructor(private readonly reflector: Reflector) {}
 
   /**
@@ -40,12 +36,14 @@ export class RolesGuard implements CanActivate {
     const { user } = this.getRequest(context);
 
     if (!user?.role) {
-      throw new ForbiddenException('User role not found in request');
+      //Log a warning since this should not happen if authentication is working correctly
+      this.logger.warn('User role not found in request');
+      return false;
     }
 
     const hasRequiredRole = requiredRoles.includes(user.role);
     if (!hasRequiredRole) {
-      throw new ForbiddenException('Insufficient role permissions');
+      return false;
     }
 
     return true;
@@ -57,14 +55,14 @@ export class RolesGuard implements CanActivate {
    * @param context - Current execution context
    * @returns Request object
    */
-  private getRequest(context: ExecutionContext): RequestWithUser {
+  private getRequest(context: ExecutionContext): ExtendedRequest {
     const gqlCtx = GqlExecutionContext.create(context);
-    const gqlRequest = gqlCtx.getContext<{ req?: RequestWithUser }>()?.req;
+    const gqlRequest = gqlCtx.getContext<{ req?: ExtendedRequest }>()?.req;
 
     if (gqlRequest) {
       return gqlRequest;
     }
 
-    return context.switchToHttp().getRequest<RequestWithUser>();
+    return context.switchToHttp().getRequest<ExtendedRequest>();
   }
 }

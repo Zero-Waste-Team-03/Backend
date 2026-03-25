@@ -1,4 +1,4 @@
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { RolesGuard } from './roles.guard';
@@ -59,7 +59,7 @@ describe('RolesGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('throws ForbiddenException when user is missing', () => {
+  it('returns false when user is missing', () => {
     reflector.getAllAndOverride.mockReturnValue([UserRoleValues.ADMINISTRATOR]);
 
     (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
@@ -70,12 +70,12 @@ describe('RolesGuard', () => {
       getContext: () => ({ req: undefined }),
     } as unknown as GqlExecutionContext);
 
-    expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-      ForbiddenException,
-    );
+    const result = guard.canActivate(mockExecutionContext);
+
+    expect(result).toBe(false);
   });
 
-  it('throws ForbiddenException when user role does not match', () => {
+  it('returns false when user role does not match', () => {
     reflector.getAllAndOverride.mockReturnValue([UserRoleValues.ADMINISTRATOR]);
 
     const request = {
@@ -92,9 +92,9 @@ describe('RolesGuard', () => {
       getContext: () => ({ req: undefined }),
     } as unknown as GqlExecutionContext);
 
-    expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-      ForbiddenException,
-    );
+    const result = guard.canActivate(mockExecutionContext);
+
+    expect(result).toBe(false);
   });
 
   it('returns true when required role matches user role (GraphQL)', () => {

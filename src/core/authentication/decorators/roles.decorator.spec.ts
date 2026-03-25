@@ -21,9 +21,10 @@ describe('Roles Decorator', () => {
       throw new Error('testMethod descriptor was not found');
     }
 
-    const metadata = Reflect.getMetadata(ROLES_KEY, methodDescriptor.value) as
-      | string[]
-      | undefined;
+    const metadata = Reflect.getMetadata(
+      ROLES_KEY,
+      methodDescriptor.value as object,
+    ) as string[] | undefined;
 
     expect(metadata).toEqual([
       UserRoleValues.ADMINISTRATOR,
