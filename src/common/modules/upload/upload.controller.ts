@@ -105,10 +105,7 @@ export class UploadController {
   @Delete()
   @ApiOperation({ summary: 'Delete multiple files by IDs' })
   @ApiBody({ type: DeleteFilesDto })
-  async deleteFiles(
-    @Body() body: DeleteFilesDto,
-    @USER('id') userId: string,
-  ) {
+  async deleteFiles(@Body() body: DeleteFilesDto, @USER('id') userId: string) {
     return this.uploadService.deleteFiles(body.ids, userId);
   }
 }
