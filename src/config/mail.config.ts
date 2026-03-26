@@ -17,7 +17,7 @@ export default registerAs(
       },
     },
     template: {
-      dir: join(process.cwd(), 'src', 'templates'),
+      dir: join(process.cwd(), 'templates'),
       adapter: new HandlebarsAdapter(),
       options: {
         strict: true,

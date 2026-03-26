@@ -1,6 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
-import { join } from 'node:path';
 
 @Injectable()
 export class EmailService {
@@ -24,7 +23,7 @@ export class EmailService {
       await this.mailerService.sendMail({
         to,
         subject: 'Email Verification',
-        template: join('..', '..', 'templates', 'verification'), // Adjust the path as needed //NOTE: this is just temporay patch , this will be configured better
+        template: './verification',
         context: {
           code,
         },
