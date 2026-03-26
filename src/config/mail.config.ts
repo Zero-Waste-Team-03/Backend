@@ -6,7 +6,6 @@ import { join } from 'path';
 export default registerAs(
   'mail',
   (): MailConfig => ({
-    //Do not touch this config until I fix the redundancy issue
     transport: {
       port: parseInt(process.env.MAIL_PORT!, 10) || 587,
       host: process.env.MAIL_HOST || 'smtp.example.com',
