@@ -93,7 +93,10 @@ export class UploadService {
   }
 
   async deleteFile(id: string, userId?: string) {
-    const attachment = await this.attachmentService.getAttachmentUrl(id, userId);
+    const attachment = await this.attachmentService.getAttachmentUrl(
+      id,
+      userId,
+    );
     if (!attachment) {
       throw new BadRequestException(`Attachment ${id} not found`);
     }
