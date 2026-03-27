@@ -8,12 +8,25 @@ import {
 } from 'src/core/user/entities/user.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { AdminUsersArgs } from 'src/core/user/graphql/inputs/admin-users.args';
-import { Repository } from 'typeorm';
 
 describe('UserService', () => {
   let service: UserService;
 
-  let userRepository: any;
+  let userRepository: {
+    createQueryBuilder: jest.Mock;
+    count: jest.Mock;
+    findAndCount: jest.Mock;
+  };
+
+  type MockQueryBuilder = {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    orWhere: jest.Mock;
+    skip: jest.Mock;
+    take: jest.Mock;
+    getManyAndCount: jest.Mock;
+    leftJoinAndSelect: jest.Mock;
+  };
 
   beforeEach(async () => {
     userRepository = {
@@ -72,7 +85,8 @@ describe('UserService', () => {
     it('should apply search filter using queryBuilder', async () => {
       const args: AdminUsersArgs = { page: 1, limit: 10, search: 'john' };
 
-      const queryBuilder = userRepository.createQueryBuilder();
+      const queryBuilder =
+        userRepository.createQueryBuilder() as MockQueryBuilder;
       queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.getPaginatedUsers(args);
@@ -128,7 +142,8 @@ describe('UserService', () => {
         status: UserStatusValues.ACTIVE,
       };
 
-      const queryBuilder = userRepository.createQueryBuilder();
+      const queryBuilder =
+        userRepository.createQueryBuilder() as MockQueryBuilder;
       queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.getPaginatedUsers(args);
@@ -148,25 +163,27 @@ describe('UserService', () => {
   describe('getUserStats', () => {
     it('should return correct user stats', async () => {
       // Mock count returns
-      userRepository.count.mockImplementation((options?: any) => {
-        if (!options || !options.where) return 100; // totalUsers
-        if (
-          options.where.status === UserStatusValues.ACTIVE &&
-          !options.where.createdAt
-        )
-          return 80; // activeAccounts
+      userRepository.count.mockImplementation(
+        (options?: { where?: Record<string, any> }) => {
+          if (!options || !options.where) return 100; // totalUsers
+          if (
+            options.where.status === UserStatusValues.ACTIVE &&
+            !options.where.createdAt
+          )
+            return 80; // activeAccounts
 
-        // previous month total
-        if (!options.where.status && options.where.createdAt) return 80;
-        // previous month active
-        if (
-          options.where.status === UserStatusValues.ACTIVE &&
-          options.where.createdAt
-        )
-          return 60;
+          // previous month total
+          if (!options.where.status && options.where.createdAt) return 80;
+          // previous month active
+          if (
+            options.where.status === UserStatusValues.ACTIVE &&
+            options.where.createdAt
+          )
+            return 60;
 
-        return 0;
-      });
+          return 0;
+        },
+      );
 
       const result = await service.getUserStats();
 
