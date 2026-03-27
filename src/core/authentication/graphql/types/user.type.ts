@@ -9,6 +9,11 @@ export enum UserRoleType {
   ADMINISTRATOR = 'Administrator',
 }
 
+export enum UserStatusType {
+  ACTIVE = 'Active',
+  SUSPENDED = 'Suspended',
+}
+
 /**
  * GraphQL User object type
  *
@@ -51,4 +56,13 @@ export class UserType {
     description: 'Location details associated with user',
   })
   location?: LocationType;
+
+  @Field(() => String, { description: 'User account status' })
+  status: string;
+
+  @Field(() => Date, { description: 'Date the user was created' })
+  createdAt: Date;
+
+  @Field(() => Date, { description: 'Date the user was last updated' })
+  updatedAt: Date;
 }
