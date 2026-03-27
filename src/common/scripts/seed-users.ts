@@ -20,7 +20,7 @@ type SeedUser = {
   };
 };
 
-const USERS_TO_SEED: SeedUser[] = [
+const BASE_USERS: SeedUser[] = [
   {
     email: 'admin@gaspzero.local',
     password: 'Admin@12345',
@@ -70,6 +70,42 @@ const USERS_TO_SEED: SeedUser[] = [
     },
   },
 ];
+
+function generateRandomUsers(count: number): SeedUser[] {
+  const users: SeedUser[] = [];
+  const roles = [
+    UserRoleValues.USER,
+    UserRoleValues.ADMINISTRATOR,
+    UserRoleValues.ORGANIZATION,
+    UserRoleValues.STORE,
+    UserRoleValues.LOCAL_AUTHORITY,
+  ];
+
+  for (let i = 1; i <= count; i++) {
+    const role = roles[i % roles.length];
+    const prefix = role.toLowerCase().replace(/\s+/g, '-');
+    users.push({
+      email: `${prefix}-${i}@gaspzero.local`,
+      password: `${prefix.charAt(0).toUpperCase() + prefix.slice(1)}@12345`,
+      displayName: `Gasp Zero ${role} ${i}`,
+      description: `Generated ${role} account ${i}.`,
+      role,
+      reputationScore: Math.floor(Math.random() * 500),
+      isMailVerified: Math.random() > 0.1, // 90% chance verified
+      location: {
+        latitude: 36 + Math.random() * 2, // Around Algeria
+        longitude: 3 + Math.random() * 4,
+        city: ['Algiers', 'Oran', 'Constantine', 'Annaba'][
+          Math.floor(Math.random() * 4)
+        ],
+        country: 'Algeria',
+      },
+    });
+  }
+  return users;
+}
+
+const USERS_TO_SEED: SeedUser[] = [...BASE_USERS, ...generateRandomUsers(100)];
 
 /**
  * Creates or updates a user seed entry and keeps location in sync.
