@@ -23,7 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import authConfig from 'src/config/auth.config';
 import { Profile } from 'passport-google-oauth20';
 import { UserService } from 'src/core/user/v1/user.service';
-import { User } from 'src/core/user/entities/user.entity';
+import { User, UserStatusValues } from 'src/core/user/entities/user.entity';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
@@ -46,14 +46,17 @@ export class AuthenticationService {
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findBasicAuthedUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException({ errCode: 'user_not_found' });
+      throw new UnauthorizedException({ errCode: 'invalid_password_or_user' });
     }
     if (!user.isMailVerified) {
       throw new UnauthorizedException({ errCode: 'email_not_verified' });
     }
+    if (user.status == UserStatusValues.SUSPENDED) {
+      throw new UnauthorizedException({ errCode: 'account_suspended' });
+    }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException({ errCode: 'invalid_password' });
+      throw new UnauthorizedException({ errCode: 'invalid_password_or_user' });
     }
     return user;
   }

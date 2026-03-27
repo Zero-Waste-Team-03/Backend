@@ -26,6 +26,11 @@ input ChangePasswordInput {
   newPassword: String!
 }
 
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Location {
   """Location city"""
   city: String
@@ -60,6 +65,11 @@ type MessageResponse {
 }
 
 type Mutation {
+  """
+  Activate a user account, enabling them from logging in or accessing services.
+  """
+  activateUser(userId: String!): User!
+
   """
   Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password
   """
@@ -99,11 +109,46 @@ type Mutation {
   """Send verification email for registration flow"""
   sendVerification(email: String!): MessageResponse!
 
+  """
+  Suspend a user account, preventing them from logging in or accessing services.
+  """
+  suspendUser(userId: String!): User!
+
   """Update current user profile information"""
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
 }
 
+type PaginatedUsers {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [User!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
 type Query {
+  """Get user statistics for admin dashboard"""
+  adminGetUserStats: UserStats!
+
+  """Get paginated list of users for admin panel"""
+  adminGetUsers(
+    """Items per page"""
+    limit: Int! = 10
+
+    """Page number"""
+    page: Int! = 1
+
+    """Filter by user role"""
+    role: String
+
+    """Search by name or email"""
+    search: String
+
+    """Filter by user status"""
+    status: String
+  ): PaginatedUsers!
+
   """Get current authenticated user profile"""
   currentUser: User!
 }
@@ -156,6 +201,12 @@ input UpdateProfileInput {
 }
 
 type User {
+  """Attachment ID reference"""
+  avatarAttachmentId: String
+
+  """Date the user was created"""
+  createdAt: DateTime!
+
   """User biography/description"""
   description: String
 
@@ -182,4 +233,30 @@ type User {
 
   """User role"""
   role: String!
+
+  """User account status"""
+  status: String!
+
+  """Date the user was last updated"""
+  updatedAt: DateTime!
+}
+
+type UserStats {
+  """Number of active accounts"""
+  activeAccounts: Int!
+
+  """Percentage increase of active accounts since last month"""
+  activeAccountsIncrease: Float!
+
+  """Number of reported issues"""
+  reportedIssues: Int!
+
+  """Percentage increase of reported issues since last month"""
+  reportedIssuesIncrease: Float!
+
+  """Total number of users"""
+  totalUsers: Int!
+
+  """Percentage increase of total users since last month"""
+  totalUsersIncrease: Float!
 }

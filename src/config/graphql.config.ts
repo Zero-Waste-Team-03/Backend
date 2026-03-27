@@ -34,6 +34,11 @@ export default registerAs(
       return {
         message: error.message,
         code: error.extensions?.code,
+        statusCode: error.extensions?.statusCode,
+        success: error.extensions?.success,
+        timestamp: error.extensions?.timestamp,
+        err_code: error.extensions?.err_code,
+        args: error.extensions?.args,
         locations: error.locations,
         path: error.path,
       };

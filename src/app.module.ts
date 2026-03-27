@@ -18,6 +18,8 @@ import elasticSearchConfig from './config/elastic-search.config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
+import { LocationDataLoader } from './common/modules/dataloader/location.dataloader';
+import { AttachmentDataLoader } from './common/modules/dataloader/attachment.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
@@ -45,6 +47,8 @@ import { APP_FILTER } from '@nestjs/core';
       useFactory: (
         graphqlConfiguration: ConfigType<typeof graphqlConfig>,
         userDataLoader: UserDataLoader,
+        locationDataLoader: LocationDataLoader,
+        attachmentDataLoader: AttachmentDataLoader,
       ) => ({
         ...graphqlConfiguration,
         // Override context to inject DataLoaders per request
@@ -52,11 +56,18 @@ import { APP_FILTER } from '@nestjs/core';
         context: ({ req, res }: { req: any; res: any }) => {
           const loaders: IDataLoaders = {
             userLoader: userDataLoader.createLoader(),
+            locationLoader: locationDataLoader.createLoader(),
+            attachmentLoader: attachmentDataLoader.createLoader(),
           };
           return { req, res, loaders };
         },
       }),
-      inject: [graphqlConfig.KEY, UserDataLoader],
+      inject: [
+        graphqlConfig.KEY,
+        UserDataLoader,
+        LocationDataLoader,
+        AttachmentDataLoader,
+      ],
     }),
     InfrastructureModule,
     MonitoringModule,

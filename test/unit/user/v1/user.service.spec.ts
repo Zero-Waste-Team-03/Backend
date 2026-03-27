@@ -1,17 +1,59 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/core/user/v1/user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User } from 'src/core/user/entities/user.entity';
+import {
+  User,
+  UserRoleValues,
+  UserStatusValues,
+} from 'src/core/user/entities/user.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
+import { AdminUsersArgs } from 'src/core/user/graphql/inputs/admin-users.args';
 
 describe('UserService', () => {
   let service: UserService;
 
+  let userRepository: {
+    createQueryBuilder: jest.Mock;
+    count: jest.Mock;
+    findAndCount: jest.Mock;
+    findOneBy: jest.Mock;
+    save: jest.Mock;
+  };
+
+  type MockQueryBuilder = {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    orWhere: jest.Mock;
+    skip: jest.Mock;
+    take: jest.Mock;
+    orderBy: jest.Mock;
+    getManyAndCount: jest.Mock;
+    leftJoinAndSelect: jest.Mock;
+  };
+
   beforeEach(async () => {
+    userRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+      }),
+      count: jest.fn(),
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      findOneBy: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
-        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Location), useValue: {} },
       ],
     }).compile();
@@ -21,5 +63,217 @@ describe('UserService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getPaginatedUsers', () => {
+    it('should return paginated users with no filters using findAndCount', async () => {
+      const args: AdminUsersArgs = { page: 1, limit: 10 };
+      const users = [{ id: '1', email: 'test@test.com' }];
+
+      userRepository.findAndCount.mockResolvedValue([users, 1]);
+
+      const result = await service.getPaginatedUsers(args);
+
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        skip: 0,
+        take: 10,
+      });
+      expect(result).toEqual({
+        items: users,
+        totalCount: 1,
+        page: 1,
+        limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
+    });
+
+    it('should apply search filter using queryBuilder', async () => {
+      const args: AdminUsersArgs = { page: 1, limit: 10, search: 'john' };
+
+      const queryBuilder =
+        userRepository.createQueryBuilder() as MockQueryBuilder;
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        '(user.email ILIKE :search OR user.displayName ILIKE :search)',
+        { search: '%john%' },
+      );
+    });
+
+    it('should apply role filter using findAndCount when no search', async () => {
+      const args: AdminUsersArgs = {
+        page: 1,
+        limit: 10,
+        role: UserRoleValues.USER,
+      };
+
+      userRepository.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: { role: UserRoleValues.USER },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should apply status filter using findAndCount when no search', async () => {
+      const args: AdminUsersArgs = {
+        page: 1,
+        limit: 10,
+        status: UserStatusValues.ACTIVE,
+      };
+
+      userRepository.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: { status: UserStatusValues.ACTIVE },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should apply role and status filters with search using queryBuilder', async () => {
+      const args: AdminUsersArgs = {
+        page: 1,
+        limit: 10,
+        search: 'john',
+        role: UserRoleValues.USER,
+        status: UserStatusValues.ACTIVE,
+      };
+
+      const queryBuilder =
+        userRepository.createQueryBuilder() as MockQueryBuilder;
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.role = :role', {
+        role: UserRoleValues.USER,
+      });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.status = :status',
+        {
+          status: UserStatusValues.ACTIVE,
+        },
+      );
+    });
+  });
+
+  describe('getUserStats', () => {
+    it('should return correct user stats', async () => {
+      // Mock count returns
+      userRepository.count.mockImplementation(
+        (options?: { where?: Record<string, any> }) => {
+          if (!options || !options.where) return 100; // totalUsers
+          if (
+            options.where.status === UserStatusValues.ACTIVE &&
+            !options.where.createdAt
+          )
+            return 80; // activeAccounts
+
+          // previous month total
+          if (!options.where.status && options.where.createdAt) return 80;
+          // previous month active
+          if (
+            options.where.status === UserStatusValues.ACTIVE &&
+            options.where.createdAt
+          )
+            return 60;
+
+          return 0;
+        },
+      );
+
+      const result = await service.getUserStats();
+
+      expect(result).toEqual({
+        totalUsers: 100,
+        totalUsersIncrease: 25, // (100 - 80) / 80 * 100
+        activeAccounts: 80,
+        activeAccountsIncrease: 33.33, // (80 - 60) / 60 * 100
+        reportedIssues: 0,
+        reportedIssuesIncrease: 0,
+      });
+    });
+  });
+
+  describe('suspendUser', () => {
+    it('should throw NotFoundException when user does not exist', async () => {
+      userRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.suspendUser('missing-user')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return existing user when already suspended', async () => {
+      const user = {
+        id: 'u1',
+        status: UserStatusValues.SUSPENDED,
+      } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+
+      const result = await service.suspendUser('u1');
+
+      expect(result).toBe(user);
+      expect(result.status).toBe(UserStatusValues.SUSPENDED);
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should update status to suspended and persist user', async () => {
+      const user = { id: 'u1', status: UserStatusValues.ACTIVE } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+      userRepository.save.mockResolvedValue(user);
+
+      const result = await service.suspendUser('u1');
+
+      expect(result.status).toBe(UserStatusValues.SUSPENDED);
+      expect(userRepository.save).toHaveBeenCalledWith(user);
+    });
+  });
+
+  describe('activateUser', () => {
+    it('should throw NotFoundException when user does not exist', async () => {
+      userRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.activateUser('missing-user')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return existing user when already active', async () => {
+      const user = { id: 'u1', status: UserStatusValues.ACTIVE } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+
+      const result = await service.activateUser('u1');
+
+      expect(result).toBe(user);
+      expect(result.status).toBe(UserStatusValues.ACTIVE);
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should update status to active and persist user', async () => {
+      const user = {
+        id: 'u1',
+        status: UserStatusValues.SUSPENDED,
+      } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+      userRepository.save.mockResolvedValue(user);
+
+      const result = await service.activateUser('u1');
+
+      expect(result.status).toBe(UserStatusValues.ACTIVE);
+      expect(userRepository.save).toHaveBeenCalledWith(user);
+    });
   });
 });

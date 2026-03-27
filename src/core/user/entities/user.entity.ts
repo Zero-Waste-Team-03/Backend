@@ -6,6 +6,8 @@ import {
   JoinColumn,
   BeforeInsert,
   Relation,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { Location } from '../../../common/locations/entities/location.entity';
@@ -20,6 +22,14 @@ export const UserRoleValues = {
 } as const;
 
 export type UserRole = (typeof UserRoleValues)[keyof typeof UserRoleValues];
+
+export const UserStatusValues = {
+  ACTIVE: 'Active',
+  SUSPENDED: 'Suspended',
+} as const;
+
+export type UserStatus =
+  (typeof UserStatusValues)[keyof typeof UserStatusValues];
 
 @Entity('users')
 export class User {
@@ -67,6 +77,19 @@ export class User {
 
   @Column('uuid', { nullable: true })
   avatarAttachmentId?: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatusValues,
+    default: UserStatusValues.ACTIVE,
+  })
+  status: UserStatus;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @BeforeInsert()
   generateId() {
