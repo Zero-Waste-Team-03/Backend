@@ -6,9 +6,13 @@ import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';
 import { Roles } from '../authentication/decorators/roles.decorator';
 import { AdminUsersArgs } from './graphql/inputs/admin-users.args';
-import { PaginatedUsersResponse } from './graphql/types/paginated-users.type';
 import { UserStatsResponse } from './graphql/types/user-stats.type';
 import { UserType } from '../authentication/graphql/types/user.type';
+import { Paginated } from '../../common/graphql/types/pagination.type';
+import { ObjectType } from '@nestjs/graphql';
+
+@ObjectType('PaginatedUsers')
+export class PaginatedUsersResponse extends Paginated(UserType) {}
 
 @Resolver(() => UserType)
 export class AdminUserResolver {

@@ -12,8 +12,9 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { generateHash } from 'src/common/utils/authentication/hash.utils';
 import { MessageResponseType } from 'src/core/authentication/graphql/types/message-response.type';
 import { AdminUsersArgs } from '../graphql/inputs/admin-users.args';
-import { PaginatedUsersResponse } from '../graphql/types/paginated-users.type';
 import { UserStatsResponse } from '../graphql/types/user-stats.type';
+import { IPaginatedType } from 'src/common/graphql/types/pagination.type';
+import { UserType } from 'src/core/authentication/graphql/types/user.type';
 
 export interface OAuthUserPayload {
   email: string;
@@ -31,7 +32,7 @@ export class UserService {
 
   async getPaginatedUsers(
     args: AdminUsersArgs,
-  ): Promise<PaginatedUsersResponse> {
+  ): Promise<IPaginatedType<UserType>> {
     const { page, limit, search, role, status } = args;
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
@@ -65,7 +66,8 @@ export class UserService {
     const hasPreviousPage = page > 1;
 
     return {
-      items: items as any, // Typecast since items from entity aligns mostly with UserType
+      items:
+        items as unknown as import('../../authentication/graphql/types/user.type').UserType[], // Typecast since items from entity aligns mostly with UserType
       totalCount,
       page,
       limit,
