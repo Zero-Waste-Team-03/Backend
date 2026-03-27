@@ -51,6 +51,9 @@ export class AuthenticationService {
     if (!user.isMailVerified) {
       throw new UnauthorizedException({ errCode: 'email_not_verified' });
     }
+    if (user.status == 'Suspended') {
+      throw new UnauthorizedException({ errCode: 'account_suspended' });
+    }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException({ errCode: 'invalid_password' });

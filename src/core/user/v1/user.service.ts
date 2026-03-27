@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import {
   User,
@@ -23,6 +23,7 @@ export interface OAuthUserPayload {
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -84,6 +85,35 @@ export class UserService {
       hasNextPage,
       hasPreviousPage,
     };
+  }
+  async suspendUser(id: string): Promise<UserType> {
+    this.logger.log(`Suspending user with ID: ${id}`);
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+    if (user.status === UserStatusValues.SUSPENDED) {
+      this.logger.warn(`User with ID: ${id} is already suspended`);
+      return user; // No change needed, return existing user
+    }
+    user.status = UserStatusValues.SUSPENDED;
+    await this.userRepository.save(user);
+    return user;
+  }
+
+  async activateUser(id: string): Promise<UserType> {
+    this.logger.log(`Activating user with ID: ${id}`);
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+    if (user.status === UserStatusValues.ACTIVE) {
+      this.logger.warn(`User with ID: ${id} is already active`);
+      return user; // No change needed, return existing user
+    }
+    user.status = UserStatusValues.ACTIVE;
+    await this.userRepository.save(user);
+    return user;
   }
 
   async getUserStats(): Promise<UserStatsResponse> {

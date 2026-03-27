@@ -5,6 +5,7 @@ import {
   ResolveField,
   Parent,
   Context,
+  Mutation,
 } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UserService } from '../v1/user.service';
@@ -23,11 +24,11 @@ import { LocationType } from '../../authentication/graphql/types/location.type';
 @ObjectType('PaginatedUsers')
 export class PaginatedUsersResponse extends Paginated(UserType) {}
 
+@UseGuards(AccessTokenGuard, RolesGuard)
 @Resolver(() => UserType)
 export class AdminUserResolver {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(UserRoleValues.ADMINISTRATOR)
   @Query(() => PaginatedUsersResponse, {
     name: 'adminGetUsers',
@@ -39,7 +40,6 @@ export class AdminUserResolver {
     return this.userService.getPaginatedUsers(args);
   }
 
-  @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(UserRoleValues.ADMINISTRATOR)
   @Query(() => UserStatsResponse, {
     name: 'adminGetUserStats',
@@ -48,6 +48,23 @@ export class AdminUserResolver {
   async adminGetUserStats(): Promise<UserStatsResponse> {
     return this.userService.getUserStats();
   }
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => UserType, {
+    description:
+      'Suspend a user account, preventing them from logging in or accessing services.',
+  })
+  async suspendUser(@Args('userId') id: string): Promise<UserType> {
+    return this.userService.suspendUser(id);
+  }
+
+@Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => UserType, {
+    description:
+      'Activate a user account, enabeling them from logging in or accessing services.',
+  })
+  async activateUser(@Args('userId') id: string): Promise<UserType> {
+    return this.userService.activateUser(id);
+  }
 
   @ResolveField(() => LocationType, { nullable: true })
   async location(
@@ -55,8 +72,6 @@ export class AdminUserResolver {
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<LocationType | null> {
     if (!user.locationId) return null;
-    return (await loaders.locationLoader.load(
-      user.locationId,
-    )) as unknown as LocationType;
+    return await loaders.locationLoader.load(user.locationId);
   }
 }
