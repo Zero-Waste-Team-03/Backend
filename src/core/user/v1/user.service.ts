@@ -60,7 +60,7 @@ export class UserService {
       [items, totalCount] = await queryBuilder.getManyAndCount();
     } else {
       // Use standard repository for simple queries
-      const where: any = {};
+      const where: Record<string, any> = {};
       if (role) where.role = role;
       if (status) where.status = status;
 
