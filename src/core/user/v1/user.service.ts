@@ -1,12 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
-import { User, UserRoleValues } from '../entities/user.entity';
+import {
+  User,
+  UserRoleValues,
+  UserStatusValues,
+} from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Not, Repository, LessThan } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { generateHash } from 'src/common/utils/authentication/hash.utils';
 import { MessageResponseType } from 'src/core/authentication/graphql/types/message-response.type';
+import { AdminUsersArgs } from '../graphql/inputs/admin-users.args';
+import { PaginatedUsersResponse } from '../graphql/types/paginated-users.type';
+import { UserStatsResponse } from '../graphql/types/user-stats.type';
 
 export interface OAuthUserPayload {
   email: string;
@@ -21,6 +28,106 @@ export class UserService {
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
   ) {}
+
+  async getPaginatedUsers(
+    args: AdminUsersArgs,
+  ): Promise<PaginatedUsersResponse> {
+    const { page, limit, search, role, status } = args;
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.location', 'location')
+      .leftJoinAndSelect('user.avatar', 'avatar');
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(user.email ILIKE :search OR user.displayName ILIKE :search)',
+        {
+          search: `%${search}%`,
+        },
+      );
+    }
+
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('user.status = :status', { status });
+    }
+
+    const skip = (page - 1) * limit;
+    queryBuilder.skip(skip).take(limit);
+
+    const [items, totalCount] = await queryBuilder.getManyAndCount();
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      items: items as any, // Typecast since items from entity aligns mostly with UserType
+      totalCount,
+      page,
+      limit,
+      hasNextPage,
+      hasPreviousPage,
+    };
+  }
+
+  async getUserStats(): Promise<UserStatsResponse> {
+    const now = new Date();
+    // Start of current month
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Total users right now
+    const totalUsers = await this.userRepository.count();
+
+    // Active users right now
+    const activeAccounts = await this.userRepository.count({
+      where: { status: UserStatusValues.ACTIVE },
+    });
+
+    // Total users before the start of this month
+    const previousTotalUsers = await this.userRepository.count({
+      where: { createdAt: LessThan(startOfCurrentMonth) },
+    });
+
+    // Active users before the start of this month
+    const previousActiveAccounts = await this.userRepository.count({
+      where: {
+        status: UserStatusValues.ACTIVE,
+        createdAt: LessThan(startOfCurrentMonth),
+      },
+    });
+
+    const calculateIncrease = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      const increase = ((current - previous) / previous) * 100;
+      return Math.round(increase * 100) / 100; // Round to 2 decimal places
+    };
+
+    const totalUsersIncrease = calculateIncrease(
+      totalUsers,
+      previousTotalUsers,
+    );
+    const activeAccountsIncrease = calculateIncrease(
+      activeAccounts,
+      previousActiveAccounts,
+    );
+
+    // Static numbers for reported issues for now
+    const reportedIssues = 0;
+    const reportedIssuesIncrease = 0;
+
+    return {
+      totalUsers,
+      totalUsersIncrease,
+      activeAccounts,
+      activeAccountsIncrease,
+      reportedIssues,
+      reportedIssuesIncrease,
+    };
+  }
 
   async createUser(data: registerDto): Promise<User> {
     const location = this.locationRepository.create({
