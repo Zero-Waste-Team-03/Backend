@@ -173,6 +173,7 @@ export class NotificationProcessor extends WorkerHost {
 
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const error = result.reason;
         if (this.isInvalidTokenError(error)) {
           invalidTokens.push(tokensWithLangs[index].token);
@@ -210,7 +211,7 @@ export class NotificationProcessor extends WorkerHost {
 
   private isInvalidTokenError(error: any): boolean {
     if (!error) return false;
-
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const errorCode = error.code || error.errorInfo?.code;
     const invalidTokenCodes = [
       'messaging/invalid-registration-token',
