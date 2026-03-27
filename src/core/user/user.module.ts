@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UserService } from './v1/user.service';
 import { UserResolver } from './user.resolver';
-import { AdminUserResolver } from './admin-user.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
@@ -19,7 +18,7 @@ import { Location } from 'src/common/locations/entities/location.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([User, Location])],
   controllers: [],
-  providers: [UserService, UserResolver, AdminUserResolver],
+  providers: [UserService, UserResolver],
   exports: [UserService],
 })
 export class UserModule {}
