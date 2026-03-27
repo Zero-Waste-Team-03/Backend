@@ -34,32 +34,42 @@ export class UserService {
     args: AdminUsersArgs,
   ): Promise<IPaginatedType<UserType>> {
     const { page, limit, search, role, status } = args;
-    const queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.location', 'location')
-      .leftJoinAndSelect('user.avatar', 'avatar');
+    const skip = (page - 1) * limit;
+
+    let items: User[];
+    let totalCount: number;
 
     if (search) {
-      queryBuilder.andWhere(
+      // Use query builder when search requires OR conditions
+      const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+      queryBuilder.where(
         '(user.email ILIKE :search OR user.displayName ILIKE :search)',
-        {
-          search: `%${search}%`,
-        },
+        { search: `%${search}%` },
       );
+
+      if (role) {
+        queryBuilder.andWhere('user.role = :role', { role });
+      }
+
+      if (status) {
+        queryBuilder.andWhere('user.status = :status', { status });
+      }
+
+      queryBuilder.skip(skip).take(limit);
+      [items, totalCount] = await queryBuilder.getManyAndCount();
+    } else {
+      // Use standard repository for simple queries
+      const where: any = {};
+      if (role) where.role = role;
+      if (status) where.status = status;
+
+      [items, totalCount] = await this.userRepository.findAndCount({
+        where,
+        skip,
+        take: limit,
+      });
     }
-
-    if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
-    }
-
-    if (status) {
-      queryBuilder.andWhere('user.status = :status', { status });
-    }
-
-    const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
-
-    const [items, totalCount] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;

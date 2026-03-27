@@ -8,9 +8,11 @@ import {
 } from 'src/core/user/entities/user.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { AdminUsersArgs } from 'src/core/user/graphql/inputs/admin-users.args';
+import { Repository } from 'typeorm';
 
 describe('UserService', () => {
   let service: UserService;
+
   let userRepository: any;
 
   beforeEach(async () => {
@@ -25,6 +27,7 @@ describe('UserService', () => {
         getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
       }),
       count: jest.fn(),
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -43,17 +46,19 @@ describe('UserService', () => {
   });
 
   describe('getPaginatedUsers', () => {
-    it('should return paginated users with no filters', async () => {
+    it('should return paginated users with no filters using findAndCount', async () => {
       const args: AdminUsersArgs = { page: 1, limit: 10 };
       const users = [{ id: '1', email: 'test@test.com' }];
 
-      const queryBuilder = userRepository.createQueryBuilder();
-      queryBuilder.getManyAndCount.mockResolvedValue([users, 1]);
+      userRepository.findAndCount.mockResolvedValue([users, 1]);
 
       const result = await service.getPaginatedUsers(args);
 
-      expect(queryBuilder.skip).toHaveBeenCalledWith(0);
-      expect(queryBuilder.take).toHaveBeenCalledWith(10);
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        skip: 0,
+        take: 10,
+      });
       expect(result).toEqual({
         items: users,
         totalCount: 1,
@@ -64,7 +69,7 @@ describe('UserService', () => {
       });
     });
 
-    it('should apply search filter on email or displayName', async () => {
+    it('should apply search filter using queryBuilder', async () => {
       const args: AdminUsersArgs = { page: 1, limit: 10, search: 'john' };
 
       const queryBuilder = userRepository.createQueryBuilder();
@@ -72,17 +77,55 @@ describe('UserService', () => {
 
       await service.getPaginatedUsers(args);
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      expect(queryBuilder.where).toHaveBeenCalledWith(
         '(user.email ILIKE :search OR user.displayName ILIKE :search)',
         { search: '%john%' },
       );
     });
 
-    it('should apply role filter', async () => {
+    it('should apply role filter using findAndCount when no search', async () => {
       const args: AdminUsersArgs = {
         page: 1,
         limit: 10,
         role: UserRoleValues.USER,
+      };
+
+      userRepository.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: { role: UserRoleValues.USER },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should apply status filter using findAndCount when no search', async () => {
+      const args: AdminUsersArgs = {
+        page: 1,
+        limit: 10,
+        status: UserStatusValues.ACTIVE,
+      };
+
+      userRepository.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.getPaginatedUsers(args);
+
+      expect(userRepository.findAndCount).toHaveBeenCalledWith({
+        where: { status: UserStatusValues.ACTIVE },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should apply role and status filters with search using queryBuilder', async () => {
+      const args: AdminUsersArgs = {
+        page: 1,
+        limit: 10,
+        search: 'john',
+        role: UserRoleValues.USER,
+        status: UserStatusValues.ACTIVE,
       };
 
       const queryBuilder = userRepository.createQueryBuilder();
@@ -93,23 +136,11 @@ describe('UserService', () => {
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.role = :role', {
         role: UserRoleValues.USER,
       });
-    });
-
-    it('should apply status filter', async () => {
-      const args: AdminUsersArgs = {
-        page: 1,
-        limit: 10,
-        status: UserStatusValues.ACTIVE,
-      };
-
-      const queryBuilder = userRepository.createQueryBuilder();
-      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
-
-      await service.getPaginatedUsers(args);
-
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.status = :status',
-        { status: UserStatusValues.ACTIVE },
+        {
+          status: UserStatusValues.ACTIVE,
+        },
       );
     });
   });
