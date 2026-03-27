@@ -25,3 +25,9 @@ export const UPLOAD_JOBS = {
   DELETE_FILES: 'delete-files',
   UPLOAD_OAUTH_PROFILE_PICTURE: 'upload-oauth-profile-picture',
 };
+
+export const NOTIFICATION_JOBS = {
+  SEND_NOTIFICATION: 'send-notification',
+  SEND_TEST_NOTIFICATION: 'send-test-notification',
+  SEND_WITHOUT_SAVING: 'send-without-saving',
+};

@@ -31,6 +31,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
 type Location {
   """Location city"""
   city: String
@@ -77,6 +82,7 @@ type Mutation {
 
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
+  deleteNotification(id: ID!): MessageResponse!
 
   """Send password reset email to user"""
   forgotPassword(email: String!): MessageResponse!
@@ -86,6 +92,7 @@ type Mutation {
 
   """Logout from all devices by invalidating all active sessions"""
   logoutFromAllDevices: MessageResponse!
+  markNotificationsAsRead(input: UpdateReadNotificationsInput!): MessageResponse!
 
   """
   Refresh access and refresh tokens using a valid refresh token, the refresh token should be sent in the Authorization header as a Bearer token
@@ -102,9 +109,11 @@ type Mutation {
     otp: String!
     registerInput: RegisterInput!
   ): MessageResponse!
+  registerFcmToken(fcmToken: String!): MessageResponse!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
+  sendFcmNotification(input: SendNotificationInput!): SendNotificationResponse!
 
   """Send verification email for registration flow"""
   sendVerification(email: String!): MessageResponse!
@@ -118,6 +127,18 @@ type Mutation {
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
 }
 
+type Notification {
+  body: String!
+  createdAt: DateTime!
+  id: ID!
+  isRead: Boolean!
+  meta: JSON
+  receiverId: String!
+  title: String!
+  type: String!
+  updatedAt: DateTime!
+}
+
 type PaginatedUsers {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -125,6 +146,11 @@ type PaginatedUsers {
   limit: Int!
   page: Int!
   totalCount: Int!
+}
+
+input PaginationQueryInput {
+  limit: Int = 10
+  page: Int = 1
 }
 
 type Query {
@@ -151,6 +177,7 @@ type Query {
 
   """Get current authenticated user profile"""
   currentUser: User!
+  notifications(pagination: PaginationQueryInput): [Notification!]!
 }
 
 input RegisterInput {
@@ -195,9 +222,26 @@ input ResetPasswordInput {
   token: String!
 }
 
+input SendNotificationInput {
+  body: String!
+  metaData: JSON
+  title: String!
+  type: String!
+}
+
+type SendNotificationResponse {
+  message: String!
+  success: Boolean!
+}
+
 input UpdateProfileInput {
   """New display name for the user"""
   displayName: String
+}
+
+input UpdateReadNotificationsInput {
+  """Array of notification IDs to mark as read"""
+  ids: [ID!]!
 }
 
 type User {

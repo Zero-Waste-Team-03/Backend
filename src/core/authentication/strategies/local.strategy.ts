@@ -8,9 +8,9 @@ import { AuthenticationService } from '../v1/authentication.service';
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
   constructor(private readonly authenticationService: AuthenticationService) {
     super({
-      usernameField: 'email', //change this to 'username' if you want to use username instead of email
+      usernameField: 'email',
       passwordField: 'password',
-      passReqToCallback: true, // Allows us to access the request object
+      passReqToCallback: true,
     });
   }
   async validate(req: Request, email: string, password: string): Promise<User> {
