@@ -8,12 +8,16 @@ describe('AdminUserResolver', () => {
   let userService: {
     getPaginatedUsers: jest.Mock;
     getUserStats: jest.Mock;
+    suspendUser: jest.Mock;
+    activateUser: jest.Mock;
   };
 
   beforeEach(async () => {
     userService = {
       getPaginatedUsers: jest.fn(),
       getUserStats: jest.fn(),
+      suspendUser: jest.fn(),
+      activateUser: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +53,40 @@ describe('AdminUserResolver', () => {
       const result = await resolver.adminGetUserStats();
 
       expect(userService.getUserStats).toHaveBeenCalled();
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('suspendUser', () => {
+    it('should delegate to service and return suspended user', async () => {
+      const userId = 'user-1';
+      const expectedResult = {
+        id: userId,
+        status: 'SUSPENDED',
+      };
+
+      userService.suspendUser.mockResolvedValue(expectedResult);
+
+      const result = await resolver.suspendUser(userId);
+
+      expect(userService.suspendUser).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('activateUser', () => {
+    it('should delegate to service and return active user', async () => {
+      const userId = 'user-1';
+      const expectedResult = {
+        id: userId,
+        status: 'ACTIVE',
+      };
+
+      userService.activateUser.mockResolvedValue(expectedResult);
+
+      const result = await resolver.activateUser(userId);
+
+      expect(userService.activateUser).toHaveBeenCalledWith(userId);
       expect(result).toEqual(expectedResult);
     });
   });

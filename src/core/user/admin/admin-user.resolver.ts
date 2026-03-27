@@ -60,7 +60,7 @@ export class AdminUserResolver {
   @Roles(UserRoleValues.ADMINISTRATOR)
   @Mutation(() => UserType, {
     description:
-      'Activate a user account, enabeling them from logging in or accessing services.',
+      'Activate a user account, enabling them from logging in or accessing services.',
   })
   async activateUser(@Args('userId') id: string): Promise<UserType> {
     return this.userService.activateUser(id);

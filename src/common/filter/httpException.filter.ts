@@ -122,7 +122,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     ];
     const errCode = errCodeCandidates.find(
       (candidate) => typeof candidate === 'string',
-    ) as string | undefined;
+    );
 
     const args = this.isRecord(exceptionResponse.args)
       ? exceptionResponse.args

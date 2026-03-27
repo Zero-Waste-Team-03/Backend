@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/core/user/v1/user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
@@ -16,6 +17,8 @@ describe('UserService', () => {
     createQueryBuilder: jest.Mock;
     count: jest.Mock;
     findAndCount: jest.Mock;
+    findOneBy: jest.Mock;
+    save: jest.Mock;
   };
 
   type MockQueryBuilder = {
@@ -24,6 +27,7 @@ describe('UserService', () => {
     orWhere: jest.Mock;
     skip: jest.Mock;
     take: jest.Mock;
+    orderBy: jest.Mock;
     getManyAndCount: jest.Mock;
     leftJoinAndSelect: jest.Mock;
   };
@@ -37,10 +41,13 @@ describe('UserService', () => {
         orWhere: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
       }),
       count: jest.fn(),
       findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      findOneBy: jest.fn(),
+      save: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -195,6 +202,78 @@ describe('UserService', () => {
         reportedIssues: 0,
         reportedIssuesIncrease: 0,
       });
+    });
+  });
+
+  describe('suspendUser', () => {
+    it('should throw NotFoundException when user does not exist', async () => {
+      userRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.suspendUser('missing-user')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return existing user when already suspended', async () => {
+      const user = {
+        id: 'u1',
+        status: UserStatusValues.SUSPENDED,
+      } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+
+      const result = await service.suspendUser('u1');
+
+      expect(result).toBe(user);
+      expect(result.status).toBe(UserStatusValues.SUSPENDED);
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should update status to suspended and persist user', async () => {
+      const user = { id: 'u1', status: UserStatusValues.ACTIVE } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+      userRepository.save.mockResolvedValue(user);
+
+      const result = await service.suspendUser('u1');
+
+      expect(result.status).toBe(UserStatusValues.SUSPENDED);
+      expect(userRepository.save).toHaveBeenCalledWith(user);
+    });
+  });
+
+  describe('activateUser', () => {
+    it('should throw NotFoundException when user does not exist', async () => {
+      userRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.activateUser('missing-user')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return existing user when already active', async () => {
+      const user = { id: 'u1', status: UserStatusValues.ACTIVE } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+
+      const result = await service.activateUser('u1');
+
+      expect(result).toBe(user);
+      expect(result.status).toBe(UserStatusValues.ACTIVE);
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should update status to active and persist user', async () => {
+      const user = {
+        id: 'u1',
+        status: UserStatusValues.SUSPENDED,
+      } as User;
+      userRepository.findOneBy.mockResolvedValue(user);
+      userRepository.save.mockResolvedValue(user);
+
+      const result = await service.activateUser('u1');
+
+      expect(result.status).toBe(UserStatusValues.ACTIVE);
+      expect(userRepository.save).toHaveBeenCalledWith(user);
     });
   });
 });

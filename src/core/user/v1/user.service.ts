@@ -57,7 +57,7 @@ export class UserService {
         queryBuilder.andWhere('user.status = :status', { status });
       }
 
-      queryBuilder.skip(skip).take(limit);
+      queryBuilder.skip(skip).take(limit).orderBy('user.createdAt', 'DESC');
       [items, totalCount] = await queryBuilder.getManyAndCount();
     } else {
       // Use standard repository for simple queries
@@ -77,8 +77,7 @@ export class UserService {
     const hasPreviousPage = page > 1;
 
     return {
-      items:
-        items as unknown as import('../../authentication/graphql/types/user.type').UserType[], // Typecast since items from entity aligns mostly with UserType
+      items,
       totalCount,
       page,
       limit,
