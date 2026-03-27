@@ -36,7 +36,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const status = exception.getStatus();
-    const message = exception.message || 'Internal server error';
+    const responsePayload = this.extractErrorDetails(exception.getResponse());
+    const message =
+      responsePayload.message || exception.message || 'Internal server error';
 
     this.logger.warn(`HTTP Exception: Status ${status} - Message: ${message}`);
     if (exception.cause) {
@@ -69,6 +71,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
           statusCode: status,
           success: false,
           timestamp: new Date().toISOString(),
+          ...(responsePayload.errCode
+            ? { err_code: responsePayload.errCode }
+            : {}),
+          ...(responsePayload.args ? { args: responsePayload.args } : {}),
         },
       });
     }
@@ -82,7 +88,51 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: message,
       success: false,
       timestamp: new Date().toISOString(),
+      ...(responsePayload.errCode ? { err_code: responsePayload.errCode } : {}),
+      ...(responsePayload.args ? { args: responsePayload.args } : {}),
     });
+  }
+
+  private extractErrorDetails(exceptionResponse: unknown): {
+    message?: string;
+    errCode?: string;
+    args?: Record<string, unknown>;
+  } {
+    if (typeof exceptionResponse === 'string') {
+      return { message: exceptionResponse };
+    }
+
+    if (!this.isRecord(exceptionResponse)) {
+      return {};
+    }
+
+    const rawMessage = exceptionResponse.message;
+    const message =
+      typeof rawMessage === 'string'
+        ? rawMessage
+        : Array.isArray(rawMessage)
+          ? rawMessage.filter((item) => typeof item === 'string').join(', ')
+          : undefined;
+
+    const errCodeCandidates = [
+      exceptionResponse.err_code,
+      exceptionResponse.errCode,
+      exceptionResponse.error_code,
+      exceptionResponse.errorCode,
+    ];
+    const errCode = errCodeCandidates.find(
+      (candidate) => typeof candidate === 'string',
+    ) as string | undefined;
+
+    const args = this.isRecord(exceptionResponse.args)
+      ? exceptionResponse.args
+      : undefined;
+
+    return { message, errCode, args };
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
   /**

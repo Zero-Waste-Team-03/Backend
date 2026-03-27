@@ -57,7 +57,7 @@ export class AdminUserResolver {
     return this.userService.suspendUser(id);
   }
 
-@Roles(UserRoleValues.ADMINISTRATOR)
+  @Roles(UserRoleValues.ADMINISTRATOR)
   @Mutation(() => UserType, {
     description:
       'Activate a user account, enabeling them from logging in or accessing services.',
