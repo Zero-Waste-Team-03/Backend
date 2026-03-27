@@ -1,15 +1,18 @@
 import { BullModule } from '@nestjs/bullmq';
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import redisConfig from 'src/config/redis.config';
 import { MailProcessor } from './mail/mail.processor';
 import { UploadProcessor } from './upload/upload.processor';
+import { NotificationsModule } from 'src/core/notifications/notifications.module';
 import { CloudinaryModuleWrapper } from '../cloudinary/cloudinary.module';
 import { EmailModule } from 'src/common/modules/email/email.module';
 import { UserModule } from 'src/core/user/user.module';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
+import { NotificationProcessor } from './notification/notification.processor';
 
+@Global()
 @Module({
   imports: [
     BullModule.forRootAsync({
@@ -38,8 +41,9 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
     EmailModule,
     UserModule,
     AttachmentModule,
+    NotificationsModule,
   ],
-  providers: [MailProcessor, UploadProcessor],
+  providers: [MailProcessor, UploadProcessor, NotificationProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

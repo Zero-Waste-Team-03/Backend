@@ -15,6 +15,7 @@ import { SecurityModule } from './security/security.module';
 import { CommonModule } from './common/modules/common.module';
 import { CoreModule } from './core/core.module';
 import elasticSearchConfig from './config/elastic-search.config';
+import firebaseConfig from './config/firebase.config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
@@ -37,6 +38,7 @@ import { APP_FILTER } from '@nestjs/core';
         elasticSearchConfig,
         dbConfig,
         graphqlConfig,
+        firebaseConfig,
       ],
     }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({

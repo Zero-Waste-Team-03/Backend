@@ -36,6 +36,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const status = exception.getStatus();
+    //TODO: extract message from response not exception
     const message = exception.message || 'Internal server error';
 
     this.logger.warn(`HTTP Exception: Status ${status} - Message: ${message}`);

@@ -3,6 +3,7 @@ import {
   PrimaryColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   BeforeInsert,
   Relation,
@@ -10,6 +11,8 @@ import {
 import { v7 as uuidv7 } from 'uuid';
 import { Location } from '../../../common/locations/entities/location.entity';
 import { Attachment } from '../../../common/modules/attachment/entities/attachment.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
+import { Token } from '../../notifications/entities/token.entity';
 
 export const UserRoleValues = {
   USER: 'User',
@@ -67,6 +70,12 @@ export class User {
 
   @Column('uuid', { nullable: true })
   avatarAttachmentId?: string;
+
+  @OneToMany(() => Notification, (notification) => notification.receiver)
+  notifications: Relation<Notification[]>;
+
+  @OneToMany(() => Token, (token) => token.user)
+  tokens: Relation<Token[]>;
 
   @BeforeInsert()
   generateId() {
