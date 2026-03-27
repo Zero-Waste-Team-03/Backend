@@ -57,6 +57,12 @@ export class UserType {
   })
   location?: LocationType;
 
+  @Field(() => String, {
+    nullable: true,
+    description: 'Attachment ID reference',
+  })
+  avatarAttachmentId?: string;
+
   @Field(() => String, { description: 'User account status' })
   status: string;
 
