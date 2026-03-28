@@ -9,7 +9,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Match } from '../../v1/dtos/requests/Match.decorator';
 
 @InputType()
 export class RegisterLocationInput {
