@@ -1,7 +1,12 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { UserRole, UserRoleValues } from '../../entities/user.entity';
-
 
 @InputType()
 export class AdminCreateAccountInput {

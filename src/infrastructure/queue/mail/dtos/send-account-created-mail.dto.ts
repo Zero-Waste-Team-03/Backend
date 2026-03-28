@@ -1,4 +1,3 @@
-
 export interface SendAccountCreatedMailDto {
   to: string;
   displayName: string;

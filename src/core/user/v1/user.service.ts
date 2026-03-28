@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import {
   User,
@@ -205,7 +210,9 @@ export class UserService {
   async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
     const { email, displayName, role } = data;
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
       throw new BadRequestException({ errCode: 'user_already_exists' });
     }
@@ -217,7 +224,7 @@ export class UserService {
       displayName,
       role,
       passwordHash: await generateHash(temporaryPassword),
-      isMailVerified: true, 
+      isMailVerified: true,
       status: UserStatusValues.ACTIVE,
     });
 
@@ -228,7 +235,7 @@ export class UserService {
       displayName,
       role,
       plainPassword: temporaryPassword,
-      loginUrl: `${this.applicationConfig.websiteUrl}/login`,
+      loginUrl: `${this.applicationConfig.frontUrl}/login`,
     });
 
     return savedUser;
