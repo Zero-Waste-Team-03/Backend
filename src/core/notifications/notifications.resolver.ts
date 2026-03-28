@@ -11,12 +11,12 @@ import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 
 @Resolver(() => NotificationTypeGraphQL)
-@UseGuards(AccessTokenGuard)
 export class NotificationsResolver {
   private readonly logger = new Logger(NotificationsResolver.name);
 
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  @UseGuards(AccessTokenGuard)
   @Query(() => [NotificationTypeGraphQL], { name: 'notifications' })
   async getNotifications(
     @Args('pagination', { nullable: true }) pagination: PaginationQueryInput,
@@ -28,6 +28,7 @@ export class NotificationsResolver {
     );
   }
 
+  @UseGuards(AccessTokenGuard)
   @Mutation(() => SendNotificationResponseType)
   async sendFcmNotification(
     @Args('input') input: SendNotificationInput,
@@ -46,6 +47,7 @@ export class NotificationsResolver {
     );
   }
 
+  @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType)
   async registerFcmToken(
     @Args('fcmToken') input: string,
@@ -55,17 +57,23 @@ export class NotificationsResolver {
     return { message: result.message };
   }
 
+  @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType)
   async markNotificationsAsRead(
     @Args('input') input: UpdateReadNotificationsInput,
+    @USER('id') userId: string,
   ) {
-    await this.notificationsService.updateRead(input.ids);
+    await this.notificationsService.updateRead(input.ids, userId);
     return { message: 'Notifications marked as read' };
   }
 
+  @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType)
-  async deleteNotification(@Args('id', { type: () => ID }) id: string) {
-    await this.notificationsService.remove(id);
+  async deleteNotification(
+    @Args('id', { type: () => ID }) id: string,
+    @USER('id') userId: string,
+  ) {
+    await this.notificationsService.remove(id, userId);
     return { message: 'Notification deleted' };
   }
 }
