@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
@@ -12,6 +17,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { SendNotificationResponseDto } from './dto/send-notification-response.dto';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
+import { isError } from 'lodash';
 
 const OLD_NOTIFICATION_DELETE_DAYS = 7;
 
@@ -84,8 +90,14 @@ export class NotificationsService {
    * @param id - The ID of the notification to retrieve.
    * @returns A promise that resolves to the notification, or undefined if not found.
    */
-  findOne(id: string) {
-    return this.notificationRepo.findOne({ where: { id } });
+  async findOne(id: string, userId: string) {
+    const notification = await this.notificationRepo.findOne({
+      where: { id, receiverId: userId },
+    });
+    if (!notification) {
+      throw new NotFoundException({ errCode: 'notification_not_found' });
+    }
+    return notification;
   }
 
   /**
@@ -93,12 +105,13 @@ export class NotificationsService {
    * @param ids - An array of notification IDs to mark as read.
    * @returns A promise that resolves when the update is complete.
    */
-  async updateRead(ids: string[]) {
+  async updateRead(ids: string[], userId: string) {
     await this.notificationRepo
       .createQueryBuilder()
       .update()
       .set({ isRead: true })
       .whereInIds(ids)
+      .where('receiverId = :userId', { userId })
       .execute();
   }
 
@@ -108,8 +121,13 @@ export class NotificationsService {
    * @param userId - The ID of the user attempting to remove the notification (for authorization, though not used in current implementation).
    * @returns A promise that resolves when the removal is complete.
    */
-  async remove(id: string) {
-    await this.notificationRepo.delete(id);
+  async remove(id: string, userId: string) {
+    try {
+      await this.notificationRepo.delete({ id, receiverId: userId });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new NotFoundException({ errCode: 'notification_not_found' });
+    }
   }
 
   /**
@@ -149,19 +167,29 @@ export class NotificationsService {
     fcmToken: string,
     userId: string,
   ): Promise<{ message: string }> {
-    const token = this.tokenRepo.create({
-      userId,
-      fcmToken,
-    });
-    await this.tokenRepo.save(token);
-    this.logger.log({
-      message: 'FCM token registered',
-      userId,
-      context: 'Notifications',
-    });
-    return { message: 'Token registered successfully' };
-  }
+    try {
+      await this.tokenRepo.upsert(
+        {
+          fcmToken,
+          userId,
+        },
+        ['fcmToken'],
+      );
 
+      this.logger.log({
+        message: 'FCM token registered/updated',
+        userId,
+        context: 'Notifications',
+      });
+      return { message: 'Token registered successfully' };
+    } catch (error) {
+      this.logger.error(
+        'Failed to register token',
+        isError(error) ? error.message : JSON.stringify(error),
+      );
+      throw error;
+    }
+  }
   /**
    * Retrieves all active FCM tokens for a given user.
    * @param userId - The ID of the user.

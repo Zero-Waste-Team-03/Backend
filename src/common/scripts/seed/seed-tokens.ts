@@ -1,0 +1,141 @@
+import dataSource from 'src/infrastructure/db/data-source';
+import { Token } from 'src/core/notifications/entities/token.entity';
+import { User } from 'src/core/user/entities/user.entity';
+
+/**
+ * @fileoverview Seed script for the `tokens` table (FCM device tokens).
+ *
+ * Upserts FCM tokens linked to the seeded base users.  The `fcmToken` value
+ * is used as the unique key, matching the UNIQUE constraint defined on the
+ * `tokens` table.  Safe to re-run without creating duplicates.
+ *
+ * @example
+ * ```bash
+ * pnpm ts-node -r tsconfig-paths/register \
+ *   src/common/scripts/seed/seed-tokens.ts
+ * ```
+ */
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type SeedToken = {
+  /** Firebase Cloud Messaging token (must be unique) */
+  fcmToken: string;
+  /** email of the owning user (must already be seeded) */
+  userEmail: string;
+};
+
+// ---------------------------------------------------------------------------
+// Seed data
+// ---------------------------------------------------------------------------
+
+const BASE_TOKENS: SeedToken[] = [
+  {
+    fcmToken: 'seed_fcm_admin_device_01:APA91bHPRgkFLo...AdminToken',
+    userEmail: 'admin@gaspzero.local',
+  },
+  {
+    fcmToken: 'seed_fcm_admin_device_02:APA91bHPRgkFLo...AdminToken2',
+    userEmail: 'admin@gaspzero.local',
+  },
+  {
+    fcmToken: 'seed_fcm_user_device_01:bk3RNwTe3H0...UserToken',
+    userEmail: 'user@gaspzero.local',
+  },
+  {
+    fcmToken: 'seed_fcm_org_device_01:c9RNwTe3H0...OrgToken',
+    userEmail: 'organization@gaspzero.local',
+  },
+];
+
+/**
+ * Generates additional fake FCM tokens spread across the base users.
+ */
+function generateRandomTokens(count: number): SeedToken[] {
+  const emails = [
+    'admin@gaspzero.local',
+    'user@gaspzero.local',
+    'organization@gaspzero.local',
+  ];
+
+  return Array.from({ length: count }, (_, i) => ({
+    fcmToken: `seed_fcm_generated_${i + 1}:APA91bGenerated${i + 1}RandomToken`,
+    userEmail: emails[i % emails.length],
+  }));
+}
+
+const TOKENS_TO_SEED: SeedToken[] = [
+  ...BASE_TOKENS,
+  ...generateRandomTokens(10),
+];
+
+// ---------------------------------------------------------------------------
+// Upsert logic
+// ---------------------------------------------------------------------------
+
+/**
+ * Upserts a single FCM token record.
+ * Matched by the `fcmToken` unique column — updates `userId` if the token
+ * already exists (e.g. device re-registered by a different user).
+ */
+async function upsertToken(seed: SeedToken): Promise<void> {
+  const tokenRepo = dataSource.getRepository(Token);
+  const userRepo = dataSource.getRepository(User);
+
+  const user = await userRepo.findOne({ where: { email: seed.userEmail } });
+
+  if (!user) {
+    process.stderr.write(
+      `[seed-tokens] Skipping token for "${seed.userEmail}": user not found. Run seed-users first.\n`,
+    );
+    return;
+  }
+
+  const existing = await tokenRepo.findOne({
+    where: { fcmToken: seed.fcmToken },
+  });
+
+  if (existing) {
+    tokenRepo.merge(existing, { userId: user.id });
+    await tokenRepo.save(existing);
+    return;
+  }
+
+  const token = tokenRepo.create({
+    fcmToken: seed.fcmToken,
+    userId: user.id,
+  });
+
+  await tokenRepo.save(token);
+}
+
+// ---------------------------------------------------------------------------
+// Entry point
+// ---------------------------------------------------------------------------
+
+/**
+ * Seeds FCM token records for local and QA usage.
+ * Requires users to have been seeded first (`seed-users.ts`).
+ */
+async function seedTokens(): Promise<void> {
+  await dataSource.initialize();
+
+  try {
+    for (const token of TOKENS_TO_SEED) {
+      await upsertToken(token);
+    }
+  } finally {
+    await dataSource.destroy();
+  }
+}
+
+seedTokens()
+  .then(() => {
+    process.stdout.write('Token seeding completed successfully.\n');
+  })
+  .catch((error: unknown) => {
+    process.stderr.write(`Token seeding failed: ${String(error)}\n`);
+    process.exitCode = 1;
+  });
