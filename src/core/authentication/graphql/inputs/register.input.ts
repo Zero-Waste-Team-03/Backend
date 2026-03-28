@@ -99,12 +99,6 @@ export class RegisterInput {
   @IsStrongPassword()
   password: string;
 
-  @Field(() => String, {
-    description: 'Confirm password for the new user, must match the password',
-  })
-  @Match('password', { message: 'Passwords do not match' })
-  confirmPassword: string;
-
   @Field(() => RegisterLocationInput, {
     description: 'Location payload for user registration',
   })
