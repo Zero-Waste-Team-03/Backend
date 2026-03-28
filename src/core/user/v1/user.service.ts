@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import {
   User,
@@ -15,6 +15,15 @@ import { AdminUsersArgs } from '../graphql/inputs/admin-users.args';
 import { UserStatsResponse } from '../graphql/types/user-stats.type';
 import { IPaginatedType } from 'src/common/graphql/types/pagination.type';
 import { UserType } from 'src/core/authentication/graphql/types/user.type';
+import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
+import { Inject } from '@nestjs/common';
+import appConfig from 'src/config/app.config';
+import { ConfigType } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { QUEUE_NAME } from 'src/common/constants/queues';
+import { Queue } from 'bullmq';
+import { MAIL_JOBS } from 'src/common/constants/jobs';
+import * as crypto from 'crypto';
 
 export interface OAuthUserPayload {
   email: string;
@@ -29,6 +38,10 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    @Inject(appConfig.KEY)
+    private readonly applicationConfig: ConfigType<typeof appConfig>,
+    @InjectQueue(QUEUE_NAME.MAIL)
+    private readonly mailQueue: Queue,
   ) {}
 
   async getPaginatedUsers(
@@ -187,6 +200,38 @@ export class UserService {
     });
 
     return this.userRepository.save(user);
+  }
+
+  async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
+    const { email, displayName, role } = data;
+
+    const existingUser = await this.userRepository.findOne({ where: { email } });
+    if (existingUser) {
+      throw new BadRequestException({ errCode: 'user_already_exists' });
+    }
+
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+
+    const user = this.userRepository.create({
+      email,
+      displayName,
+      role,
+      passwordHash: await generateHash(temporaryPassword),
+      isMailVerified: true, 
+      status: UserStatusValues.ACTIVE,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    await this.mailQueue.add(MAIL_JOBS.SEND_ACCOUNT_CREATED_MAIL, {
+      to: email,
+      displayName,
+      role,
+      plainPassword: temporaryPassword,
+      loginUrl: `${this.applicationConfig.websiteUrl}/login`,
+    });
+
+    return savedUser;
   }
 
   async updateUser(id: string, data: UpdateUserDto) {

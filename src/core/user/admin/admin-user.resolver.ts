@@ -20,6 +20,7 @@ import { Paginated } from '../../../common/graphql/types/pagination.type';
 import { ObjectType } from '@nestjs/graphql';
 import { IDataLoaders } from '../../../common/modules/dataloader/dataloader.interface';
 import { LocationType } from '../../authentication/graphql/types/location.type';
+import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
 
 @ObjectType('PaginatedUsers')
 export class PaginatedUsersResponse extends Paginated(UserType) {}
@@ -64,6 +65,18 @@ export class AdminUserResolver {
   })
   async activateUser(@Args('userId') id: string): Promise<UserType> {
     return this.userService.activateUser(id);
+  }
+
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => UserType, {
+    name: 'adminCreateAccount',
+    description:
+      'Create a new user, organization, or administrator account. A temporary password will be generated and sent via email.',
+  })
+  async adminCreateAccount(
+    @Args('input') input: AdminCreateAccountInput,
+  ): Promise<UserType> {
+    return this.userService.adminCreateAccount(input);
   }
 
   @ResolveField(() => LocationType, { nullable: true })

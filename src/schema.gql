@@ -2,6 +2,19 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AdminCreateAccountInput {
+  """Full display name of the new account holder"""
+  displayName: String!
+
+  """Email address for the new account (must be unique)"""
+  email: String!
+
+  """
+  Role to assign: "Administrator", "Organizations", "Stores", or "User"
+  """
+  role: String!
+}
+
 type AuthResponse {
   """JWT access token for authentication"""
   accessToken: String!
@@ -74,6 +87,11 @@ type Mutation {
   Activate a user account, enabling them from logging in or accessing services.
   """
   activateUser(userId: String!): User!
+
+  """
+  Create a new user, organization, or administrator account. A temporary password will be generated and sent via email.
+  """
+  adminCreateAccount(input: AdminCreateAccountInput!): User!
 
   """
   Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password

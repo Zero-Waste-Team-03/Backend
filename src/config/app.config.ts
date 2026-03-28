@@ -12,5 +12,6 @@ export default registerAs(
     },
     slackWebhookUrl: process.env.SLACK_WEBHOOK || '',
     environment: process.env.NODE_ENV || 'development',
+    websiteUrl: process.env.WEBSITE_URL || 'http://localhost:3000',
   }),
 );

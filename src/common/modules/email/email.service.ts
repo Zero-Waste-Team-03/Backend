@@ -63,4 +63,31 @@ export class EmailService {
       this.logger.error('Error sending password changed alert email:', error);
     }
   }
+
+  async sendAccountCreatedEmail(
+    to: string,
+    displayName: string,
+    role: string,
+    plainPassword: string,
+    loginUrl: string,
+  ): Promise<void> {
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject: 'Your Zero Waste Account Has Been Created',
+        template: './account-created',
+        context: {
+          displayName,
+          email: to,
+          role,
+          plainPassword,
+          loginUrl,
+          year: new Date().getFullYear(),
+        },
+      });
+      this.logger.log(`Account creation email sent to ${to}`);
+    } catch (error) {
+      this.logger.error('Error sending account creation email:', error);
+    }
+  }
 }

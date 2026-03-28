@@ -7,6 +7,7 @@ import { Logger } from '@nestjs/common';
 import { SendVerificationMailDto } from './dtos/send-verification-mail.dto';
 import { SendPasswordResetMailDto } from './dtos/send-password-reset-mail.dto';
 import { SendPasswordChangedAlertDto } from './dtos/send-password-changed-alert.dto';
+import { SendAccountCreatedMailDto } from './dtos/send-account-created-mail.dto';
 import { EmailService } from 'src/common/modules/email/email.service';
 
 @Processor(QUEUE_NAME.MAIL)
@@ -34,6 +35,11 @@ export class MailProcessor extends WorkerHost {
         this.logger.log('Processing Sending password changed alert job');
         return this.handleSendPasswordChangedAlertJob(
           job as Job<SendPasswordChangedAlertDto>,
+        );
+      case MAIL_JOBS.SEND_ACCOUNT_CREATED_MAIL:
+        this.logger.log('Processing account-created notification mail job');
+        return this.handleSendAccountCreatedMailJob(
+          job as Job<SendAccountCreatedMailDto>,
         );
       default:
         return Promise.resolve();
@@ -63,5 +69,18 @@ export class MailProcessor extends WorkerHost {
   ): Promise<void> {
     const { to } = job.data;
     return this.mailService.sendPasswordChangedAlertEmail(to);
+  }
+
+  handleSendAccountCreatedMailJob(
+    job: Job<SendAccountCreatedMailDto>,
+  ): Promise<void> {
+    const { to, displayName, role, plainPassword, loginUrl } = job.data;
+    return this.mailService.sendAccountCreatedEmail(
+      to,
+      displayName,
+      role,
+      plainPassword,
+      loginUrl,
+    );
   }
 }
