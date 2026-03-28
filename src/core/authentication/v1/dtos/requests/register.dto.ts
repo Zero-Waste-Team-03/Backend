@@ -9,7 +9,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Match } from './Match.decorator';
 
 export class RegisterLocationDto {
   @ApiProperty({
@@ -81,14 +80,6 @@ export class registerDto {
   })
   @IsStrongPassword()
   password: string;
-
-  @Match('password', { message: 'Passwords do not match' })
-  @ApiProperty({
-    type: String,
-    description: 'Confirm password for the new user, must match the password',
-  })
-  confirmPassword: string;
-
   @ApiProperty({
     type: RegisterLocationDto,
     description: 'Location payload for user registration',
