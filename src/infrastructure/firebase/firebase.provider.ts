@@ -6,9 +6,17 @@ import { FirebaseOptions } from './firebase.interface';
 export const FirebaseProvider: Provider = {
   provide: 'FIREBASE_APP',
   useFactory: (options: FirebaseOptions) => {
+    if (options.serviceAccountPath) {
+      return admin.initializeApp({
+        credential: admin.credential.cert(options.serviceAccountPath),
+      });
+    }
+
     return admin.initializeApp({
       credential: admin.credential.cert({
-        ...options,
+        projectId: options.projectId,
+        clientEmail: options.clientEmail,
+        privateKey: options.privateKey,
       }),
     });
   },
