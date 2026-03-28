@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Zero Waste Account Is Ready</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #333333;
+    }
+    .wrapper {
+      max-width: 580px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      padding: 36px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 6px 0 0;
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+    }
+    .body {
+      padding: 36px 40px;
+    }
+    .body p {
+      margin: 0 0 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #555555;
+    }
+    .credentials-box {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+    .credentials-box .label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #16a34a;
+      margin-bottom: 4px;
+    }
+    .credentials-box .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      word-break: break-all;
+    }
+    .credentials-box .divider {
+      border: none;
+      border-top: 1px solid #d1fae5;
+      margin: 14px 0;
+    }
+    .cta-btn {
+      display: block;
+      width: fit-content;
+      margin: 28px auto 0;
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-align: center;
+    }
+    .warning {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 14px 18px;
+      margin-top: 28px;
+      font-size: 13px;
+      color: #78350f;
+      line-height: 1.5;
+    }
+    .footer {
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      border-top: 1px solid #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>♻️ Zero Waste Platform</h1>
+      <p>Your account has been created by an administrator</p>
+    </div>
+    <div class="body">
+      <p>Hello <strong>{{displayName}}</strong>,</p>
+      <p>
+        An administrator has created a <strong>{{role}}</strong> account for you on the Zero Waste platform.
+        Use the credentials below to sign in and get started.
+      </p>
+
+      <div class="credentials-box">
+        <div class="label">Email Address</div>
+        <div class="value">{{email}}</div>
+        <hr class="divider" />
+        <div class="label">Temporary Password</div>
+        <div class="value">{{plainPassword}}</div>
+      </div>
+
+      <a href="{{loginUrl}}" class="cta-btn">Sign In to Your Account →</a>
+
+      <div class="warning">
+        ⚠️ <strong>Important:</strong> This password was auto-generated. Please change it immediately after your first login to keep your account secure.
+      </div>
+
+      <p style="margin-top: 24px;">
+        If you have any questions, please reach out to the platform administrator.
+      </p>
+    </div>
+    <div class="footer">
+      © {{year}} Zero Waste Platform. All rights reserved.<br/>
+      This email was sent because an administrator created an account using your email address.
+    </div>
+  </div>
+</body>
+</html>

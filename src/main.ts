@@ -40,9 +40,7 @@ function setupBullBoard(app: INestApplication, configService: ConfigService) {
     });
   }
 
-  if (configService.get<string>('NODE_ENV') !== 'production') {
-    app.use(bullBoardPath, serverAdapter.getRouter());
-  }
+  app.use(bullBoardPath, serverAdapter.getRouter());
 }
 
 async function bootstrap() {

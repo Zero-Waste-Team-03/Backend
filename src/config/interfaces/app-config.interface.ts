@@ -7,4 +7,6 @@ export interface AppConfig {
   };
   slackWebhookUrl: string;
   environment: string;
+  frontUrl: string;
+  appUrl: string;
 }
