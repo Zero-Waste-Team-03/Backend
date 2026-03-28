@@ -114,6 +114,10 @@ services:
       - 'traefik.http.routers.myapp.tls=true'
       - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
       - 'traefik.http.services.myapp.loadbalancer.server.port=8080'
+      - "traefik.http.middlewares.app-compress.compress=true"
+      - "traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760"
+      - "traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152"
+      - "traefik.http.routers.app.middlewares=app-compress,app-buffer"
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/health']
       interval: 10s
@@ -138,6 +142,10 @@ services:
       - 'traefik.http.routers.myapp.tls=true'
       - 'traefik.http.routers.myapp.tls.certresolver=myresolver'
       - 'traefik.http.services.myapp.loadbalancer.server.port=8080'
+      - "traefik.http.middlewares.app-compress.compress=true"
+      - "traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760"
+      - "traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152"
+      - "traefik.http.routers.app.middlewares=app-compress,app-buffer"
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/health']
       interval: 10s
