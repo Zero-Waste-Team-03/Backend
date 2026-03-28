@@ -269,7 +269,7 @@ export class AuthenticationService {
     });
 
     await this.userService.updateUserWithoutReturn(userId, {
-      avatar: attachment,
+      avatarAttachmentId: attachment.id,
     });
 
     await this.uploadQueue.add(

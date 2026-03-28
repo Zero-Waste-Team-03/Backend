@@ -3,7 +3,9 @@ import { UserService } from './v1/user.service';
 import { UserResolver } from './user.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { UserSettings } from './entities/user-settings.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
+import { AdminUserResolver } from './admin/admin-user.resolver';
 
 /**
  * User module
@@ -16,9 +18,9 @@ import { Location } from 'src/common/locations/entities/location.entity';
  * Note: All user endpoints are now GraphQL-based (see user.resolver.ts)
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Location])],
+  imports: [TypeOrmModule.forFeature([User, Location, UserSettings])],
   controllers: [],
-  providers: [UserService, UserResolver],
+  providers: [UserService, UserResolver, AdminUserResolver],
   exports: [UserService],
 })
 export class UserModule {}
