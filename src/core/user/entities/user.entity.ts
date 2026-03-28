@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  OneToOne,
   JoinColumn,
   BeforeInsert,
   Relation,
@@ -15,6 +16,7 @@ import { Location } from '../../../common/locations/entities/location.entity';
 import { Attachment } from '../../../common/modules/attachment/entities/attachment.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Token } from '../../notifications/entities/token.entity';
+import { UserSettings } from './user-settings.entity';
 
 export const UserRoleValues = {
   USER: 'User',
@@ -67,7 +69,7 @@ export class User {
   @Column({ type: 'int', default: 0 })
   resetVersion: number;
 
-  @ManyToOne(() => Location, { nullable: true })
+  @ManyToOne(() => Location, { nullable: true, cascade: true })
   @JoinColumn({ name: 'locationId' })
   location: Relation<Location>;
 
@@ -88,6 +90,9 @@ export class User {
   })
   status: UserStatus;
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastChangedPasswordDate: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -100,10 +105,16 @@ export class User {
   @OneToMany(() => Token, (token) => token.user)
   tokens: Relation<Token[]>;
 
+  @OneToOne('UserSettings', 'user', { cascade: true })
+  settings: Relation<UserSettings>;
+
   @BeforeInsert()
-  generateId() {
+  generateIdAndSettings() {
     if (!this.id) {
       this.id = uuidv7();
+    }
+    if (!this.settings) {
+      this.settings = new UserSettings();
     }
   }
 }

@@ -15,6 +15,13 @@ input AdminCreateAccountInput {
   role: String!
 }
 
+"""Available UI themes for the application"""
+enum AppearanceTheme {
+  DARK
+  LIGHT
+  SYSTEM
+}
+
 type AuthResponse {
   """JWT access token for authentication"""
   accessToken: String!
@@ -66,6 +73,14 @@ type Location {
   longitude: Float
 
   """Location neighborhood"""
+  neighborhood: String
+}
+
+input LocationInput {
+  city: String
+  country: String
+  latitude: Float
+  longitude: Float
   neighborhood: String
 }
 
@@ -250,8 +265,20 @@ type SendNotificationResponse {
 }
 
 input UpdateProfileInput {
+  """Avatar attachment ID"""
+  avatarAttachmentId: String
+
   """New display name for the user"""
   displayName: String
+
+  """User email address"""
+  email: String
+
+  """User location details"""
+  location: LocationInput
+
+  """User account settings"""
+  settings: UserSettingsInput
 }
 
 input UpdateReadNotificationsInput {
@@ -281,6 +308,9 @@ type User {
   """Whether the user has verified their email"""
   isMailVerified: Boolean!
 
+  """Date the user last changed password"""
+  lastChangedPasswordDate: DateTime
+
   """Location details associated with user"""
   location: Location
 
@@ -293,11 +323,30 @@ type User {
   """User role"""
   role: String!
 
+  """User account settings"""
+  settings: UserSettings
+
   """User account status"""
   status: String!
 
   """Date the user was last updated"""
   updatedAt: DateTime!
+}
+
+type UserSettings {
+  appearance: AppearanceTheme!
+  id: String!
+  isNewDonationsAlertsEnabled: Boolean!
+  isSystemReports: Boolean!
+  isUrgentAlertsEnabled: Boolean!
+  userId: String!
+}
+
+input UserSettingsInput {
+  appearance: AppearanceTheme
+  isNewDonationsAlertsEnabled: Boolean
+  isSystemReports: Boolean
+  isUrgentAlertsEnabled: Boolean
 }
 
 type UserStats {

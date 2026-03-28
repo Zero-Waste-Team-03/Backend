@@ -14,6 +14,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import appConfig from 'src/config/app.config';
 import { AdminCreateAccountInput } from 'src/core/user/graphql/inputs/admin-create-account.input';
 import { MAIL_JOBS } from 'src/common/constants/jobs';
+import * as hashUtils from 'src/common/utils/authentication/hash.utils';
 
 describe('UserService', () => {
   let service: UserService;
@@ -24,8 +25,10 @@ describe('UserService', () => {
     findAndCount: jest.Mock;
     findOneBy: jest.Mock;
     findOne: jest.Mock;
+    findOneOrFail: jest.Mock;
     save: jest.Mock;
     create: jest.Mock;
+    update: jest.Mock;
   };
   let mailQueue: {
     add: jest.Mock;
@@ -58,7 +61,9 @@ describe('UserService', () => {
       findAndCount: jest.fn().mockResolvedValue([[], 0]),
       findOneBy: jest.fn(),
       findOne: jest.fn(),
+      findOneOrFail: jest.fn(),
       save: jest.fn(),
+      update: jest.fn(),
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       create: jest.fn().mockImplementation((dto) => dto),
     };
@@ -341,6 +346,94 @@ describe('UserService', () => {
       );
       expect(result.email).toBe(input.email);
       expect(result.isMailVerified).toBe(true);
+      expect(result.email).toBe(input.email);
+      expect(result.isMailVerified).toBe(true);
+    });
+  });
+
+  describe('updateUser', () => {
+    it('should throw NotFoundException when user not found', async () => {
+      userRepository.findOneOrFail.mockRejectedValue(new Error());
+
+      await expect(
+        service.updateUser('u1', { displayName: 'New Name' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update user and settings successfully', async () => {
+      const existingUser = {
+        id: 'u1',
+        displayName: 'Old Name',
+        settings: { id: 's1', isNewDonationsAlertsEnabled: true },
+      } as unknown as User;
+
+      userRepository.findOneOrFail.mockResolvedValue(existingUser);
+      userRepository.save.mockImplementation((user) => Promise.resolve(user));
+
+      const updateData = {
+        displayName: 'New Name',
+        settings: { isNewDonationsAlertsEnabled: false },
+      };
+
+      const result = await service.updateUser('u1', updateData);
+
+      expect(userRepository.findOneOrFail).toHaveBeenCalledWith({
+        where: { id: 'u1' },
+        relations: ['settings', 'location'],
+      });
+      expect(result.displayName).toBe('New Name');
+      expect(result.settings.isNewDonationsAlertsEnabled).toBe(false);
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          displayName: 'New Name',
+        }),
+      );
+    });
+  });
+
+  describe('changePassword', () => {
+    const passwordInput = {
+      oldPassword: 'old-password',
+      newPassword: 'new-password-123',
+    };
+
+    it('should throw NotFoundException when user not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      await expect(service.changePassword('u1', passwordInput)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw BadRequestException when old password is wrong', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'u1',
+        passwordHash: 'hashed-old-password',
+      } as User);
+
+      jest.spyOn(hashUtils, 'compareHash').mockResolvedValue(false);
+
+      await expect(service.changePassword('u1', passwordInput)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should update password and lastChangedPasswordDate', async () => {
+      const user = {
+        id: 'u1',
+        passwordHash: 'hashed-old-password',
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(user);
+      jest.spyOn(hashUtils, 'compareHash').mockResolvedValue(true);
+      jest.spyOn(hashUtils, 'generateHash').mockResolvedValue('hashed-new-password');
+      userRepository.save.mockResolvedValue({});
+
+      const result = await service.changePassword('u1', passwordInput);
+
+      expect(result.message).toContain('successfully');
+      expect(user.passwordHash).toBe('hashed-new-password');
+      expect(user.lastChangedPasswordDate).toBeInstanceOf(Date);
+      expect(userRepository.save).toHaveBeenCalledWith(user);
     });
   });
 });

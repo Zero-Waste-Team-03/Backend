@@ -6,8 +6,12 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { UserRole, UserRoleValues } from '../../entities/user.entity';
+import { UserSettingsDto } from './user-settings.dto';
+import { LocationDto } from './location.dto';
 
 /**
  * Data Transfer Object for updating user information.
@@ -75,9 +79,21 @@ export class UpdateUserDto {
   @IsUUID()
   avatarAttachmentId?: string;
 
-  /**
-   * For cases where the full attachment entity might be passed internally
-   */
+  @ApiPropertyOptional({
+    description: 'The settings associated with the user',
+    type: UserSettingsDto,
+  })
   @IsOptional()
-  avatar?: any;
+  @ValidateNested()
+  @Type(() => UserSettingsDto)
+  settings?: UserSettingsDto;
+
+  @ApiPropertyOptional({
+    description: 'User location details',
+    type: LocationDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location?: LocationDto;
 }

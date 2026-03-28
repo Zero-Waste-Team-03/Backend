@@ -1,5 +1,15 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { UserSettingsInput } from '../../../user/graphql/inputs/user-settings.input';
+import { LocationInput } from '../../../../common/locations/graphql/inputs/location.input';
 
 /**
  * Input type for updating user profile
@@ -26,5 +36,37 @@ export class UpdateProfileInput {
   @IsNotEmpty()
   displayName?: string;
 
-  // Add more fields as needed for profile updates
+  @Field(() => String, {
+    nullable: true,
+    description: 'User email address',
+  })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Avatar attachment ID',
+  })
+  @IsOptional()
+  @IsUUID()
+  avatarAttachmentId?: string;
+
+  @Field(() => UserSettingsInput, {
+    nullable: true,
+    description: 'User account settings',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UserSettingsInput)
+  settings?: UserSettingsInput;
+
+  @Field(() => LocationInput, {
+    nullable: true,
+    description: 'User location details',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocationInput)
+  location?: LocationInput;
 }

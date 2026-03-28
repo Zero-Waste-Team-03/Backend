@@ -7,6 +7,7 @@ import { MessageResponseType } from '../authentication/graphql/types/message-res
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { User } from './entities/user.entity';
+import { ChangePasswordInput } from 'src/core/user/graphql/inputs/change-password.input';
 
 /**
  * GraphQL resolver for user operations
@@ -80,21 +81,21 @@ export class UserResolver {
     @Args('updateProfileInput') updateProfileInput: UpdateProfileInput,
     @USER() user: User,
   ): Promise<UserType> {
-    const currentUser = await this.userService.findById(user.id);
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
+    return await this.userService.updateUser(user.id, updateProfileInput);
+  }
 
-    if (updateProfileInput.displayName !== undefined) {
-      currentUser.displayName = updateProfileInput.displayName;
-    }
-
-    // Save and return updated user
-    const updatedUser = await this.userService.updateUser(
-      currentUser.id,
-      currentUser,
-    );
-    return updatedUser;
+  /**
+   * Change current user password
+   */
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => MessageResponseType, {
+    description: 'Change current user password',
+  })
+  async changePassword(
+    @Args('changePasswordInput') changePasswordInput: ChangePasswordInput,
+    @USER() user: User,
+  ): Promise<MessageResponseType> {
+    return this.userService.changePassword(user.id, changePasswordInput);
   }
 
   /**
