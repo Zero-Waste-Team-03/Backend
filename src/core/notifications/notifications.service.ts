@@ -255,8 +255,8 @@ export class NotificationsService {
    * @returns A promise that resolves to a success response indicating the job was added.
    */
   async sendNotification(
-    titleKey: string,
-    bodyKey: string,
+    title: string,
+    body: string,
     userId: string,
     type: NotificationType,
     data?: Record<string, any>,
@@ -264,8 +264,8 @@ export class NotificationsService {
     await this.notificationQueue.add(
       NOTIFICATION_JOBS.SEND_NOTIFICATION,
       {
-        titleKey,
-        bodyKey,
+        title,
+        body,
         userId,
         type,
         translationArgs: data,
@@ -282,7 +282,7 @@ export class NotificationsService {
     this.logger.log({
       message: 'Notification job added to queue',
       userId,
-      titleKey,
+      title,
       type,
       context: 'Notifications',
     });

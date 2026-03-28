@@ -11,7 +11,6 @@ import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { FirebaseService } from 'src/infrastructure/firebase/firebase.service';
 import { NotificationType } from 'src/core/notifications/enums/notification-type.enum';
-import { isError } from 'lodash';
 
 class SendNotificationJob {
   title: string;
@@ -127,7 +126,7 @@ export class NotificationProcessor extends WorkerHost {
       this.logger.error({
         message: 'Failed to send notification to device',
         tokenPrefix: message.token.substring(0, 20),
-        error: isError(error) ? error.message : JSON.stringify(error),
+        error: JSON.stringify(error),
         context: 'NotificationProcessor',
       });
       throw error;
@@ -192,7 +191,6 @@ export class NotificationProcessor extends WorkerHost {
       throw new InvalidTokenError(invalidTokens);
     }
 
-    // If there's a transient error, throw it so BullMQ retries the job
     if (hasTransientError) {
       throw new Error(
         'Transient error occurred during notification sending, retrying...',
