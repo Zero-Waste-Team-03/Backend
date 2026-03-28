@@ -54,6 +54,7 @@ COPY --chown=node:node package.json .
 COPY --chown=node:node --from=deps /usr/src/app/node_modules ./node_modules
 
 # Copy the application source code with proper ownership
+COPY --chown=node:node firebase.config.json .
 COPY --chown=node:node . .
 
 # Create the dist directory and set ownership as root, then switch to node user
