@@ -157,7 +157,6 @@ describe('Authentication GraphQL (e2e)', () => {
             displayName: 'John Doe',
             email: 'user@example.com',
             password: 'StrongPass123!',
-            confirmPassword: 'StrongPass123!',
             location: {
               city: 'Algiers',
               country: 'Algeria',
