@@ -1,5 +1,6 @@
 import { Field, ObjectType, Int } from '@nestjs/graphql';
 import { LocationType } from './location.type';
+import { UserSettingsType } from '../../../user/graphql/types/user-settings.type';
 
 export enum UserRoleType {
   USER = 'User',
@@ -71,4 +72,16 @@ export class UserType {
 
   @Field(() => Date, { description: 'Date the user was last updated' })
   updatedAt: Date;
+
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Date the user last changed password',
+  })
+  lastChangedPasswordDate?: Date;
+
+  @Field(() => UserSettingsType, {
+    nullable: true,
+    description: 'User account settings',
+  })
+  settings?: UserSettingsType;
 }

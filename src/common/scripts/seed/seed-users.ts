@@ -2,6 +2,7 @@ import dataSource from 'src/infrastructure/db/data-source';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { generateHash } from 'src/common/utils/authentication/hash.utils';
 import { User, UserRoleValues } from 'src/core/user/entities/user.entity';
+import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 
 type SeedUser = {
   email: string;
@@ -116,7 +117,7 @@ async function upsertUser(seed: SeedUser): Promise<void> {
 
   const existing = await userRepository.findOne({
     where: { email: seed.email },
-    relations: { location: true },
+    relations: { location: true, settings: true },
   });
 
   const passwordHash = await generateHash(seed.password);
@@ -138,6 +139,10 @@ async function upsertUser(seed: SeedUser): Promise<void> {
       location: savedLocation,
       locationId: savedLocation.id,
     });
+
+    if (!updatedUser.settings) {
+      updatedUser.settings = new UserSettings();
+    }
 
     await userRepository.save(updatedUser);
     return;

@@ -9,18 +9,22 @@ import {
   User,
   UserRoleValues,
   UserStatusValues,
-} from '../entities/user.entity';
+} from 'src/core/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository, LessThan } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { generateHash } from 'src/common/utils/authentication/hash.utils';
+import {
+  generateHash,
+  compareHash,
+} from 'src/common/utils/authentication/hash.utils';
 import { MessageResponseType } from 'src/core/authentication/graphql/types/message-response.type';
-import { AdminUsersArgs } from '../graphql/inputs/admin-users.args';
-import { UserStatsResponse } from '../graphql/types/user-stats.type';
+import { ChangePasswordInput } from 'src/core/user/graphql/inputs/change-password.input';
+import { AdminUsersArgs } from 'src/core/user/graphql/inputs/admin-users.args';
+import { UserStatsResponse } from 'src/core/user/graphql/types/user-stats.type';
 import { IPaginatedType } from 'src/common/graphql/types/pagination.type';
 import { UserType } from 'src/core/authentication/graphql/types/user.type';
-import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
+import { AdminCreateAccountInput } from 'src/core/user/graphql/inputs/admin-create-account.input';
 import { Inject } from '@nestjs/common';
 import appConfig from 'src/config/app.config';
 import { ConfigType } from '@nestjs/config';
@@ -135,29 +139,28 @@ export class UserService {
 
   async getUserStats(): Promise<UserStatsResponse> {
     const now = new Date();
-    // Start of current month
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Total users right now
-    const totalUsers = await this.userRepository.count();
-
-    // Active users right now
-    const activeAccounts = await this.userRepository.count({
-      where: { status: UserStatusValues.ACTIVE },
-    });
-
-    // Total users before the start of this month
-    const previousTotalUsers = await this.userRepository.count({
-      where: { createdAt: LessThan(startOfCurrentMonth) },
-    });
-
-    // Active users before the start of this month
-    const previousActiveAccounts = await this.userRepository.count({
-      where: {
-        status: UserStatusValues.ACTIVE,
-        createdAt: LessThan(startOfCurrentMonth),
-      },
-    });
+    const [
+      totalUsers,
+      activeAccounts,
+      previousTotalUsers,
+      previousActiveAccounts,
+    ] = await Promise.all([
+      this.userRepository.count(),
+      this.userRepository.count({
+        where: { status: UserStatusValues.ACTIVE },
+      }),
+      this.userRepository.count({
+        where: { createdAt: LessThan(startOfCurrentMonth) },
+      }),
+      this.userRepository.count({
+        where: {
+          status: UserStatusValues.ACTIVE,
+          createdAt: LessThan(startOfCurrentMonth),
+        },
+      }),
+    ]);
 
     const calculateIncrease = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
@@ -174,7 +177,6 @@ export class UserService {
       previousActiveAccounts,
     );
 
-    // Static numbers for reported issues for now
     const reportedIssues = 0;
     const reportedIssuesIncrease = 0;
 
@@ -243,12 +245,40 @@ export class UserService {
 
   async updateUser(id: string, data: UpdateUserDto) {
     try {
-      await this.userRepository.update(id, { ...data });
-      return await this.userRepository.findOneOrFail({ where: { id } });
-      //eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
+      const user = await this.userRepository.findOneOrFail({
+        where: { id },
+        relations: ['settings', 'location'],
+      });
+
+      Object.assign(user, data);
+      return await this.userRepository.save(user);
+    } catch {
       throw new NotFoundException({ errCode: 'user_not_found' });
     }
+  }
+
+  async changePassword(
+    userId: string,
+    data: ChangePasswordInput,
+  ): Promise<MessageResponseType> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException({ errCode: 'user_not_found' });
+    }
+
+    const isPasswordValid = await compareHash(
+      data.oldPassword,
+      user.passwordHash,
+    );
+    if (!isPasswordValid) {
+      throw new BadRequestException({ errCode: 'invalid_password' });
+    }
+
+    user.passwordHash = await generateHash(data.newPassword);
+    user.lastChangedPasswordDate = new Date();
+    await this.userRepository.save(user);
+
+    return { message: 'Password changed successfully' };
   }
 
   createOAuthUser(data: OAuthUserPayload): Promise<User> {
