@@ -118,6 +118,8 @@ services:
       - "traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760"
       - "traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152"
       - "traefik.http.routers.app.middlewares=app-compress,app-buffer"
+    volumes:
+      - ./firebase.config.json:/usr/src/app/firebase.config.json
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/health']
       interval: 10s
@@ -146,6 +148,8 @@ services:
       - "traefik.http.middlewares.app-buffer.buffering.maxRequestBodyBytes=10485760"
       - "traefik.http.middlewares.app-buffer.buffering.memRequestBodyBytes=2097152"
       - "traefik.http.routers.app.middlewares=app-compress,app-buffer"
+    volumes:
+      - ./firebase.config.json:/usr/src/app/firebase.config.json
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/health']
       interval: 10s
