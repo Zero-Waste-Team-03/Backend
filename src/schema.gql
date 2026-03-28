@@ -199,9 +199,6 @@ type Query {
 }
 
 input RegisterInput {
-  """Confirm password for the new user, must match the password"""
-  confirmPassword: String!
-
   """Display name for the new user"""
   displayName: String
 
