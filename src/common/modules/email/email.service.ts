@@ -34,7 +34,7 @@ export class EmailService {
     }
   }
 
-  async sendPasswordResetEmail(to: string, token: string): Promise<void> {
+  async sendPasswordResetEmail(to: string, token: string, frontUrl: string): Promise<void> {
     try {
       await this.mailerService.sendMail({
         to,
@@ -42,6 +42,7 @@ export class EmailService {
         template: './password-reset',
         context: {
           token,
+          frontUrl,
         },
       });
       this.logger.log(`Password reset email sent to ${to}`);

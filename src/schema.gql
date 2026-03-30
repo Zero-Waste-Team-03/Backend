@@ -10,9 +10,9 @@ input AdminCreateAccountInput {
   email: String!
 
   """
-  Role to assign: "Administrator", "Organizations", "Stores", or "User"
+  Role to assign: "Administrator", "Organizations", "Stores", "User" or "Local Authority"
   """
-  role: String!
+  role: UserRole!
 }
 
 """Available UI themes for the application"""
@@ -20,6 +20,38 @@ enum AppearanceTheme {
   DARK
   LIGHT
   SYSTEM
+}
+
+type Attachment {
+  """Date the attachment was created"""
+  createdAt: DateTime!
+
+  """Original file name of the attachment"""
+  fileName: String!
+
+  """Size of the attachment in bytes"""
+  fileSize: Float!
+
+  """MIME type of the attachment"""
+  fileType: String!
+
+  """Attachment unique identifier"""
+  id: String!
+
+  """ID of the background job processing the upload"""
+  jobId: String
+
+  """Date the attachment was last updated"""
+  updatedAt: DateTime!
+
+  """Current upload status of the attachment"""
+  uploadStatus: UploadStatusValues
+
+  """ID of the user who uploaded the attachment"""
+  uploadedById: String!
+
+  """URL of the attachment"""
+  url: String
 }
 
 type AuthResponse {
@@ -199,7 +231,7 @@ type Query {
     page: Int! = 1
 
     """Filter by user role"""
-    role: String
+    role: UserRole
 
     """Search by name or email"""
     search: String
@@ -286,7 +318,17 @@ input UpdateReadNotificationsInput {
   ids: [ID!]!
 }
 
+enum UploadStatusValues {
+  COMPLETED
+  FAILED
+  PENDING
+  UPLOADING
+}
+
 type User {
+  """User avatar attachment details"""
+  avatar: Attachment
+
   """Attachment ID reference"""
   avatarAttachmentId: String
 
@@ -321,7 +363,7 @@ type User {
   reputationScore: Int!
 
   """User role"""
-  role: String!
+  role: UserRole!
 
   """User account settings"""
   settings: UserSettings
@@ -331,6 +373,15 @@ type User {
 
   """Date the user was last updated"""
   updatedAt: DateTime!
+}
+
+"""Available user roles"""
+enum UserRole {
+  ADMINISTRATOR
+  LOCAL_AUTHORITY
+  ORGANIZATION
+  STORE
+  USER
 }
 
 type UserSettings {
