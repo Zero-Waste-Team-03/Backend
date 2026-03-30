@@ -425,7 +425,9 @@ describe('UserService', () => {
 
       userRepository.findOne.mockResolvedValue(user);
       jest.spyOn(hashUtils, 'compareHash').mockResolvedValue(true);
-      jest.spyOn(hashUtils, 'generateHash').mockResolvedValue('hashed-new-password');
+      jest
+        .spyOn(hashUtils, 'generateHash')
+        .mockResolvedValue('hashed-new-password');
       userRepository.save.mockResolvedValue({});
 
       const result = await service.changePassword('u1', passwordInput);

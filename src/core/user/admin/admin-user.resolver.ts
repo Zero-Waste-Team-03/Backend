@@ -1,12 +1,4 @@
-import {
-  Resolver,
-  Query,
-  Args,
-  ResolveField,
-  Parent,
-  Context,
-  Mutation,
-} from '@nestjs/graphql';
+import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UserService } from '../v1/user.service';
 import { UserRoleValues } from '../entities/user.entity';
@@ -18,8 +10,6 @@ import { UserStatsResponse } from '../graphql/types/user-stats.type';
 import { UserType } from '../../authentication/graphql/types/user.type';
 import { Paginated } from '../../../common/graphql/types/pagination.type';
 import { ObjectType } from '@nestjs/graphql';
-import { IDataLoaders } from '../../../common/modules/dataloader/dataloader.interface';
-import { LocationType } from '../../authentication/graphql/types/location.type';
 import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
 
 @ObjectType('PaginatedUsers')
@@ -77,14 +67,5 @@ export class AdminUserResolver {
     @Args('input') input: AdminCreateAccountInput,
   ): Promise<UserType> {
     return this.userService.adminCreateAccount(input);
-  }
-
-  @ResolveField(() => LocationType, { nullable: true })
-  async location(
-    @Parent() user: UserType,
-    @Context() { loaders }: { loaders: IDataLoaders },
-  ): Promise<LocationType | null> {
-    if (!user.locationId) return null;
-    return await loaders.locationLoader.load(user.locationId);
   }
 }

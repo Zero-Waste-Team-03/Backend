@@ -1,4 +1,12 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UserService } from './v1/user.service';
 import { UserType } from '../authentication/graphql/types/user.type';
@@ -8,6 +16,9 @@ import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { User } from './entities/user.entity';
 import { ChangePasswordInput } from 'src/core/user/graphql/inputs/change-password.input';
+import { LocationType } from '../authentication/graphql/types/location.type';
+import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
+import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
 /**
  * GraphQL resolver for user operations
@@ -120,5 +131,21 @@ export class UserResolver {
   })
   async deleteAccount(@USER() user: User): Promise<MessageResponseType> {
     return this.userService.deleteUser(user.id);
+  }
+  @ResolveField(() => LocationType, { nullable: true })
+  async location(
+    @Parent() user: UserType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<LocationType | null> {
+    if (!user.locationId) return null;
+    return await loaders.locationLoader.load(user.locationId);
+  }
+  @ResolveField(() => AttachementType, { nullable: true })
+  async avatar(
+    @Parent() user: UserType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<AttachementType | null> {
+    if (!user.avatarAttachmentId) return null;
+    return await loaders.attachmentLoader.load(user.avatarAttachmentId);
   }
 }

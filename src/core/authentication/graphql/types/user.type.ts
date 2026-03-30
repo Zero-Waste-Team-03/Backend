@@ -1,6 +1,7 @@
 import { Field, ObjectType, Int } from '@nestjs/graphql';
 import { LocationType } from './location.type';
 import { UserSettingsType } from '../../../user/graphql/types/user-settings.type';
+import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
 export enum UserRoleType {
   USER = 'User',
@@ -79,6 +80,10 @@ export class UserType {
   })
   lastChangedPasswordDate?: Date;
 
+  @Field(() => AttachementType, {
+    description: 'User avatar attachment details',
+  })
+  avatar?: AttachementType;
   @Field(() => UserSettingsType, {
     nullable: true,
     description: 'User account settings',
