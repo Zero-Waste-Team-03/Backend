@@ -82,6 +82,7 @@ export class UserType {
 
   @Field(() => AttachementType, {
     description: 'User avatar attachment details',
+    nullable: true,
   })
   avatar?: AttachementType;
   @Field(() => UserSettingsType, {
