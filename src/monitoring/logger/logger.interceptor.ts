@@ -29,6 +29,7 @@ export class LoggerInterceptor implements NestInterceptor {
     private readonly alsService: AsyncLocalStorage<LoggerStore>,
   ) {}
   logger = new Logger(LoggerInterceptor.name);
+  SKIP_PATHS = ['/health']; // Paths to skip logging
 
   intercept(
     context: ExecutionContext,
@@ -55,6 +56,9 @@ export class LoggerInterceptor implements NestInterceptor {
       request = context.switchToHttp().getRequest<Request>();
       requestPath = request.path;
       requestMethod = request.method;
+    }
+    if (this.SKIP_PATHS.includes(requestPath)) {
+      return next.handle();
     }
 
     const userIp = request.ip;
