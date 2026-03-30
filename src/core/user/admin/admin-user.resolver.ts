@@ -21,6 +21,7 @@ import { ObjectType } from '@nestjs/graphql';
 import { IDataLoaders } from '../../../common/modules/dataloader/dataloader.interface';
 import { LocationType } from '../../authentication/graphql/types/location.type';
 import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
+import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
 @ObjectType('PaginatedUsers')
 export class PaginatedUsersResponse extends Paginated(UserType) {}
@@ -86,5 +87,13 @@ export class AdminUserResolver {
   ): Promise<LocationType | null> {
     if (!user.locationId) return null;
     return await loaders.locationLoader.load(user.locationId);
+  }
+  @ResolveField(() => AttachementType, { nullable: true })
+  async avatar(
+    @Parent() user: UserType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<AttachementType | null> {
+    if (!user.avatarAttachmentId) return null;
+    return await loaders.attachmentLoader.load(user.avatarAttachmentId);
   }
 }
