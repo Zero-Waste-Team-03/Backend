@@ -21,9 +21,9 @@ export class AdminCreateAccountInput {
   @IsNotEmpty()
   email: string;
 
-  @Field(() => String, {
+  @Field(() => UserRoleValues, {
     description:
-      'Role to assign: "Administrator", "Organizations", "Stores", or "User"',
+      'Role to assign: "Administrator", "Organizations", "Stores", "User" or "Local Authority"',
   })
   @IsEnum(UserRoleValues)
   role: UserRole;

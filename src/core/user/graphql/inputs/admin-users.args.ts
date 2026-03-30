@@ -7,6 +7,7 @@ import {
   UserStatus,
 } from '../../entities/user.entity';
 
+
 @ArgsType()
 export class AdminUsersArgs {
   @Field(() => Int, { defaultValue: 1, description: 'Page number' })
@@ -29,7 +30,10 @@ export class AdminUsersArgs {
   @IsOptional()
   search?: string;
 
-  @Field(() => String, { nullable: true, description: 'Filter by user role' })
+  @Field(() => UserRoleValues, {
+    nullable: true,
+    description: 'Filter by user role',
+  })
   @IsEnum(UserRoleValues)
   @IsOptional()
   role?: UserRole;

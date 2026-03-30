@@ -2,19 +2,13 @@ import { Field, ObjectType, Int } from '@nestjs/graphql';
 import { LocationType } from './location.type';
 import { UserSettingsType } from '../../../user/graphql/types/user-settings.type';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
+import { UserRole, UserRoleValues } from 'src/core/user/entities/user.entity';
+import { registerEnumType } from '@nestjs/graphql';
 
-export enum UserRoleType {
-  USER = 'User',
-  LOCAL_AUTHORITY = 'Local Authority',
-  ORGANIZATION = 'Organizations',
-  STORE = 'Stores',
-  ADMINISTRATOR = 'Administrator',
-}
-
-export enum UserStatusType {
-  ACTIVE = 'Active',
-  SUSPENDED = 'Suspended',
-}
+registerEnumType(UserRoleValues, {
+  name: 'UserRole',
+  description: 'Available user roles',
+});
 
 /**
  * GraphQL User object type
@@ -39,8 +33,8 @@ export class UserType {
   })
   description?: string;
 
-  @Field(() => String, { description: 'User role' })
-  role: string;
+  @Field(() => UserRoleValues, { description: 'User role' })
+  role: UserRole;
 
   @Field(() => Int, { description: 'User reputation score' })
   reputationScore: number;
