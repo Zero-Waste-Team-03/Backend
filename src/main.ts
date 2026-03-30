@@ -173,8 +173,9 @@ async function bootstrap() {
 
   //RUNNING THE APPLICATION
   const port = process.env.PORT || 3000;
+  const appInterface = process.env.APP_INTERFACE || '0.0.0.0';
 
-  await app.listen(port);
+  await app.listen(port, appInterface);
 }
 const cluserizeApp =
   (process.env.CLUSTERIZE_APP || 'false').toLowerCase() === 'true';
