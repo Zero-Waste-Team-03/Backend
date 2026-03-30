@@ -4,7 +4,7 @@ import {
   UploadStatusValues,
 } from '../entities/attachment.entity';
 
-registerEnumType(() => UploadStatusValues, { name: 'UploadStatusValues' });
+registerEnumType(UploadStatusValues, { name: 'UploadStatusValues' });
 @ObjectType('Attachment')
 export class AttachementType {
   @Field(() => String, { description: 'Attachment unique identifier' })
