@@ -1,15 +1,16 @@
-import { Field, registerEnumType } from '@nestjs/graphql';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import {
   UploadStatus,
   UploadStatusValues,
 } from '../entities/attachment.entity';
 
 registerEnumType(() => UploadStatusValues, { name: 'UploadStatusValues' });
+@ObjectType('Attachment')
 export class AttachementType {
   @Field(() => String, { description: 'Attachment unique identifier' })
   id: string;
 
-  @Field(() => String, { description: 'URL of the attachment' })
+  @Field(() => String, { description: 'URL of the attachment', nullable: true })
   url: string;
   @Field(() => String, { description: 'Original file name of the attachment' })
   fileName: string;
@@ -20,6 +21,7 @@ export class AttachementType {
 
   @Field(() => UploadStatusValues, {
     description: 'Current upload status of the attachment',
+    nullable: true,
   })
   uploadStatus: UploadStatus;
   @Field(() => String, {
@@ -28,6 +30,7 @@ export class AttachementType {
   uploadedById: string;
   @Field(() => String, {
     description: 'ID of the background job processing the upload',
+    nullable: true,
   })
   jobId: string;
 
