@@ -10,6 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { UserSettingsInput } from '../../../user/graphql/inputs/user-settings.input';
 import { LocationInput } from '../../../../common/locations/graphql/inputs/location.input';
+import { IsAttachmentExist } from '../../../../common/modules/attachment/decorators/is-attachment-exist.decorator';
 
 /**
  * Input type for updating user profile
@@ -50,6 +51,7 @@ export class UpdateProfileInput {
   })
   @IsOptional()
   @IsUUID()
+  @IsAttachmentExist()
   avatarAttachmentId?: string;
 
   @Field(() => UserSettingsInput, {
