@@ -276,15 +276,16 @@ export class UserService {
 
       return await this.userRepository.save(user);
     } catch (error) {
+      if (error instanceof EntityNotFoundError) {
+        throw new NotFoundException({ errCode: 'user_not_found' });
+      }
+
       this.logger.error(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         `Error updating user profile ${id}: ${error.message}`,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         error.stack,
       );
-      if (error instanceof EntityNotFoundError) {
-        throw new NotFoundException({ errCode: 'user_not_found' });
-      }
       throw error;
     }
   }
