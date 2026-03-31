@@ -10,8 +10,9 @@ import {
   UserRoleValues,
   UserStatusValues,
 } from 'src/core/user/entities/user.entity';
+import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository, LessThan } from 'typeorm';
+import { Not, Repository, LessThan, EntityNotFoundError } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import {
@@ -47,6 +48,8 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    @InjectRepository(UserSettings)
+    private readonly userSettingsRepository: Repository<UserSettings>,
     @Inject(appConfig.KEY)
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     @InjectQueue(QUEUE_NAME.MAIL)
@@ -63,7 +66,6 @@ export class UserService {
     let totalCount: number;
 
     if (search) {
-      // Use query builder when search requires OR conditions
       const queryBuilder = this.userRepository.createQueryBuilder('user');
 
       queryBuilder.where(
@@ -82,7 +84,6 @@ export class UserService {
       queryBuilder.skip(skip).take(limit).orderBy('user.createdAt', 'DESC');
       [items, totalCount] = await queryBuilder.getManyAndCount();
     } else {
-      // Use standard repository for simple queries
       const where: Record<string, any> = {};
       if (role) where.role = role;
       if (status) where.status = status;
@@ -209,7 +210,7 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
+  async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
     const { email, displayName, role } = data;
 
     const existingUser = await this.userRepository.findOne({
@@ -247,13 +248,44 @@ async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
     try {
       const user = await this.userRepository.findOneOrFail({
         where: { id },
-        relations: ['settings', 'location'],
+        relations: ['location', 'settings'],
       });
 
-      Object.assign(user, data);
+      const { location, settings, ...restOfData } = data;
+
+      if (location) {
+        if (user.location) {
+          Object.assign(user.location, location);
+        } else {
+          user.location = this.locationRepository.create(location);
+        }
+      }
+
+      if (settings) {
+        if (user.settings) {
+          Object.assign(user.settings, settings);
+        } else {
+          user.settings = this.userSettingsRepository.create({
+            ...settings,
+            userId: user.id,
+          });
+        }
+      }
+
+      Object.assign(user, restOfData);
+
       return await this.userRepository.save(user);
-    } catch {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+    } catch (error) {
+      this.logger.error(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Error updating user profile ${id}: ${error.message}`,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        error.stack,
+      );
+      if (error instanceof EntityNotFoundError) {
+        throw new NotFoundException({ errCode: 'user_not_found' });
+      }
+      throw error;
     }
   }
 

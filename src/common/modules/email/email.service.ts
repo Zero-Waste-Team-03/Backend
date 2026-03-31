@@ -34,7 +34,11 @@ export class EmailService {
     }
   }
 
-  async sendPasswordResetEmail(to: string, token: string, frontUrl: string): Promise<void> {
+  async sendPasswordResetEmail(
+    to: string,
+    token: string,
+    frontUrl: string,
+  ): Promise<void> {
     try {
       await this.mailerService.sendMail({
         to,

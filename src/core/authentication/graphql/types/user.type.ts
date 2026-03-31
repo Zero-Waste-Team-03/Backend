@@ -84,4 +84,10 @@ export class UserType {
     description: 'User account settings',
   })
   settings?: UserSettingsType;
+
+  @Field(() => AttachementType, {
+    description: 'Alias for avatar attachment details',
+    nullable: true,
+  })
+  attachment?: AttachementType;
 }
