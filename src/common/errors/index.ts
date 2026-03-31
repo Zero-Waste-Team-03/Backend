@@ -4,4 +4,4 @@ export {
   type ErrorCodeValue,
 } from './error-codes';
 export type { ErrorArgsMap } from './error-args';
-export { throwAppError } from './throw-app-error';
+export { throwAppError, createAppError } from './throw-app-error';

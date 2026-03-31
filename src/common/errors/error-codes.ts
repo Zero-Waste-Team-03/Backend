@@ -114,6 +114,12 @@ export const ERROR_CODES = {
     message: 'Attachment not found.',
     args: { id: 'string' } as const,
   },
+  UPLOAD_FAILED_ATTACHMENT: {
+    code: 'upload.failed_attachment',
+    httpStatus: 400,
+    message: 'Attachment upload failed.',
+    args: { id: 'string' } as const,
+  },
   UPLOAD_IDS_REQUIRED: {
     code: 'upload.ids_required',
     httpStatus: 400,
