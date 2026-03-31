@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-  BadRequestException,
-  Inject,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import {
   compareHash,
   generateHash,
@@ -28,6 +21,7 @@ import { AttachmentService } from 'src/common/modules/attachment/attachment.serv
 import { UploadStatusValues } from 'src/common/modules/attachment/entities/attachment.entity';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import { RefreshTokenPayload } from '../interfaces/refresh-token.dto';
+import { throwAppError } from 'src/common/errors';
 import appConfig from 'src/config/app.config';
 
 @Injectable()
@@ -48,17 +42,17 @@ export class AuthenticationService {
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findBasicAuthedUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException({ errCode: 'invalid_password_or_user' });
+      throwAppError('AUTH_INVALID_CREDENTIALS');
     }
     if (!user.isMailVerified) {
-      throw new UnauthorizedException({ errCode: 'email_not_verified' });
+      throwAppError('AUTH_EMAIL_NOT_VERIFIED');
     }
     if (user.status == UserStatusValues.SUSPENDED) {
-      throw new UnauthorizedException({ errCode: 'account_suspended' });
+      throwAppError('AUTH_ACCOUNT_SUSPENDED');
     }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException({ errCode: 'invalid_password_or_user' });
+      throwAppError('AUTH_INVALID_CREDENTIALS');
     }
     return user;
   }
@@ -75,7 +69,7 @@ export class AuthenticationService {
       passwordHash,
     );
     if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException({ errCode: 'invalid_current_password' });
+      throwAppError('AUTH_INVALID_CURRENT_PASSWORD');
     }
     const newHashedPassword = await generateHash(newPassword);
     const updateData: Partial<User> = {
@@ -136,7 +130,7 @@ export class AuthenticationService {
       `verification:${data.email}`,
     );
     if (!storedCode || storedCode !== otp) {
-      throw new BadRequestException('Invalid verification code');
+      throwAppError('AUTH_INVALID_VERIFICATION_CODE');
     }
 
     await this.userService.createUser(data);
@@ -150,9 +144,7 @@ export class AuthenticationService {
   async logOauthUser(profile: Profile): Promise<User> {
     const email = profile.emails?.[0]?.value;
     if (!email) {
-      throw new UnauthorizedException(
-        'Google account does not have a verified email address.',
-      );
+      throwAppError('AUTH_OAUTH_NO_EMAIL');
     }
 
     const existingUser = await this.userService.findByEmail(email);
@@ -205,12 +197,10 @@ export class AuthenticationService {
   async forgotPassword(email: string) {
     const user = await this.userService.findByEmail(email);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throwAppError('USER_NOT_FOUND');
     }
     if (!user.passwordHash || user.passwordHash === '') {
-      throw new BadRequestException(
-        'Cannot reset password for OAuth users. Please log in with your provider.',
-      );
+      throwAppError('AUTH_OAUTH_PASSWORD_RESET');
     }
     const token = uuidv4();
     await this.redisService.set(`password-reset:${token}`, user.email, 600);
@@ -229,11 +219,11 @@ export class AuthenticationService {
       `password-reset:${token}`,
     );
     if (!email) {
-      throw new BadRequestException('Invalid reset token');
+      throwAppError('AUTH_INVALID_RESET_TOKEN');
     }
     const user = await this.userService.findByEmail(email);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throwAppError('USER_NOT_FOUND');
     }
     user.passwordHash = await generateHash(password);
     user.resetVersion += 1;
