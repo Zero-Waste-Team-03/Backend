@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import {
   User,
@@ -12,7 +7,7 @@ import {
 } from 'src/core/user/entities/user.entity';
 import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository, LessThan, EntityNotFoundError } from 'typeorm';
+import { Not, Repository, LessThan } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import {
@@ -34,6 +29,8 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { Queue } from 'bullmq';
 import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as crypto from 'crypto';
+import { throwAppError } from 'src/common/errors';
+import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 
 export interface OAuthUserPayload {
   email: string;
@@ -54,6 +51,7 @@ export class UserService {
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     @InjectQueue(QUEUE_NAME.MAIL)
     private readonly mailQueue: Queue,
+    private readonly attachmentService: AttachmentService,
   ) {}
 
   async getPaginatedUsers(
@@ -112,7 +110,7 @@ export class UserService {
     this.logger.log(`Suspending user with ID: ${id}`);
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     if (user.status === UserStatusValues.SUSPENDED) {
       this.logger.warn(`User with ID: ${id} is already suspended`);
@@ -127,7 +125,7 @@ export class UserService {
     this.logger.log(`Activating user with ID: ${id}`);
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     if (user.status === UserStatusValues.ACTIVE) {
       this.logger.warn(`User with ID: ${id} is already active`);
@@ -217,7 +215,7 @@ export class UserService {
       where: { email },
     });
     if (existingUser) {
-      throw new BadRequestException({ errCode: 'user_already_exists' });
+      throwAppError('USER_ALREADY_EXISTS');
     }
 
     const temporaryPassword = crypto.randomBytes(8).toString('hex');
@@ -245,49 +243,40 @@ export class UserService {
   }
 
   async updateUser(id: string, data: UpdateUserDto) {
+    let user: User;
     try {
-      const user = await this.userRepository.findOneOrFail({
+      user = await this.userRepository.findOneOrFail({
         where: { id },
         relations: ['location', 'settings'],
       });
-
-      const { location, settings, ...restOfData } = data;
-
-      if (location) {
-        if (user.location) {
-          Object.assign(user.location, location);
-        } else {
-          user.location = this.locationRepository.create(location);
-        }
-      }
-
-      if (settings) {
-        if (user.settings) {
-          Object.assign(user.settings, settings);
-        } else {
-          user.settings = this.userSettingsRepository.create({
-            ...settings,
-            userId: user.id,
-          });
-        }
-      }
-
-      Object.assign(user, restOfData);
-
-      return await this.userRepository.save(user);
-    } catch (error) {
-      if (error instanceof EntityNotFoundError) {
-        throw new NotFoundException({ errCode: 'user_not_found' });
-      }
-
-      this.logger.error(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `Error updating user profile ${id}: ${error.message}`,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        error.stack,
-      );
-      throw error;
+    } catch {
+      throwAppError('USER_NOT_FOUND');
     }
+
+    const { location, settings, avatarAttachmentId, ...restOfData } = data;
+
+    if (avatarAttachmentId) {
+      try{
+        const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
+        user.avatarAttachmentId = attachment.id;
+      }catch{
+          throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
+      }
+    }
+
+    if (location) {
+        user.location = this.locationRepository.create(location);
+    }
+
+    if (settings) {
+        user.settings = this.userSettingsRepository.create({
+          ...settings,
+          userId: user.id,
+        });
+    }
+    Object.assign(user, restOfData);
+
+    return await this.userRepository.save(user);
   }
 
   async changePassword(
@@ -296,7 +285,7 @@ export class UserService {
   ): Promise<MessageResponseType> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
 
     const isPasswordValid = await compareHash(
@@ -304,7 +293,7 @@ export class UserService {
       user.passwordHash,
     );
     if (!isPasswordValid) {
-      throw new BadRequestException({ errCode: 'invalid_password' });
+      throwAppError('USER_INVALID_PASSWORD');
     }
 
     user.passwordHash = await generateHash(data.newPassword);
@@ -346,7 +335,7 @@ export class UserService {
       });
       //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
   }
 
@@ -359,7 +348,7 @@ export class UserService {
       return;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
   }
   async getHashedPassword(
@@ -370,14 +359,14 @@ export class UserService {
       where: { id: userId },
     });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     return { passwordHash: user.passwordHash, resetVersion: user.resetVersion };
   }
   async deleteUser(id: string): Promise<MessageResponseType> {
     const deleteResult = await this.userRepository.softDelete(id);
     if (deleteResult.affected === 0) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     return { message: 'User deleted successfully' };
   }

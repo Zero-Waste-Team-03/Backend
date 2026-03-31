@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import DataLoader from 'dataloader';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Attachment } from '../attachment/entities/attachment.entity';
+import { Attachment, UploadStatusValues } from '../attachment/entities/attachment.entity';
+import { createAppError } from '../../errors';
 
 @Injectable()
 export class AttachmentDataLoader {
@@ -18,9 +19,14 @@ export class AttachmentDataLoader {
           where: { id: In([...attachmentIds]) },
         });
 
-        // Map the results back to the original ids order
         const attachmentMap = new Map(attachments.map((att) => [att.id, att]));
-        return attachmentIds.map((id) => attachmentMap.get(id) || null);
+        return attachmentIds.map((id) => {
+          const attachment = attachmentMap.get(id);
+          if (attachment && attachment.uploadStatus === UploadStatusValues.FAILED) {
+            return createAppError('UPLOAD_FAILED_ATTACHMENT', { id });
+          }
+          return attachment || null;
+        });
       },
       {
         cache: true,

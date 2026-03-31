@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
@@ -18,6 +13,7 @@ import { SendNotificationResponseDto } from './dto/send-notification-response.dt
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { isError } from 'lodash';
+import { throwAppError } from 'src/common/errors';
 
 const OLD_NOTIFICATION_DELETE_DAYS = 7;
 
@@ -95,7 +91,7 @@ export class NotificationsService {
       where: { id, receiverId: userId },
     });
     if (!notification) {
-      throw new NotFoundException({ errCode: 'notification_not_found' });
+      throwAppError('NOTIFICATION_NOT_FOUND');
     }
     return notification;
   }
@@ -126,7 +122,7 @@ export class NotificationsService {
       await this.notificationRepo.delete({ id, receiverId: userId });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new NotFoundException({ errCode: 'notification_not_found' });
+      throwAppError('NOTIFICATION_NOT_FOUND');
     }
   }
 
@@ -203,7 +199,7 @@ export class NotificationsService {
   > {
     const tokens = await this.tokenRepo.find({ where: { userId } });
     if (!tokens || tokens.length === 0) {
-      throw new BadRequestException('No active tokens found for the user');
+      throwAppError('NOTIFICATION_NO_ACTIVE_TOKENS');
     }
     return tokens.map((token) => {
       return { token: token.fcmToken };

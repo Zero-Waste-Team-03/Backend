@@ -105,13 +105,14 @@ describe('UploadController (e2e)', () => {
 
       return request(app.getHttpServer() as App)
         .post('/upload/file')
+        .query({ uploadType: 'USER_PROFILE' })
         .attach('file', Buffer.from('test content'), 'test.txt')
         .expect(201)
         .expect(() => {
           expect(mockUploadService.uploadFile).toHaveBeenCalledWith(
             expect.any(Object),
             'test-user-id',
-            undefined,
+            { uploadType: 'USER_PROFILE' },
           );
         });
     });
@@ -143,6 +144,7 @@ describe('UploadController (e2e)', () => {
 
       return request(app.getHttpServer() as App)
         .post('/upload/files')
+        .query({ uploadType: 'USER_PROFILE' })
         .attach('files', Buffer.from('test content1'), 'test1.txt')
         .attach('files', Buffer.from('test content2'), 'test2.txt')
         .expect(201)
@@ -150,7 +152,7 @@ describe('UploadController (e2e)', () => {
           expect(mockUploadService.uploadFiles).toHaveBeenCalledWith(
             expect.arrayContaining([expect.any(Object)]),
             'test-user-id',
-            undefined,
+            { uploadType: 'USER_PROFILE' },
           );
         });
     });
