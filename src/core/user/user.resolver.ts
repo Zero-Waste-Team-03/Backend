@@ -148,4 +148,12 @@ export class UserResolver {
     if (!user.avatarAttachmentId) return null;
     return await loaders.attachmentLoader.load(user.avatarAttachmentId);
   }
+
+  @ResolveField(() => AttachementType, { nullable: true })
+  async attachment(
+    @Parent() user: UserType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<AttachementType | null> {
+    return this.avatar(user, { loaders });
+  }
 }
