@@ -97,6 +97,11 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'At least one file is required.',
   },
+  UPLOAD_TYPE_REQUIRED: {
+    code: 'upload.type_required',
+    httpStatus: 400,
+    message: 'Upload type is required.',
+  },
   UPLOAD_MAX_FILES_EXCEEDED: {
     code: 'upload.max_files_exceeded',
     httpStatus: 400,

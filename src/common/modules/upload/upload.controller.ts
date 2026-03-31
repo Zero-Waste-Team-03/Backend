@@ -47,23 +47,22 @@ export class UploadController {
   @ApiQuery({
     name: 'uploadType',
     enum: UploadTypeValues,
-    required: false,
+    required: true,
     description: 'The type/context of the upload',
   })
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @USER('id') userId: string,
-    @Query('uploadType') uploadType?: UploadType,
+    @Query('uploadType') uploadType: UploadType,
   ) {
     if (!file) {
       throwAppError('UPLOAD_FILE_REQUIRED');
     }
-    return this.uploadService.uploadFile(
-      file,
-      userId,
-      uploadType ? { uploadType } : undefined,
-    );
+    if (!uploadType) {
+      throwAppError('UPLOAD_TYPE_REQUIRED');
+    }
+    return this.uploadService.uploadFile(file, userId, { uploadType });
   }
 
   @Post('files')
@@ -73,23 +72,22 @@ export class UploadController {
   @ApiQuery({
     name: 'uploadType',
     enum: UploadTypeValues,
-    required: false,
+    required: true,
     description: 'The type/context of the upload',
   })
   @UseInterceptors(FilesInterceptor('files', 5))
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
     @USER('id') userId: string,
-    @Query('uploadType') uploadType?: UploadType,
+    @Query('uploadType') uploadType: UploadType,
   ) {
     if (!files || files.length === 0) {
       throwAppError('UPLOAD_FILES_REQUIRED');
     }
-    return this.uploadService.uploadFiles(
-      files,
-      userId,
-      uploadType ? { uploadType } : undefined,
-    );
+    if (!uploadType) {
+      throwAppError('UPLOAD_TYPE_REQUIRED');
+    }
+    return this.uploadService.uploadFiles(files, userId, { uploadType });
   }
 
   @Delete(':id')
