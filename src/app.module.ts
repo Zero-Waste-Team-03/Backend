@@ -25,6 +25,7 @@ import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
 import { APP_FILTER } from '@nestjs/core';
+import { ErrorsModule } from './common/errors/errors.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { APP_FILTER } from '@nestjs/core';
 
     CommonModule,
     CoreModule,
+    ErrorsModule,
   ],
   controllers: [AppController],
   providers: [
