@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import {
   compareHash,
   generateHash,

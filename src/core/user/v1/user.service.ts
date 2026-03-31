@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { registerDto } from 'src/core/authentication/v1/dtos/requests/register.dto';
 import {
   User,
@@ -33,6 +28,7 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { Queue } from 'bullmq';
 import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as crypto from 'crypto';
+import { throwAppError } from 'src/common/errors';
 
 export interface OAuthUserPayload {
   email: string;
@@ -111,7 +107,7 @@ export class UserService {
     this.logger.log(`Suspending user with ID: ${id}`);
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     if (user.status === UserStatusValues.SUSPENDED) {
       this.logger.warn(`User with ID: ${id} is already suspended`);
@@ -126,7 +122,7 @@ export class UserService {
     this.logger.log(`Activating user with ID: ${id}`);
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     if (user.status === UserStatusValues.ACTIVE) {
       this.logger.warn(`User with ID: ${id} is already active`);
@@ -216,7 +212,7 @@ export class UserService {
       where: { email },
     });
     if (existingUser) {
-      throw new BadRequestException({ errCode: 'user_already_exists' });
+      throwAppError('USER_ALREADY_EXISTS');
     }
 
     const temporaryPassword = crypto.randomBytes(8).toString('hex');
@@ -253,7 +249,7 @@ export class UserService {
       Object.assign(user, data);
       return await this.userRepository.save(user);
     } catch {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
   }
 
@@ -263,7 +259,7 @@ export class UserService {
   ): Promise<MessageResponseType> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
 
     const isPasswordValid = await compareHash(
@@ -271,7 +267,7 @@ export class UserService {
       user.passwordHash,
     );
     if (!isPasswordValid) {
-      throw new BadRequestException({ errCode: 'invalid_password' });
+      throwAppError('USER_INVALID_PASSWORD');
     }
 
     user.passwordHash = await generateHash(data.newPassword);
@@ -313,7 +309,7 @@ export class UserService {
       });
       //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
   }
 
@@ -326,7 +322,7 @@ export class UserService {
       return;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
   }
   async getHashedPassword(
@@ -337,14 +333,14 @@ export class UserService {
       where: { id: userId },
     });
     if (!user) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     return { passwordHash: user.passwordHash, resetVersion: user.resetVersion };
   }
   async deleteUser(id: string): Promise<MessageResponseType> {
     const deleteResult = await this.userRepository.softDelete(id);
     if (deleteResult.affected === 0) {
-      throw new NotFoundException({ errCode: 'user_not_found' });
+      throwAppError('USER_NOT_FOUND');
     }
     return { message: 'User deleted successfully' };
   }
