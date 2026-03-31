@@ -8,6 +8,7 @@ import {
   UserStatusValues,
 } from 'src/core/user/entities/user.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
+import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { AdminUsersArgs } from 'src/core/user/graphql/inputs/admin-users.args';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -15,6 +16,7 @@ import appConfig from 'src/config/app.config';
 import { AdminCreateAccountInput } from 'src/core/user/graphql/inputs/admin-create-account.input';
 import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as hashUtils from 'src/common/utils/authentication/hash.utils';
+import { EntityNotFoundError } from 'typeorm';
 
 describe('UserService', () => {
   let service: UserService;
@@ -29,6 +31,10 @@ describe('UserService', () => {
     save: jest.Mock;
     create: jest.Mock;
     update: jest.Mock;
+  };
+  let userSettingsRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
   };
   let mailQueue: {
     add: jest.Mock;
@@ -68,6 +74,12 @@ describe('UserService', () => {
       create: jest.fn().mockImplementation((dto) => dto),
     };
 
+    userSettingsRepository = {
+      //eslint-disable-next-line
+      create: jest.fn().mockImplementation((dto) => dto),
+      save: jest.fn().mockImplementation((val) => Promise.resolve(val)),
+    };
+
     mailQueue = {
       add: jest.fn(),
     };
@@ -77,6 +89,10 @@ describe('UserService', () => {
         UserService,
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Location), useValue: {} },
+        {
+          provide: getRepositoryToken(UserSettings),
+          useValue: userSettingsRepository,
+        },
         {
           provide: appConfig.KEY,
           useValue: { frontUrl: 'http://localhost:3000' },
@@ -353,7 +369,9 @@ describe('UserService', () => {
 
   describe('updateUser', () => {
     it('should throw NotFoundException when user not found', async () => {
-      userRepository.findOneOrFail.mockRejectedValue(new Error());
+      userRepository.findOneOrFail.mockRejectedValue(
+        new EntityNotFoundError(User, { id: 'u1' }),
+      );
 
       await expect(
         service.updateUser('u1', { displayName: 'New Name' }),
@@ -379,7 +397,7 @@ describe('UserService', () => {
 
       expect(userRepository.findOneOrFail).toHaveBeenCalledWith({
         where: { id: 'u1' },
-        relations: ['settings', 'location'],
+        relations: ['location', 'settings'],
       });
       expect(result.displayName).toBe('New Name');
       expect(result.settings.isNewDonationsAlertsEnabled).toBe(false);
