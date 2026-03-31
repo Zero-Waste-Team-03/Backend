@@ -52,9 +52,7 @@ describe('Errors Contract Endpoint (e2e)', () => {
       .get('/api/v1/errors')
       .expect(200);
 
-    const codes = (response.body as Array<{ code: string }>).map(
-      (e) => e.code,
-    );
+    const codes = (response.body as Array<{ code: string }>).map((e) => e.code);
     expect(codes).toContain('auth.invalid_credentials');
     expect(codes).toContain('user.not_found');
     expect(codes).toContain('upload.max_files_exceeded');
