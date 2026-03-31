@@ -123,5 +123,4 @@ export const ERROR_CODES = {
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;
-export type ErrorCodeValue =
-  (typeof ERROR_CODES)[ErrorCodeKey]['code'];
+export type ErrorCodeValue = (typeof ERROR_CODES)[ErrorCodeKey]['code'];
