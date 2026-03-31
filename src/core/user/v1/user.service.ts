@@ -209,7 +209,7 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
+async adminCreateAccount(data: AdminCreateAccountInput): Promise<User> {
     const { email, displayName, role } = data;
 
     const existingUser = await this.userRepository.findOne({

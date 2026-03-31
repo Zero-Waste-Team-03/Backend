@@ -60,8 +60,8 @@ export class MailProcessor extends WorkerHost {
   handleSendPasswordResetMailJob(
     job: Job<SendPasswordResetMailDto>,
   ): Promise<void> {
-    const { to, token } = job.data;
-    return this.mailService.sendPasswordResetEmail(to, token);
+    const { to, token, frontUrl } = job.data;
+    return this.mailService.sendPasswordResetEmail(to, token, frontUrl);
   }
 
   handleSendPasswordChangedAlertJob(
