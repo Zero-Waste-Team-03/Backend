@@ -7,7 +7,6 @@ import {
   UserStatus,
 } from '../../entities/user.entity';
 
-
 @ArgsType()
 export class AdminUsersArgs {
   @Field(() => Int, { defaultValue: 1, description: 'Page number' })

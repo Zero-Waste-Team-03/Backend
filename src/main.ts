@@ -16,6 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from './common/constants/queues';
 import { LoggerServiceBuilder } from './monitoring/logger/logger.service';
+import { useContainer } from 'class-validator';
 
 function setupBullBoard(app: INestApplication, configService: ConfigService) {
   const bullBoardPath = '/bull-board';
@@ -57,6 +58,7 @@ async function bootstrap() {
       credentials: true,
     },
   });
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
   const configService = app.get(ConfigService);
   const logger = app
