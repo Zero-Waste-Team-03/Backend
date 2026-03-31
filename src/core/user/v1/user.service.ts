@@ -7,7 +7,7 @@ import {
 } from 'src/core/user/entities/user.entity';
 import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository, LessThan, EntityNotFoundError } from 'typeorm';
+import { Not, Repository, LessThan } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import {

@@ -1,18 +1,1 @@
-#!/bin/bash
-. "$(dirname "$0")/_/husky.sh"
-
-# Sync .env to GitHub Secrets using hash-check (since .env is ignored by git)
-HASH_FILE=".husky/.env.hash"
-if [ -f .env ]; then
-    CURRENT_HASH=$(md5sum .env | awk '{ print $1 }')
-    if [ ! -f "$HASH_FILE" ] || [ "$CURRENT_HASH" != "$(cat "$HASH_FILE")" ]; then
-        echo "--- detected local .env change, syncing to GitHub Secrets... ---"
-        chmod +x ./load_env_to_secrets.sh
-        ./load_env_to_secrets.sh
-        echo "$CURRENT_HASH" > "$HASH_FILE"
-    else
-        echo "No .env content changes, skipping secret sync."
-    fi
-else
-    echo ".env file not found, skipping sync."
-fi
+pnpm test:all
