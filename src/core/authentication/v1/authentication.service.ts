@@ -22,6 +22,7 @@ import { UploadStatusValues } from 'src/common/modules/attachment/entities/attac
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import { RefreshTokenPayload } from '../interfaces/refresh-token.dto';
 import { throwAppError } from 'src/common/errors';
+import appConfig from 'src/config/app.config';
 
 @Injectable()
 export class AuthenticationService {
@@ -31,7 +32,8 @@ export class AuthenticationService {
     private readonly jwtService: JwtService,
     @Inject(authConfig.KEY)
     private readonly authenicationConfig: ConfigType<typeof authConfig>,
-
+    @Inject(appConfig.KEY)
+    private readonly applicationConfig: ConfigType<typeof appConfig>,
     private readonly redisService: RedisService,
     private readonly attachmentService: AttachmentService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
@@ -229,6 +231,7 @@ export class AuthenticationService {
     await this.redisService.del(`password-reset:${token}`);
     await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_CHANGED_ALERT, {
       to: user.email,
+      frontUrl: this.applicationConfig.frontUrl,
     });
     return {
       message: 'Password reset successfully.',
