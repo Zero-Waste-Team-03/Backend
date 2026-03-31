@@ -23,6 +23,7 @@ describe('throwAppError', () => {
   });
 
   it('should include errCode in the exception response', () => {
+    expect.assertions(2);
     try {
       throwAppError('AUTH_INVALID_CREDENTIALS');
     } catch (e) {
@@ -36,6 +37,7 @@ describe('throwAppError', () => {
   });
 
   it('should include args when provided', () => {
+    expect.assertions(2);
     try {
       throwAppError('UPLOAD_MAX_FILES_EXCEEDED', { max: 5 });
     } catch (e) {
@@ -49,6 +51,7 @@ describe('throwAppError', () => {
   });
 
   it('should not include args when not provided', () => {
+    expect.assertions(1);
     try {
       throwAppError('AUTH_INVALID_CREDENTIALS');
     } catch (e) {

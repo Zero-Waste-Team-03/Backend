@@ -58,6 +58,6 @@ function statusToException(
     case 500:
       return InternalServerErrorException;
     default:
-      return BadRequestException;
+      return InternalServerErrorException;
   }
 }
