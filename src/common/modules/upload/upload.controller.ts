@@ -9,7 +9,6 @@ import {
   UploadedFiles,
   Query,
   ParseUUIDPipe,
-  BadRequestException,
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
@@ -33,6 +32,7 @@ import {
   UploadType,
   UploadTypeValues,
 } from 'src/infrastructure/cloudinary/types/upload-options.interface';
+import { throwAppError } from 'src/common/errors';
 
 @ApiTags('Upload')
 @Controller('upload')
@@ -57,7 +57,7 @@ export class UploadController {
     @Query('uploadType') uploadType?: UploadType,
   ) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throwAppError('UPLOAD_FILE_REQUIRED');
     }
     return this.uploadService.uploadFile(
       file,
@@ -83,7 +83,7 @@ export class UploadController {
     @Query('uploadType') uploadType?: UploadType,
   ) {
     if (!files || files.length === 0) {
-      throw new BadRequestException('Files are required');
+      throwAppError('UPLOAD_FILES_REQUIRED');
     }
     return this.uploadService.uploadFiles(
       files,

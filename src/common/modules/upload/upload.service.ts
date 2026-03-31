@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
@@ -7,6 +7,7 @@ import { AttachmentService } from '../attachment/attachment.service';
 import { UploadStatusValues } from '../attachment/entities/attachment.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { UploadingOptions } from 'src/infrastructure/cloudinary/types/upload-options.interface';
+import { throwAppError } from 'src/common/errors';
 
 @Injectable()
 export class UploadService {
@@ -51,7 +52,7 @@ export class UploadService {
     options?: UploadingOptions,
   ) {
     if (files.length > 5) {
-      throw new BadRequestException('Maximum 5 files allowed');
+      throwAppError('UPLOAD_MAX_FILES_EXCEEDED', { max: 5 });
     }
 
     return await this.dataSource.transaction(async (manager: EntityManager) => {
@@ -98,7 +99,7 @@ export class UploadService {
       userId,
     );
     if (!attachment) {
-      throw new BadRequestException(`Attachment ${id} not found`);
+      throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id });
     }
 
     if (!attachment.url) {
@@ -115,8 +116,7 @@ export class UploadService {
   }
 
   async deleteFiles(ids: string[], userId?: string) {
-    if (!ids || ids.length === 0)
-      throw new BadRequestException('Ids are required');
+    if (!ids || ids.length === 0) throwAppError('UPLOAD_IDS_REQUIRED');
 
     const attachments = await Promise.all(
       ids.map((id) => this.attachmentService.getAttachmentUrl(id, userId)),
@@ -124,9 +124,7 @@ export class UploadService {
 
     const missing = ids.filter((_, i) => !attachments[i]);
     if (missing.length > 0)
-      throw new BadRequestException(
-        `Attachments not found: ${missing.join(', ')}`,
-      );
+      throwAppError('UPLOAD_ATTACHMENTS_NOT_FOUND', { ids: missing });
 
     const withUrl = attachments
       .filter((a) => a!.url)
