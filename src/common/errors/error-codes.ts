@@ -97,6 +97,11 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'At least one file is required.',
   },
+  UPLOAD_TYPE_REQUIRED: {
+    code: 'upload.type_required',
+    httpStatus: 400,
+    message: 'Upload type is required.',
+  },
   UPLOAD_MAX_FILES_EXCEEDED: {
     code: 'upload.max_files_exceeded',
     httpStatus: 400,
@@ -107,6 +112,12 @@ export const ERROR_CODES = {
     code: 'upload.attachment_not_found',
     httpStatus: 400,
     message: 'Attachment not found.',
+    args: { id: 'string' } as const,
+  },
+  UPLOAD_FAILED_ATTACHMENT: {
+    code: 'upload.failed_attachment',
+    httpStatus: 400,
+    message: 'Attachment upload failed.',
     args: { id: 'string' } as const,
   },
   UPLOAD_IDS_REQUIRED: {

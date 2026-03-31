@@ -76,7 +76,7 @@ export class User {
   @Column('uuid', { nullable: true })
   locationId?: string;
 
-  @ManyToOne(() => Attachment, { nullable: true })
+  @ManyToOne(() => Attachment, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'avatarAttachmentId' })
   avatar: Relation<Attachment>;
 

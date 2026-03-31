@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { Attachment } from './entities/attachment.entity';
+import { Attachment, UploadStatusValues } from './entities/attachment.entity';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
 import { UpdateAttachmentDto } from './dto/update-attachment.dto';
+import { throwAppError } from '../../errors';
 
 @Injectable()
 export class AttachmentService {
@@ -34,13 +35,19 @@ export class AttachmentService {
     id: string,
     uploadedById?: string,
     manager?: EntityManager,
-  ): Promise<Attachment | null> {
+  ): Promise<Attachment> {
     const repo = manager
       ? manager.getRepository(Attachment)
       : this.attachmentRepo;
-    return await repo.findOne({
+    const attachment = await repo.findOneOrFail({
       where: { id, ...(uploadedById !== undefined && { uploadedById }) },
     });
+
+    if (attachment && attachment.uploadStatus === UploadStatusValues.FAILED) {
+      throwAppError('UPLOAD_FAILED_ATTACHMENT', { id: attachment.id });
+    }
+
+    return attachment;
   }
 
   async getAttachmentUrl(
@@ -49,9 +56,15 @@ export class AttachmentService {
   ): Promise<{ url: string; id: string } | null> {
     const attachment = await this.attachmentRepo.findOne({
       where: { id, ...(uploadedById !== undefined && { uploadedById }) },
-      select: { url: true, id: true },
+      select: { url: true, id: true, uploadStatus: true },
     });
-    return attachment || null;
+
+    if (attachment && attachment.uploadStatus === UploadStatusValues.FAILED) {
+      throwAppError('UPLOAD_FAILED_ATTACHMENT', { id: attachment.id });
+    }
+
+    if (!attachment) return null;
+    return { id: attachment.id, url: attachment.url };
   }
 
   async updateAttachment(

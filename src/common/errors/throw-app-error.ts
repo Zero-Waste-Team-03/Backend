@@ -23,12 +23,12 @@ type CodeOf<K extends ErrorCodeKey> = (typeof ERROR_CODES)[K]['code'];
  * throwAppError('AUTH_INVALID_CREDENTIALS');
  * throwAppError('UPLOAD_MAX_FILES_EXCEEDED', { max: 5 });
  */
-export function throwAppError<K extends ErrorCodeKey>(
+export function createAppError<K extends ErrorCodeKey>(
   key: K,
   ...rest: CodeOf<K> extends keyof ErrorArgsMap
     ? [args: ErrorArgsMap[CodeOf<K>]]
     : []
-): never {
+): HttpException {
   const entry = ERROR_CODES[key];
   const args = rest[0] as Record<string, unknown> | undefined;
   const payload = {
@@ -38,7 +38,16 @@ export function throwAppError<K extends ErrorCodeKey>(
   };
 
   const ExceptionClass = statusToException(entry.httpStatus);
-  throw new ExceptionClass(payload);
+  return new ExceptionClass(payload);
+}
+
+export function throwAppError<K extends ErrorCodeKey>(
+  key: K,
+  ...rest: CodeOf<K> extends keyof ErrorArgsMap
+    ? [args: ErrorArgsMap[CodeOf<K>]]
+    : []
+): never {
+  throw createAppError(key, ...rest);
 }
 
 function statusToException(

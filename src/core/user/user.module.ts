@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { UserSettings } from './entities/user-settings.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { AdminUserResolver } from './admin/admin-user.resolver';
+import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 
 /**
  * User module
@@ -18,7 +19,10 @@ import { AdminUserResolver } from './admin/admin-user.resolver';
  * Note: All user endpoints are now GraphQL-based (see user.resolver.ts)
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Location, UserSettings])],
+  imports: [
+    TypeOrmModule.forFeature([User, Location, UserSettings]),
+    AttachmentModule,
+  ],
   controllers: [],
   providers: [UserService, UserResolver, AdminUserResolver],
   exports: [UserService],

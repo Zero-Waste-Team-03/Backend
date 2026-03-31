@@ -200,9 +200,11 @@ export class UploadProcessor extends WorkerHost {
     if (job.name === UPLOAD_JOBS.UPLOAD_FILE) {
       const data = job.data as UploadFileDto;
       if (data.attachmentId) {
-        await this.attachmentService.deleteAttachment(data.attachmentId);
+        await this.attachmentService.updateAttachment(data.attachmentId, {
+          uploadStatus: UploadStatusValues.FAILED,
+        });
         this.logger.log(
-          `Deleted attachment record ${data.attachmentId} due to upload failure`,
+          `Marked attachment record ${data.attachmentId} as failed due to upload failure`,
         );
       }
     }
@@ -210,9 +212,15 @@ export class UploadProcessor extends WorkerHost {
     if (job.name === UPLOAD_JOBS.UPLOAD_FILES) {
       const data = job.data as UploadFilesDto;
       if (data.attachmentIds) {
-        await this.attachmentService.deleteAttachments(data.attachmentIds);
+        await Promise.all(
+          data.attachmentIds.map((id) =>
+            this.attachmentService.updateAttachment(id, {
+              uploadStatus: UploadStatusValues.FAILED,
+            }),
+          ),
+        );
         this.logger.log(
-          `Deleted attachment records [${data.attachmentIds.join(',')}] due to upload failure`,
+          `Marked attachment records [${data.attachmentIds.join(',')}] as failed due to upload failure`,
         );
       }
     }
@@ -220,9 +228,11 @@ export class UploadProcessor extends WorkerHost {
     if (job.name === UPLOAD_JOBS.UPLOAD_OAUTH_PROFILE_PICTURE) {
       const data = job.data as OAuthProfilePictureJobDto;
       if (data.attachmentId) {
-        await this.attachmentService.deleteAttachment(data.attachmentId);
+        await this.attachmentService.updateAttachment(data.attachmentId, {
+          uploadStatus: UploadStatusValues.FAILED,
+        });
         this.logger.log(
-          `Deleted OAuth attachment record ${data.attachmentId} due to failure`,
+          `Marked OAuth attachment record ${data.attachmentId} as failed due to failure`,
         );
       }
     }

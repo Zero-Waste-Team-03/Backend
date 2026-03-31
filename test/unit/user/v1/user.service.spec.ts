@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/core/user/v1/user.service';
+import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   User,
@@ -38,6 +39,9 @@ describe('UserService', () => {
   };
   let mailQueue: {
     add: jest.Mock;
+  };
+  let attachmentService: {
+    getAttachmentById: jest.Mock;
   };
 
   type MockQueryBuilder = {
@@ -84,6 +88,10 @@ describe('UserService', () => {
       add: jest.fn(),
     };
 
+    attachmentService = {
+      getAttachmentById: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -100,6 +108,10 @@ describe('UserService', () => {
         {
           provide: getQueueToken(QUEUE_NAME.MAIL),
           useValue: mailQueue,
+        },
+        {
+          provide: AttachmentService,
+          useValue: attachmentService,
         },
       ],
     }).compile();
@@ -376,6 +388,15 @@ describe('UserService', () => {
       await expect(
         service.updateUser('u1', { displayName: 'New Name' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when avatar attachment is not found', async () => {
+      userRepository.findOneOrFail.mockResolvedValue({ id: 'u1' } as User);
+      attachmentService.getAttachmentById.mockResolvedValue(null);
+
+      await expect(
+        service.updateUser('u1', { avatarAttachmentId: 'missing-id' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should update user and settings successfully', async () => {
