@@ -10,9 +10,9 @@ input AdminCreateAccountInput {
   email: String!
 
   """
-  Role to assign: "Administrator", "Organizations", "Stores", or "User"
+  Role to assign: "Administrator", "Organizations", "Stores", "User" or "Local Authority"
   """
-  role: String!
+  role: UserRole!
 }
 
 """Available UI themes for the application"""
@@ -231,7 +231,7 @@ type Query {
     page: Int! = 1
 
     """Filter by user role"""
-    role: String
+    role: UserRole
 
     """Search by name or email"""
     search: String
@@ -363,7 +363,7 @@ type User {
   reputationScore: Int!
 
   """User role"""
-  role: String!
+  role: UserRole!
 
   """User account settings"""
   settings: UserSettings
@@ -373,6 +373,15 @@ type User {
 
   """Date the user was last updated"""
   updatedAt: DateTime!
+}
+
+"""Available user roles"""
+enum UserRole {
+  ADMINISTRATOR
+  LOCAL_AUTHORITY
+  ORGANIZATION
+  STORE
+  USER
 }
 
 type UserSettings {

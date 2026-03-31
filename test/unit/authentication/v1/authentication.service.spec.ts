@@ -8,6 +8,7 @@ import { RedisService } from 'nestjs-redis-client';
 import { getQueueToken } from '@nestjs/bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
+import appConfig from 'src/config/app.config';
 
 describe('AuthenticationService', () => {
   let service: AuthenticationService;
@@ -50,6 +51,12 @@ describe('AuthenticationService', () => {
               refreshTokenExpiresIn: '7d',
               refreshTokenSecret: 'refresh-secret',
             },
+          },
+        },
+        {
+          provide: appConfig.KEY,
+          useValue: {
+            frontUrl: 'http://localhost:3000',
           },
         },
         { provide: RedisService, useValue: redisService },
