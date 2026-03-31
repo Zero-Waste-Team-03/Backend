@@ -4,6 +4,7 @@ import { AlsModule } from './async_storage/als.module';
 import { DataLoaderModule } from './dataloader/dataloader.module';
 import { AttachmentModule } from './attachment/attachment.module';
 import { UploadModule } from './upload/upload.module';
+import { ErrorsModule } from '../errors/errors.module';
 
 @Module({
   imports: [
@@ -11,10 +12,12 @@ import { UploadModule } from './upload/upload.module';
     AlsModule,
     DataLoaderModule,
     AttachmentModule,
+    ErrorsModule,
     UploadModule,
   ],
   exports: [
     MailerModule,
+    ErrorsModule,
     AlsModule,
     DataLoaderModule,
     AttachmentModule,
