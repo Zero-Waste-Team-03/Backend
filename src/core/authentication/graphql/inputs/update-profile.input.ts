@@ -48,6 +48,7 @@ export class UpdateProfileInput {
   @IsOptional()
   @Field(()=>String,{
     description:'Phone number of the user',
+    nullable:true
   })
   @IsString()
   phoneNumber?: string;
