@@ -37,6 +37,6 @@ export class AttachementType {
   @Field(() => Date, { description: 'Date the attachment was created' })
   createdAt: Date;
 
-  @Field(() => Date, { description: 'Date the attachment was last updated' })
+  @Field(() => Date, { description: 'Date the attachment was last updated',nullable:true })
   updatedAt?: Date;
 }

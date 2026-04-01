@@ -32,6 +32,7 @@ export class AccessTokenGuard extends AuthGuard('access-token') {
    * @returns The request object containing headers and user information
    */
   getRequest(context: ExecutionContext): any {
+
     const ctx = GqlExecutionContext.create(context);
     // If GraphQL context exists, use it; otherwise fall back to HTTP
 

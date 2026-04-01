@@ -207,6 +207,7 @@ export class AuthenticationService {
     await this.mailQueue.add(MAIL_JOBS.SEND_PASSWORD_RESET_MAIL, {
       to: user.email,
       token,
+      frontUrl: this.applicationConfig.frontUrl,
     });
     return {
       message:
