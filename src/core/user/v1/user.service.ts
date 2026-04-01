@@ -325,7 +325,6 @@ export class UserService {
   findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
-      relations: { location: true },
     });
   }
 
@@ -371,5 +370,11 @@ export class UserService {
       throwAppError('USER_NOT_FOUND');
     }
     return { message: 'User deleted successfully' };
+  }
+  async getUserSettings(userId: string): Promise<UserSettings|null> {
+    const settings = await this.userSettingsRepository.findOne({
+      where: { userId },
+    });
+    return settings;
   }
 }
