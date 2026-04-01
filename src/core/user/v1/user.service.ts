@@ -255,9 +255,15 @@ export class UserService {
 
     const { location, settings, avatarAttachmentId, ...restOfData } = data;
 
+ //TODO: this should not query attachment (rely on fk instead) but we will come back to this later
+
     if (avatarAttachmentId) {
-        user.avatarAttachmentId = avatarAttachmentId;
-      }
+ try{
+        const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
+        user.avatarAttachmentId = attachment.id;
+      }catch{
+          throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
+      }      }
 
     if (location) {
         user.location = this.locationRepository.create({...location, id: user.location?.id});
