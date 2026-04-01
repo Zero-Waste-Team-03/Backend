@@ -256,8 +256,12 @@ export class UserService {
     const { location, settings, avatarAttachmentId, ...restOfData } = data;
 
     if (avatarAttachmentId) {
-        user.avatarAttachmentId = avatarAttachmentId;
-      }
+ try{
+        const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
+        user.avatarAttachmentId = attachment.id;
+      }catch{
+          throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
+      }      }
 
     if (location) {
         user.location = this.locationRepository.create({...location, id: user.location?.id});
