@@ -19,6 +19,7 @@ import { ChangePasswordInput } from 'src/core/user/graphql/inputs/change-passwor
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
+import { UserSettingsType } from './graphql/types/user-settings.type';
 
 /**
  * GraphQL resolver for user operations
@@ -155,5 +156,13 @@ export class UserResolver {
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<AttachementType | null> {
     return this.avatar(user, { loaders });
+  }
+  //NOTE: this does not use dataloader as user settinng are only queries on user profile and not in list of users, so no N+1 problem, and also user settings are not expected to be queried as much as other fields, so performance impact is minimal
+  @ResolveField(()=>UserSettingsType, { nullable: true })
+  async settings(
+    @Parent() user: UserType,
+  ): Promise<UserSettingsType | null> {
+    if (!user.id) return null;
+    return await this.userService.getUserSettings(user.id)
   }
 }
