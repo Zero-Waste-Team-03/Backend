@@ -95,7 +95,9 @@ export class RegisterInput {
   @Field(() => String, {
     description: 'Password for the new user, must be strong and secure',
   })
-  @Field(() => String, {
+  @IsStrongPassword()
+  password: string;
+@Field(() => String, {
     description:"Phone number of the user, optional but if provided must be a valid string",
     nullable:true
   })
@@ -103,8 +105,6 @@ export class RegisterInput {
   @IsString()
   phoneNumber?: string;
 
-  @IsStrongPassword()
-  password: string;
 
   @Field(() => RegisterLocationInput, {
     description: 'Location payload for user registration',
