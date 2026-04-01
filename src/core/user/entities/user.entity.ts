@@ -60,6 +60,13 @@ export class User {
   })
   role: UserRole;
 
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    length:20
+  })
+  phoneNumber?: string;
+
   @Column({ type: 'int', default: 0 })
   reputationScore: number;
 

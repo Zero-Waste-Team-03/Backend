@@ -45,6 +45,13 @@ export class UpdateProfileInput {
   @IsEmail()
   email?: string;
 
+  @IsOptional()
+  @Field(()=>String,{
+    description:'Phone number of the user',
+  })
+  @IsString()
+  phoneNumber?: string;
+
   @Field(() => String, {
     nullable: true,
     description: 'Avatar attachment ID',
