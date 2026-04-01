@@ -255,6 +255,8 @@ export class UserService {
 
     const { location, settings, avatarAttachmentId, ...restOfData } = data;
 
+ //TODO: this should not query attachment (rely on fk instead) but we will come back to this later
+
     if (avatarAttachmentId) {
  try{
         const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
