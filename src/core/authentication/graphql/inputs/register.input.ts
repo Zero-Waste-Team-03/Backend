@@ -95,6 +95,14 @@ export class RegisterInput {
   @Field(() => String, {
     description: 'Password for the new user, must be strong and secure',
   })
+  @Field(() => String, {
+    description:"Phone number of the user, optional but if provided must be a valid string",
+    nullable:true
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
   @IsStrongPassword()
   password: string;
 
