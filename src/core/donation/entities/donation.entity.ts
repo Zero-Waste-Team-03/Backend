@@ -68,12 +68,12 @@ export class Donation {
   })
   status: DonationStatus;
 
-  @Column('uuid')
-  attachmentId: string;
+  @Column('uuid', { nullable: true })
+  attachmentId?: string;
 
-  @ManyToOne(() => Attachment, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Attachment, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'attachmentId' })
-  attachment: Relation<Attachment>;
+  attachment?: Relation<Attachment>;
 
   @CreateDateColumn()
   createdAt: Date;

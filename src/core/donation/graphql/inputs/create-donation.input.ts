@@ -62,8 +62,10 @@ export class CreateDonationInput {
   status?: string;
 
   @Field(() => String, {
+    nullable: true,
     description: 'Attachment id returned by upload endpoint',
   })
+  @IsOptional()
   @IsUUID()
-  attachmentId: string;
+  attachmentId?: string;
 }

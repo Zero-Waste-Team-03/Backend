@@ -34,9 +34,10 @@ export class DonationType {
   status: string;
 
   @Field(() => String, {
+    nullable: true,
     description: 'Attachment id returned by upload endpoint',
   })
-  attachmentId: string;
+  attachmentId?: string;
 
   @Field(() => Date)
   createdAt: Date;

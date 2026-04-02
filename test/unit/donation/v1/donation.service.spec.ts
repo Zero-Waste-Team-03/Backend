@@ -72,6 +72,38 @@ describe('DonationService', () => {
       expect(result).toEqual(createdEntity);
     });
 
+    it('creates donation without attachment id', async () => {
+      const input = {
+        categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
+        title: 'No image donation',
+        description: 'Donation without media',
+        quantity: 3,
+        specification: { note: 'text only' },
+        expiryDate: new Date('2030-01-01T10:00:00.000Z'),
+      };
+
+      const createdEntity = {
+        id: 'd-no-attachment',
+        ...input,
+        userId: 'u1',
+        status: DonationStatusValues.DRAFT,
+      };
+
+      donationRepository.create.mockReturnValue(createdEntity);
+      donationRepository.save.mockResolvedValue(createdEntity);
+
+      const result = await service.createDonation(input, 'u1');
+
+      expect(donationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...input,
+          userId: 'u1',
+          status: DonationStatusValues.DRAFT,
+        }),
+      );
+      expect(result).toEqual(createdEntity);
+    });
+
     it('throws BadRequestException when expiry date is invalid', async () => {
       await expect(
         service.createDonation(

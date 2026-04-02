@@ -15,7 +15,7 @@ export class AddCategoriesAndDonations1775150000000 implements MigrationInterfac
       `CREATE TYPE "public"."donations_status_enum" AS ENUM('Draft', 'Published', 'Reserved', 'Completed', 'Expired')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "donations" ("id" uuid NOT NULL, "userId" uuid NOT NULL, "categoryId" uuid NOT NULL, "title" character varying NOT NULL, "description" text NOT NULL, "quantity" integer NOT NULL, "specification" jsonb NOT NULL DEFAULT '{}', "expiryDate" TIMESTAMP NOT NULL, "status" "public"."donations_status_enum" NOT NULL DEFAULT 'Draft', "attachmentId" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_73e0f0bd4f1f8996575a2025f5d" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "donations" ("id" uuid NOT NULL, "userId" uuid NOT NULL, "categoryId" uuid NOT NULL, "title" character varying NOT NULL, "description" text NOT NULL, "quantity" integer NOT NULL, "specification" jsonb NOT NULL DEFAULT '{}', "expiryDate" TIMESTAMP NOT NULL, "status" "public"."donations_status_enum" NOT NULL DEFAULT 'Draft', "attachmentId" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_73e0f0bd4f1f8996575a2025f5d" PRIMARY KEY ("id"))`,
     );
 
     await queryRunner.query(
@@ -38,7 +38,7 @@ export class AddCategoriesAndDonations1775150000000 implements MigrationInterfac
       `ALTER TABLE "donations" ADD CONSTRAINT "FK_donations_category" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE "donations" ADD CONSTRAINT "FK_donations_attachment" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`,
+      `ALTER TABLE "donations" ADD CONSTRAINT "FK_donations_attachment" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
     );
   }
 
