@@ -86,6 +86,19 @@ export const ERROR_CODES = {
     message: 'No active notification tokens found for this user.',
   },
 
+  // ── Donation ────────────────────────────────────────────────────────
+  DONATION_NOT_FOUND: {
+    code: 'donation.not_found',
+    httpStatus: 404,
+    message: 'Donation not found.',
+    args: { id: 'string' } as const,
+  },
+  DONATION_INVALID_EXPIRY_DATE: {
+    code: 'donation.invalid_expiry_date',
+    httpStatus: 400,
+    message: 'Donation expiry date is invalid.',
+  },
+
   // ── Upload ──────────────────────────────────────────────────────────
   UPLOAD_FILE_REQUIRED: {
     code: 'upload.file_required',

@@ -4,6 +4,7 @@ import { UserModule } from './user/user.module';
 import { AdminUserModule } from './user/admin/admin-user.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CategoryModule } from './category/category.module';
+import { DonationModule } from './donation/donation.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CategoryModule } from './category/category.module';
     NotificationsModule,
     AdminUserModule,
     CategoryModule,
+    DonationModule,
   ],
   exports: [
     UserModule,
@@ -19,6 +21,7 @@ import { CategoryModule } from './category/category.module';
     NotificationsModule,
     AdminUserModule,
     CategoryModule,
+    DonationModule,
   ],
 })
 export class CoreModule {}
