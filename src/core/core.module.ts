@@ -3,6 +3,7 @@ import { AuthenticationModule } from './authentication/authentication.module';
 import { UserModule } from './user/user.module';
 import { AdminUserModule } from './user/admin/admin-user.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -10,12 +11,14 @@ import { NotificationsModule } from './notifications/notifications.module';
     AuthenticationModule,
     NotificationsModule,
     AdminUserModule,
+    CategoryModule,
   ],
   exports: [
     UserModule,
     AuthenticationModule,
     NotificationsModule,
     AdminUserModule,
+    CategoryModule,
   ],
 })
 export class CoreModule {}
