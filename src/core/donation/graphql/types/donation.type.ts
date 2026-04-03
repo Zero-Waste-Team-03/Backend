@@ -30,14 +30,45 @@ export class DonationType {
   @Field(() => Date, { description: 'Donation expiry date' })
   expiryDate: Date;
 
-  @Field(() => String, { description: 'Donation status' })
-  status: string;
+  @Field(() => String, { description: 'Urgency level for this listing' })
+  urgency: string;
+
+  @Field(() => Boolean, {
+    description: 'Whether safety checklist is completed',
+  })
+  safetyChecklistCompleted: boolean;
 
   @Field(() => String, {
     nullable: true,
-    description: 'Attachment id returned by upload endpoint',
+    description: 'Optional pickup location id',
   })
-  attachmentId?: string;
+  locationId?: string;
+
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Date when listing was published',
+  })
+  publishedAt?: Date;
+
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Date when listing expires for visibility',
+  })
+  listingExpiresAt?: Date;
+
+  @Field(() => String, { description: 'Donation status' })
+  status: string;
+
+  @Field(() => [String], {
+    description: 'Attachment ids for donation photos',
+  })
+  attachmentIds: string[];
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Main attachment id used as cover photo',
+  })
+  mainAttachmentId?: string;
 
   @Field(() => Date)
   createdAt: Date;

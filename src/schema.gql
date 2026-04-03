@@ -80,7 +80,7 @@ input ChangePasswordInput {
 
 input CreateDonationInput {
   """Attachment id returned by upload endpoint"""
-  attachmentId: String!
+  attachmentId: String
 
   """Category id for this donation listing"""
   categoryId: String!
@@ -92,10 +92,10 @@ input CreateDonationInput {
   expiryDate: DateTime!
 
   """Available quantity in integer units"""
-  quantity: Float!
+  quantity: Int!
 
   """Structured specification payload (e.g. packaging, allergens)"""
-  specification: JSON
+  specification: JSONObject
 
   """Donation lifecycle status"""
   status: String
@@ -111,7 +111,7 @@ scalar DateTime
 
 type Donation {
   """Attachment id returned by upload endpoint"""
-  attachmentId: String!
+  attachmentId: String
 
   """Category id"""
   categoryId: String!
@@ -145,6 +145,11 @@ type Donation {
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSON
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
 
 type Location {
   """Location city"""
@@ -386,10 +391,10 @@ input UpdateDonationInput {
   expiryDate: DateTime
 
   """Available quantity in integer units"""
-  quantity: Float
+  quantity: Int
 
   """Structured specification payload (e.g. packaging, allergens)"""
-  specification: JSON
+  specification: JSONObject
 
   """Donation lifecycle status"""
   status: String

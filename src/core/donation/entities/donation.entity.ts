@@ -3,8 +3,10 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryColumn,
   Relation,
   UpdateDateColumn,
@@ -12,7 +14,8 @@ import {
 import { v7 as uuidv7 } from 'uuid';
 import { User } from 'src/core/user/entities/user.entity';
 import { Category } from 'src/core/category/entities/category.entity';
-import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
+import { Location } from 'src/common/locations/entities/location.entity';
+import { DonationPhoto } from './donation-photo.entity';
 
 export const DonationStatusValues = {
   DRAFT: 'Draft',
@@ -24,10 +27,27 @@ export const DonationStatusValues = {
 
 export const DONATION_STATUS_OPTIONS = Object.values(DonationStatusValues);
 
+export const DonationUrgencyValues = {
+  LOW: 'Low',
+  MEDIUM: 'Medium',
+  HIGH: 'High',
+} as const;
+
+export const DONATION_URGENCY_OPTIONS = Object.values(DonationUrgencyValues);
+
 export type DonationStatus =
   (typeof DonationStatusValues)[keyof typeof DonationStatusValues];
 
+export type DonationUrgency =
+  (typeof DonationUrgencyValues)[keyof typeof DonationUrgencyValues];
+
 @Entity('donations')
+@Index('IDX_donations_user_id', ['userId'])
+@Index('IDX_donations_status', ['status'])
+@Index('IDX_donations_expiry_date', ['expiryDate'])
+@Index('IDX_donations_id_user_id', ['id', 'userId'])
+@Index('IDX_donations_location_id', ['locationId'])
+@Index('IDX_donations_listing_expires_at', ['listingExpiresAt'])
 export class Donation {
   @PrimaryColumn('uuid')
   id: string;
@@ -63,17 +83,36 @@ export class Donation {
 
   @Column({
     type: 'enum',
+    enum: DonationUrgencyValues,
+    default: DonationUrgencyValues.MEDIUM,
+  })
+  urgency: DonationUrgency;
+
+  @Column({ type: 'boolean', default: false })
+  safetyChecklistCompleted: boolean;
+
+  @Column('uuid', { nullable: true })
+  locationId?: string;
+
+  @ManyToOne(() => Location, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'locationId' })
+  location?: Relation<Location>;
+
+  @Column({ type: 'timestamp', nullable: true })
+  publishedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  listingExpiresAt?: Date;
+
+  @Column({
+    type: 'enum',
     enum: DonationStatusValues,
     default: DonationStatusValues.DRAFT,
   })
   status: DonationStatus;
 
-  @Column('uuid', { nullable: true })
-  attachmentId?: string;
-
-  @ManyToOne(() => Attachment, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'attachmentId' })
-  attachment?: Relation<Attachment>;
+  @OneToMany(() => DonationPhoto, (photo) => photo.donation)
+  photos: Relation<DonationPhoto[]>;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -1,17 +1,22 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 import {
+  ArrayUnique,
   IsDate,
   IsIn,
   IsInt,
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsBoolean,
   IsString,
   IsUUID,
   Min,
 } from 'class-validator';
-import { DONATION_STATUS_OPTIONS } from '../../entities/donation.entity';
-import { GraphQLJSON } from 'graphql-type-json';
+import {
+  DONATION_STATUS_OPTIONS,
+  DONATION_URGENCY_OPTIONS,
+} from '../../entities/donation.entity';
+import { GraphQLJSONObject } from 'graphql-type-json';
 import { Type } from 'class-transformer';
 
 @InputType()
@@ -30,14 +35,14 @@ export class CreateDonationInput {
   @IsNotEmpty()
   description: string;
 
-  @Field(() => Number, {
+  @Field(() => Int, {
     description: 'Available quantity in integer units',
   })
   @IsInt()
   @Min(1)
   quantity: number;
 
-  @Field(() => GraphQLJSON, {
+  @Field(() => GraphQLJSONObject, {
     nullable: true,
     description: 'Structured specification payload (e.g. packaging, allergens)',
   })
@@ -63,9 +68,52 @@ export class CreateDonationInput {
 
   @Field(() => String, {
     nullable: true,
-    description: 'Attachment id returned by upload endpoint',
+    description: 'Urgency level for the listing',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(DONATION_URGENCY_OPTIONS)
+  urgency?: string;
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description: 'Whether safety checklist was completed',
+  })
+  @IsOptional()
+  @IsBoolean()
+  safetyChecklistCompleted?: boolean;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Optional pickup location id',
   })
   @IsOptional()
   @IsUUID()
-  attachmentId?: string;
+  locationId?: string;
+
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Optional listing expiration date/time',
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  listingExpiresAt?: Date;
+
+  @Field(() => [String], {
+    nullable: true,
+    description: 'Attachment ids returned by upload endpoint',
+  })
+  @IsOptional()
+  @ArrayUnique()
+  @IsUUID(undefined, { each: true })
+  attachmentIds?: string[];
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Main attachment id; must be inside attachmentIds',
+  })
+  @IsOptional()
+  @IsUUID()
+  mainAttachmentId?: string;
 }

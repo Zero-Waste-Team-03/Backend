@@ -98,6 +98,16 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'Donation expiry date is invalid.',
   },
+  DONATION_MAIN_ATTACHMENT_INVALID: {
+    code: 'donation.main_attachment_invalid',
+    httpStatus: 400,
+    message: 'Main attachment id must be included in attachment ids.',
+  },
+  DONATION_ATTACHMENT_IDS_DUPLICATED: {
+    code: 'donation.attachment_ids_duplicated',
+    httpStatus: 400,
+    message: 'Attachment ids contain duplicate values.',
+  },
 
   // ── Upload ──────────────────────────────────────────────────────────
   UPLOAD_FILE_REQUIRED: {
