@@ -1,8 +1,14 @@
 import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
-import { DonationUrgency, DonationUrgencyValues } from '../../entities/donation.entity';
+import {
+  DonationUrgency,
+  DonationUrgencyValues,
+} from '../../entities/donation.entity';
 
-registerEnumType(DonationUrgencyValues,{name:'DonationUrgencyValues', description:'Available urgency levels for donations'})
+registerEnumType(DonationUrgencyValues, {
+  name: 'DonationUrgencyValues',
+  description: 'Available urgency levels for donations',
+});
 @ObjectType('Donation')
 export class DonationType {
   @Field(() => ID)
@@ -20,7 +26,7 @@ export class DonationType {
   @Field(() => String, { description: 'Donation description' })
   description: string;
 
-  @Field(() =>Int , { description: 'Available quantity' })
+  @Field(() => Int, { description: 'Available quantity' })
   quantity: number;
 
   @Field(() => GraphQLJSON, {
@@ -32,8 +38,10 @@ export class DonationType {
   @Field(() => Date, { description: 'Donation expiry date' })
   expiryDate: Date;
 
-  @Field(()=>DonationUrgencyValues, { description: 'Urgency level for this listing' })
-  urgency:DonationUrgency ;
+  @Field(() => DonationUrgencyValues, {
+    description: 'Urgency level for this listing',
+  })
+  urgency: DonationUrgency;
 
   @Field(() => Boolean, {
     description: 'Whether safety checklist is completed',
@@ -44,19 +52,19 @@ export class DonationType {
     nullable: true,
     description: 'Optional pickup location id',
   })
-  locationId?: string;
+  locationId?: string | null;
 
   @Field(() => Date, {
     nullable: true,
     description: 'Date when listing was published',
   })
-  publishedAt?: Date;
+  publishedAt?: Date | null;
 
   @Field(() => Date, {
     nullable: true,
     description: 'Date when listing expires for visibility',
   })
-  listingExpiresAt?: Date;
+  listingExpiresAt?: Date | null;
 
   @Field(() => String, { description: 'Donation status' })
   status: string;
