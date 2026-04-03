@@ -32,7 +32,7 @@ export class DonationService {
   ) {}
 
   private async resolveLocationId(
-    locationId?: string,
+    locationId?: string | null,
     locationInput?: LocationInput,
   ): Promise<string | undefined> {
     if (locationId && locationInput) {
@@ -47,6 +47,46 @@ export class DonationService {
     const location = this.locationRepository.create(locationInput);
     const savedLocation = await this.locationRepository.save(location);
     return savedLocation.id;
+  }
+
+  private async resolveUpdateLocationId(
+    input: UpdateDonationInput,
+  ): Promise<string | null | undefined> {
+    if (input.locationId !== undefined && input.locationInput !== undefined) {
+      throwAppError('DONATION_LOCATION_XOR_INVALID', {
+        locationId: String(input.locationId),
+      });
+    }
+
+    if (input.locationInput !== undefined) {
+      const location = this.locationRepository.create(input.locationInput);
+      const savedLocation = await this.locationRepository.save(location);
+      return savedLocation.id;
+    }
+
+    if ('locationId' in input) {
+      return input.locationId ?? null;
+    }
+
+    return undefined;
+  }
+
+  private buildUpdatePatch(input: UpdateDonationInput): Partial<Donation> {
+    const patch: Partial<Donation> = {};
+
+    if (input.categoryId !== undefined) patch.categoryId = input.categoryId;
+    if (input.title !== undefined) patch.title = input.title;
+    if (input.description !== undefined) patch.description = input.description;
+    if (input.quantity !== undefined) patch.quantity = input.quantity;
+    if (input.specification !== undefined)
+      patch.specification = input.specification;
+    if (input.urgency !== undefined)
+      patch.urgency = input.urgency as DonationUrgency;
+    if (input.safetyChecklistCompleted !== undefined) {
+      patch.safetyChecklistCompleted = input.safetyChecklistCompleted;
+    }
+
+    return patch;
   }
 
   private validatePhotoInput(
@@ -203,11 +243,6 @@ export class DonationService {
     ) {
       this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
     }
-    if (input.locationId && input.locationInput) {
-      throwAppError('DONATION_LOCATION_XOR_INVALID', {
-        locationId: input.locationId,
-      });
-    }
 
     if (input.expiryDate) {
       const expiryDate = new Date(input.expiryDate);
@@ -225,25 +260,11 @@ export class DonationService {
       donation.listingExpiresAt = listingExpiresAt;
     }
 
-    if (input.categoryId !== undefined) donation.categoryId = input.categoryId;
-    if (input.title !== undefined) donation.title = input.title;
-    if (input.description !== undefined)
-      donation.description = input.description;
-    if (input.quantity !== undefined) donation.quantity = input.quantity;
-    if (input.specification !== undefined)
-      donation.specification = input.specification;
-    if (input.urgency !== undefined)
-      donation.urgency = input.urgency as DonationUrgency;
-    if (input.safetyChecklistCompleted !== undefined)
-      donation.safetyChecklistCompleted = input.safetyChecklistCompleted;
-    if (input.locationId !== undefined) {
-      donation.locationId = input.locationId;
-    }
-    if (input.locationInput !== undefined) {
-      donation.locationId = await this.resolveLocationId(
-        undefined,
-        input.locationInput,
-      );
+    Object.assign(donation, this.buildUpdatePatch(input));
+
+    const resolvedLocationId = await this.resolveUpdateLocationId(input);
+    if (resolvedLocationId !== undefined) {
+      donation.locationId = resolvedLocationId;
     }
 
     const savedDonation = await this.donationRepository.save(donation);

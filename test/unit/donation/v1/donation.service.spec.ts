@@ -359,6 +359,50 @@ describe('DonationService', () => {
       ]);
     });
 
+    it('clears location when locationId is explicitly null', async () => {
+      const existingDonation = {
+        id: 'd1',
+        userId: 'u1',
+        title: 'Old title',
+        locationId: 'loc-1',
+        urgency: DonationUrgencyValues.MEDIUM,
+        safetyChecklistCompleted: false,
+      };
+      donationRepository.findOne.mockResolvedValue(existingDonation);
+      donationRepository.save.mockImplementation(async (entity) => entity);
+      donationPhotoRepository.find.mockResolvedValue([]);
+
+      const result = await service.updateDonation(
+        'd1',
+        { locationId: null },
+        'u1',
+      );
+
+      expect(result.locationId).toBeNull();
+    });
+
+    it('throws when both locationId and locationInput are provided on update', async () => {
+      const existingDonation = {
+        id: 'd1',
+        userId: 'u1',
+        title: 'Old title',
+        urgency: DonationUrgencyValues.MEDIUM,
+        safetyChecklistCompleted: false,
+      };
+      donationRepository.findOne.mockResolvedValue(existingDonation);
+
+      await expect(
+        service.updateDonation(
+          'd1',
+          {
+            locationId: 'd40d9c73-92fd-43cf-a4da-308f8f4ea945',
+            locationInput: { city: 'Algiers', country: 'Algeria' },
+          },
+          'u1',
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('throws NotFoundException when donation is not owned or missing', async () => {
       donationRepository.findOne.mockResolvedValue(null);
 

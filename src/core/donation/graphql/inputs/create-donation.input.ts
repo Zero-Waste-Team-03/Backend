@@ -2,7 +2,6 @@ import { Field, InputType, Int } from '@nestjs/graphql';
 import {
   ArrayUnique,
   IsDate,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -13,7 +12,10 @@ import {
   ValidateNested,
   Min,
 } from 'class-validator';
-import { DONATION_URGENCY_OPTIONS } from '../../entities/donation.entity';
+import {
+  DonationUrgency,
+  DonationUrgencyValues,
+} from '../../entities/donation.entity';
 import { GraphQLJSONObject } from 'graphql-type-json';
 import { Type } from 'class-transformer';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
@@ -56,14 +58,11 @@ export class CreateDonationInput {
   @IsDate()
   expiryDate: Date;
 
-  @Field(() => String, {
+  @Field(() => DonationUrgencyValues, {
     nullable: true,
     description: 'Urgency level for the listing',
   })
-  @IsOptional()
-  @IsString()
-  @IsIn(DONATION_URGENCY_OPTIONS)
-  urgency?: string;
+  urgency?: DonationUrgency;
 
   @Field(() => Boolean, {
     nullable: true,
@@ -75,11 +74,12 @@ export class CreateDonationInput {
 
   @Field(() => String, {
     nullable: true,
-    description: 'Optional pickup location id',
+    description:
+      'Optional pickup location id. On update, explicit null clears location.',
   })
   @IsOptional()
   @IsUUID()
-  locationId?: string;
+  locationId?: string | null;
 
   @Field(() => LocationInput, {
     nullable: true,

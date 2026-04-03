@@ -1,6 +1,8 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
+import { DonationUrgency, DonationUrgencyValues } from '../../entities/donation.entity';
 
+registerEnumType(DonationUrgencyValues,{name:'DonationUrgencyValues', description:'Available urgency levels for donations'})
 @ObjectType('Donation')
 export class DonationType {
   @Field(() => ID)
@@ -18,7 +20,7 @@ export class DonationType {
   @Field(() => String, { description: 'Donation description' })
   description: string;
 
-  @Field(() => Number, { description: 'Available quantity' })
+  @Field(() =>Int , { description: 'Available quantity' })
   quantity: number;
 
   @Field(() => GraphQLJSON, {
@@ -30,8 +32,8 @@ export class DonationType {
   @Field(() => Date, { description: 'Donation expiry date' })
   expiryDate: Date;
 
-  @Field(() => String, { description: 'Urgency level for this listing' })
-  urgency: string;
+  @Field(()=>DonationUrgencyValues, { description: 'Urgency level for this listing' })
+  urgency:DonationUrgency ;
 
   @Field(() => Boolean, {
     description: 'Whether safety checklist is completed',

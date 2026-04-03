@@ -92,17 +92,17 @@ export class Donation {
   safetyChecklistCompleted: boolean;
 
   @Column('uuid', { nullable: true })
-  locationId?: string;
+  locationId?: string | null;
 
   @ManyToOne(() => Location, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'locationId' })
   location?: Relation<Location>;
 
   @Column({ type: 'timestamp', nullable: true })
-  publishedAt?: Date;
+  publishedAt?: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  listingExpiresAt?: Date;
+  listingExpiresAt?: Date | null;
 
   @Column({
     type: 'enum',

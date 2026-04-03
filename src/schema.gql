@@ -94,7 +94,7 @@ input CreateDonationInput {
   """Optional listing expiration date/time"""
   listingExpiresAt: DateTime
 
-  """Optional pickup location id"""
+  """Optional pickup location id. On update, explicit null clears location."""
   locationId: String
 
   """
@@ -118,7 +118,7 @@ input CreateDonationInput {
   title: String!
 
   """Urgency level for the listing"""
-  urgency: String
+  urgency: DonationUrgencyValues
 }
 
 """
@@ -154,7 +154,7 @@ type Donation {
   publishedAt: DateTime
 
   """Available quantity"""
-  quantity: Float!
+  quantity: Int!
 
   """Whether safety checklist is completed"""
   safetyChecklistCompleted: Boolean!
@@ -170,10 +170,17 @@ type Donation {
   updatedAt: DateTime!
 
   """Urgency level for this listing"""
-  urgency: String!
+  urgency: DonationUrgencyValues!
 
   """Owner user id (donor)"""
   userId: String!
+}
+
+"""Available urgency levels for donations"""
+enum DonationUrgencyValues {
+  HIGH
+  LOW
+  MEDIUM
 }
 
 """
@@ -428,7 +435,7 @@ input UpdateDonationInput {
   """Optional listing expiration date/time"""
   listingExpiresAt: DateTime
 
-  """Optional pickup location id"""
+  """Optional pickup location id. On update, explicit null clears location."""
   locationId: String
 
   """
@@ -452,7 +459,7 @@ input UpdateDonationInput {
   title: String
 
   """Urgency level for the listing"""
-  urgency: String
+  urgency: DonationUrgencyValues
 }
 
 input UpdateProfileInput {
