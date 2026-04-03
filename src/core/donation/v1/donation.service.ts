@@ -179,19 +179,6 @@ export class DonationService {
   }
 
   async createDonation(input: CreateDonationInput, userId: string) {
-    const expiryDate = new Date(input.expiryDate);
-
-    if (Number.isNaN(expiryDate.getTime())) {
-      throwAppError('DONATION_INVALID_EXPIRY_DATE');
-    }
-
-    if (input.listingExpiresAt) {
-      const listingExpiresAt = new Date(input.listingExpiresAt);
-      if (Number.isNaN(listingExpiresAt.getTime())) {
-        throwAppError('DONATION_INVALID_EXPIRY_DATE');
-      }
-    }
-
     this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
     const locationId = await this.resolveLocationId(
       input.locationId,
@@ -206,7 +193,7 @@ export class DonationService {
       description: input.description,
       quantity: input.quantity,
       specification: input.specification ?? {},
-      expiryDate,
+      expiryDate: input.expiryDate,
       status: status as DonationStatus,
       urgency:
         (input.urgency as DonationUrgency) ?? DonationUrgencyValues.MEDIUM,
@@ -245,19 +232,11 @@ export class DonationService {
     }
 
     if (input.expiryDate) {
-      const expiryDate = new Date(input.expiryDate);
-      if (Number.isNaN(expiryDate.getTime())) {
-        throwAppError('DONATION_INVALID_EXPIRY_DATE');
-      }
-      donation.expiryDate = expiryDate;
+      donation.expiryDate = input.expiryDate;
     }
 
     if (input.listingExpiresAt) {
-      const listingExpiresAt = new Date(input.listingExpiresAt);
-      if (Number.isNaN(listingExpiresAt.getTime())) {
-        throwAppError('DONATION_INVALID_EXPIRY_DATE');
-      }
-      donation.listingExpiresAt = listingExpiresAt;
+      donation.listingExpiresAt = input.listingExpiresAt;
     }
 
     Object.assign(donation, this.buildUpdatePatch(input));

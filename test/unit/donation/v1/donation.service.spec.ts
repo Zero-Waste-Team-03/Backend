@@ -284,26 +284,6 @@ describe('DonationService', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
-
-    it('throws BadRequestException when expiry date is invalid', async () => {
-      await expect(
-        service.createDonation(
-          {
-            categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
-            title: 'Bread packs',
-            description: 'Fresh bread packs',
-            quantity: 12,
-            specification: {},
-            urgency: DonationUrgencyValues.MEDIUM,
-            safetyChecklistCompleted: false,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            expiryDate: new Date('invalid-date') as any,
-            mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
-          },
-          'u1',
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
   });
 
   describe('updateDonation', () => {
