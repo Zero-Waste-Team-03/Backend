@@ -8,6 +8,7 @@ import {
   DonationStatusValues,
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
+import { Location } from 'src/common/locations/entities/location.entity';
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -27,6 +28,11 @@ describe('DonationService', () => {
     merge: jest.fn(),
   };
 
+  const locationRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -40,6 +46,10 @@ describe('DonationService', () => {
         {
           provide: getRepositoryToken(DonationPhoto),
           useValue: donationPhotoRepository,
+        },
+        {
+          provide: getRepositoryToken(Location),
+          useValue: locationRepository,
         },
       ],
     }).compile();
@@ -70,13 +80,19 @@ describe('DonationService', () => {
         id: 'd1',
         ...input,
         userId: 'u1',
-        status: DonationStatusValues.DRAFT,
+        status: DonationStatusValues.PUBLISHED,
       };
 
       donationRepository.create.mockReturnValue(createdEntity);
       donationRepository.save.mockResolvedValue(createdEntity);
       donationPhotoRepository.create.mockImplementation((entity) => entity);
       donationPhotoRepository.save.mockResolvedValue(undefined);
+      locationRepository.create.mockImplementation((entity) => entity);
+      locationRepository.save.mockResolvedValue({
+        id: 'loc-1',
+        city: 'Algiers',
+        country: 'Algeria',
+      });
       donationPhotoRepository.find.mockResolvedValue([
         {
           donationId: 'd1',
@@ -96,7 +112,7 @@ describe('DonationService', () => {
           specification: input.specification,
           expiryDate: input.expiryDate,
           userId: 'u1',
-          status: DonationStatusValues.DRAFT,
+          status: DonationStatusValues.PUBLISHED,
           urgency: DonationUrgencyValues.MEDIUM,
           safetyChecklistCompleted: false,
         }),
@@ -111,7 +127,7 @@ describe('DonationService', () => {
       );
     });
 
-    it('creates donation without attachment id', async () => {
+    it('creates donation with only mainAttachmentId', async () => {
       const input = {
         categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
         title: 'No image donation',
@@ -121,18 +137,27 @@ describe('DonationService', () => {
         expiryDate: new Date('2030-01-01T10:00:00.000Z'),
         urgency: DonationUrgencyValues.LOW,
         safetyChecklistCompleted: true,
+        mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
       };
 
       const createdEntity = {
         id: 'd-no-attachment',
         ...input,
         userId: 'u1',
-        status: DonationStatusValues.DRAFT,
+        status: DonationStatusValues.PUBLISHED,
       };
 
       donationRepository.create.mockReturnValue(createdEntity);
       donationRepository.save.mockResolvedValue(createdEntity);
-      donationPhotoRepository.find.mockResolvedValue([]);
+      donationPhotoRepository.create.mockImplementation((entity) => entity);
+      donationPhotoRepository.save.mockResolvedValue(undefined);
+      donationPhotoRepository.find.mockResolvedValue([
+        {
+          donationId: 'd-no-attachment',
+          attachmentId: input.mainAttachmentId,
+          isMain: true,
+        },
+      ]);
 
       const result = await service.createDonation(input, 'u1');
 
@@ -145,16 +170,21 @@ describe('DonationService', () => {
           specification: input.specification,
           expiryDate: input.expiryDate,
           userId: 'u1',
-          status: DonationStatusValues.DRAFT,
+          status: DonationStatusValues.PUBLISHED,
           urgency: DonationUrgencyValues.LOW,
           safetyChecklistCompleted: true,
         }),
       );
+      expect(donationPhotoRepository.create).toHaveBeenCalledWith({
+        donationId: createdEntity.id,
+        attachmentId: input.mainAttachmentId,
+        isMain: true,
+      });
       expect(result).toEqual(
         expect.objectContaining({
           ...createdEntity,
-          attachmentIds: [],
-          mainAttachmentId: undefined,
+          attachmentIds: [input.mainAttachmentId],
+          mainAttachmentId: input.mainAttachmentId,
         }),
       );
     });
@@ -175,6 +205,80 @@ describe('DonationService', () => {
               'a1111111-1111-1111-1111-111111111111',
               'a1111111-1111-1111-1111-111111111111',
             ],
+            mainAttachmentId: 'a1111111-1111-1111-1111-111111111111',
+          },
+          'u1',
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('creates donation from locationInput when locationId is not provided', async () => {
+      const input = {
+        categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
+        title: 'Location input donation',
+        description: 'Created with inline location payload',
+        quantity: 2,
+        specification: {},
+        expiryDate: new Date('2030-01-01T10:00:00.000Z'),
+        urgency: DonationUrgencyValues.MEDIUM,
+        safetyChecklistCompleted: true,
+        locationInput: {
+          city: 'Algiers',
+          country: 'Algeria',
+        },
+        mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
+      };
+
+      const createdEntity = {
+        id: 'd-location-input',
+        userId: 'u1',
+        status: DonationStatusValues.PUBLISHED,
+        ...input,
+      };
+
+      locationRepository.create.mockImplementation((entity) => entity);
+      locationRepository.save.mockResolvedValue({
+        id: 'loc-created',
+        ...input.locationInput,
+      });
+      donationRepository.create.mockReturnValue(createdEntity);
+      donationRepository.save.mockResolvedValue(createdEntity);
+      donationPhotoRepository.create.mockImplementation((entity) => entity);
+      donationPhotoRepository.save.mockResolvedValue(undefined);
+      donationPhotoRepository.find.mockResolvedValue([
+        {
+          donationId: 'd-location-input',
+          attachmentId: input.mainAttachmentId,
+          isMain: true,
+        },
+      ]);
+
+      await service.createDonation(input, 'u1');
+
+      expect(locationRepository.create).toHaveBeenCalledWith(
+        input.locationInput,
+      );
+      expect(locationRepository.save).toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when locationId and locationInput are both provided', async () => {
+      await expect(
+        service.createDonation(
+          {
+            categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
+            title: 'Location xor',
+            description: 'Invalid location payload',
+            quantity: 3,
+            specification: {},
+            expiryDate: new Date('2030-01-01T10:00:00.000Z'),
+            urgency: DonationUrgencyValues.MEDIUM,
+            safetyChecklistCompleted: false,
+            locationId: 'd40d9c73-92fd-43cf-a4da-308f8f4ea945',
+            locationInput: {
+              city: 'Algiers',
+              country: 'Algeria',
+            },
+            mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
           },
           'u1',
         ),
@@ -194,6 +298,7 @@ describe('DonationService', () => {
             safetyChecklistCompleted: false,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             expiryDate: new Date('invalid-date') as any,
+            mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
           },
           'u1',
         ),

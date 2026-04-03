@@ -4,9 +4,10 @@ import { Donation } from './entities/donation.entity';
 import { DonationResolver } from './donation.resolver';
 import { DonationService } from './v1/donation.service';
 import { DonationPhoto } from './entities/donation-photo.entity';
+import { Location } from 'src/common/locations/entities/location.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Donation, DonationPhoto])],
+  imports: [TypeOrmModule.forFeature([Donation, DonationPhoto, Location])],
   providers: [DonationResolver, DonationService],
   exports: [DonationService],
 })

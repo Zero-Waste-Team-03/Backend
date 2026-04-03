@@ -108,6 +108,12 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'Attachment ids contain duplicate values.',
   },
+  DONATION_LOCATION_XOR_INVALID: {
+    code: 'donation.location_xor_invalid',
+    httpStatus: 400,
+    message: 'Provide either locationId or locationInput, not both.',
+    args: { locationId: 'string' } as const,
+  },
 
   // ── Upload ──────────────────────────────────────────────────────────
   UPLOAD_FILE_REQUIRED: {

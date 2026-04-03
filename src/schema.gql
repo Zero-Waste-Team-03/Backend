@@ -79,8 +79,8 @@ input ChangePasswordInput {
 }
 
 input CreateDonationInput {
-  """Attachment id returned by upload endpoint"""
-  attachmentId: String
+  """Optional additional attachment ids returned by upload endpoint"""
+  attachmentIds: [String!]
 
   """Category id for this donation listing"""
   categoryId: String!
@@ -91,17 +91,34 @@ input CreateDonationInput {
   """Expiry date/time for this donation"""
   expiryDate: DateTime!
 
+  """Optional listing expiration date/time"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id"""
+  locationId: String
+
+  """
+  Optional pickup location payload. Provide either locationId or locationInput, not both.
+  """
+  locationInput: LocationInput
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String!
+
   """Available quantity in integer units"""
   quantity: Int!
+
+  """Whether safety checklist was completed"""
+  safetyChecklistCompleted: Boolean
 
   """Structured specification payload (e.g. packaging, allergens)"""
   specification: JSONObject
 
-  """Donation lifecycle status"""
-  status: String
-
   """Donation title"""
   title: String!
+
+  """Urgency level for the listing"""
+  urgency: String
 }
 
 """
@@ -110,8 +127,8 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Donation {
-  """Attachment id returned by upload endpoint"""
-  attachmentId: String
+  """Attachment ids for donation photos"""
+  attachmentIds: [String!]!
 
   """Category id"""
   categoryId: String!
@@ -124,8 +141,23 @@ type Donation {
   expiryDate: DateTime!
   id: ID!
 
+  """Date when listing expires for visibility"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id"""
+  locationId: String
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String
+
+  """Date when listing was published"""
+  publishedAt: DateTime
+
   """Available quantity"""
   quantity: Float!
+
+  """Whether safety checklist is completed"""
+  safetyChecklistCompleted: Boolean!
 
   """Structured specification data"""
   specification: JSON
@@ -136,6 +168,9 @@ type Donation {
   """Donation title"""
   title: String!
   updatedAt: DateTime!
+
+  """Urgency level for this listing"""
+  urgency: String!
 
   """Owner user id (donor)"""
   userId: String!
@@ -378,8 +413,8 @@ type SendNotificationResponse {
 }
 
 input UpdateDonationInput {
-  """Optional replacement attachment id returned by upload endpoint"""
-  attachmentId: String
+  """Optional additional attachment ids returned by upload endpoint"""
+  attachmentIds: [String!]
 
   """Category id for this donation listing"""
   categoryId: String
@@ -390,17 +425,34 @@ input UpdateDonationInput {
   """Expiry date/time for this donation"""
   expiryDate: DateTime
 
+  """Optional listing expiration date/time"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id"""
+  locationId: String
+
+  """
+  Optional pickup location payload. Provide either locationId or locationInput, not both.
+  """
+  locationInput: LocationInput
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String
+
   """Available quantity in integer units"""
   quantity: Int
+
+  """Whether safety checklist was completed"""
+  safetyChecklistCompleted: Boolean
 
   """Structured specification payload (e.g. packaging, allergens)"""
   specification: JSONObject
 
-  """Donation lifecycle status"""
-  status: String
-
   """Donation title"""
   title: String
+
+  """Urgency level for the listing"""
+  urgency: String
 }
 
 input UpdateProfileInput {

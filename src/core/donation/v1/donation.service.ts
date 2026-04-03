@@ -12,6 +12,8 @@ import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
 import { DonationPhoto } from '../entities/donation-photo.entity';
+import { Location } from 'src/common/locations/entities/location.entity';
+import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -25,12 +27,38 @@ export class DonationService {
     private readonly donationRepository: Repository<Donation>,
     @InjectRepository(DonationPhoto)
     private readonly donationPhotoRepository: Repository<DonationPhoto>,
+    @InjectRepository(Location)
+    private readonly locationRepository: Repository<Location>,
   ) {}
+
+  private async resolveLocationId(
+    locationId?: string,
+    locationInput?: LocationInput,
+  ): Promise<string | undefined> {
+    if (locationId && locationInput) {
+      throwAppError('DONATION_LOCATION_XOR_INVALID', {
+        locationId,
+      });
+    }
+
+    if (locationId) return locationId;
+    if (!locationInput) return undefined;
+
+    const location = this.locationRepository.create(locationInput);
+    const savedLocation = await this.locationRepository.save(location);
+    return savedLocation.id;
+  }
 
   private validatePhotoInput(
     attachmentIds?: string[],
     mainAttachmentId?: string,
   ) {
+    if (!mainAttachmentId) {
+      throwAppError('DONATION_MAIN_ATTACHMENT_INVALID', {
+        attachmentIds,
+      });
+    }
+
     if (attachmentIds?.length) {
       const deduped = new Set(attachmentIds);
       if (deduped.size !== attachmentIds.length) {
@@ -64,16 +92,16 @@ export class DonationService {
 
   private async replaceDonationPhotos(
     donationId: string,
-    attachmentIds?: string[],
-    mainAttachmentId?: string,
+    attachmentIds: string[],
+    mainAttachmentId: string,
   ) {
-    if (!attachmentIds) return;
-
     await this.donationPhotoRepository.delete({ donationId });
 
-    if (!attachmentIds.length) return;
+    const allAttachmentIds = Array.from(
+      new Set([mainAttachmentId, ...attachmentIds]),
+    );
 
-    const photos = attachmentIds.map((attachmentId) =>
+    const photos = allAttachmentIds.map((attachmentId) =>
       this.donationPhotoRepository.create({
         donationId,
         attachmentId,
@@ -124,16 +152,12 @@ export class DonationService {
       }
     }
 
-    if (input.mainAttachmentId && !input.attachmentIds) {
-      throwAppError('DONATION_MAIN_ATTACHMENT_INVALID', {
-        mainAttachmentId: input.mainAttachmentId,
-      });
-    }
-
     this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
-
-    const status =
-      (input.status as DonationStatus) ?? DonationStatusValues.DRAFT;
+    const locationId = await this.resolveLocationId(
+      input.locationId,
+      input.locationInput,
+    );
+    const status = DonationStatusValues.PUBLISHED;
 
     const donation = this.donationRepository.create({
       userId,
@@ -143,11 +167,11 @@ export class DonationService {
       quantity: input.quantity,
       specification: input.specification ?? {},
       expiryDate,
-      status,
+      status: status as DonationStatus,
       urgency:
         (input.urgency as DonationUrgency) ?? DonationUrgencyValues.MEDIUM,
       safetyChecklistCompleted: input.safetyChecklistCompleted ?? false,
-      locationId: input.locationId,
+      locationId,
       listingExpiresAt: input.listingExpiresAt,
       publishedAt:
         status === DonationStatusValues.PUBLISHED ? new Date() : undefined,
@@ -155,13 +179,11 @@ export class DonationService {
 
     const savedDonation = await this.donationRepository.save(donation);
 
-    if (input.attachmentIds !== undefined) {
-      await this.replaceDonationPhotos(
-        savedDonation.id,
-        input.attachmentIds,
-        input.mainAttachmentId,
-      );
-    }
+    await this.replaceDonationPhotos(
+      savedDonation.id,
+      input.attachmentIds ?? [],
+      input.mainAttachmentId,
+    );
 
     return await this.mapDonationResponse(savedDonation);
   }
@@ -175,7 +197,17 @@ export class DonationService {
       throwAppError('DONATION_NOT_FOUND', { id });
     }
 
-    this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
+    if (
+      input.attachmentIds !== undefined ||
+      input.mainAttachmentId !== undefined
+    ) {
+      this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
+    }
+    if (input.locationId && input.locationInput) {
+      throwAppError('DONATION_LOCATION_XOR_INVALID', {
+        locationId: input.locationId,
+      });
+    }
 
     if (input.expiryDate) {
       const expiryDate = new Date(input.expiryDate);
@@ -200,28 +232,37 @@ export class DonationService {
     if (input.quantity !== undefined) donation.quantity = input.quantity;
     if (input.specification !== undefined)
       donation.specification = input.specification;
-    if (input.status !== undefined)
-      donation.status = input.status as DonationStatus;
     if (input.urgency !== undefined)
       donation.urgency = input.urgency as DonationUrgency;
     if (input.safetyChecklistCompleted !== undefined)
       donation.safetyChecklistCompleted = input.safetyChecklistCompleted;
-    if (input.locationId !== undefined) donation.locationId = input.locationId;
-
-    if (
-      input.status === DonationStatusValues.PUBLISHED &&
-      !donation.publishedAt
-    ) {
-      donation.publishedAt = new Date();
+    if (input.locationId !== undefined) {
+      donation.locationId = input.locationId;
+    }
+    if (input.locationInput !== undefined) {
+      donation.locationId = await this.resolveLocationId(
+        undefined,
+        input.locationInput,
+      );
     }
 
     const savedDonation = await this.donationRepository.save(donation);
 
     if (input.attachmentIds !== undefined) {
+      const mainAttachmentId =
+        input.mainAttachmentId ??
+        (await this.mapDonationResponse(savedDonation)).mainAttachmentId;
+
+      if (!mainAttachmentId) {
+        throwAppError('DONATION_MAIN_ATTACHMENT_INVALID', {
+          attachmentIds: input.attachmentIds,
+        });
+      }
+
       await this.replaceDonationPhotos(
         savedDonation.id,
         input.attachmentIds,
-        input.mainAttachmentId,
+        mainAttachmentId,
       );
     } else if (input.mainAttachmentId !== undefined) {
       await this.setMainDonationPhoto(savedDonation.id, input.mainAttachmentId);

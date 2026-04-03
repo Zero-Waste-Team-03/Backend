@@ -10,14 +10,13 @@ import {
   IsBoolean,
   IsString,
   IsUUID,
+  ValidateNested,
   Min,
 } from 'class-validator';
-import {
-  DONATION_STATUS_OPTIONS,
-  DONATION_URGENCY_OPTIONS,
-} from '../../entities/donation.entity';
+import { DONATION_URGENCY_OPTIONS } from '../../entities/donation.entity';
 import { GraphQLJSONObject } from 'graphql-type-json';
 import { Type } from 'class-transformer';
+import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 
 @InputType()
 export class CreateDonationInput {
@@ -59,15 +58,6 @@ export class CreateDonationInput {
 
   @Field(() => String, {
     nullable: true,
-    description: 'Donation lifecycle status',
-  })
-  @IsOptional()
-  @IsString()
-  @IsIn(DONATION_STATUS_OPTIONS)
-  status?: string;
-
-  @Field(() => String, {
-    nullable: true,
     description: 'Urgency level for the listing',
   })
   @IsOptional()
@@ -91,6 +81,16 @@ export class CreateDonationInput {
   @IsUUID()
   locationId?: string;
 
+  @Field(() => LocationInput, {
+    nullable: true,
+    description:
+      'Optional pickup location payload. Provide either locationId or locationInput, not both.',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocationInput)
+  locationInput?: LocationInput;
+
   @Field(() => Date, {
     nullable: true,
     description: 'Optional listing expiration date/time',
@@ -102,7 +102,8 @@ export class CreateDonationInput {
 
   @Field(() => [String], {
     nullable: true,
-    description: 'Attachment ids returned by upload endpoint',
+    description:
+      'Optional additional attachment ids returned by upload endpoint',
   })
   @IsOptional()
   @ArrayUnique()
@@ -110,10 +111,8 @@ export class CreateDonationInput {
   attachmentIds?: string[];
 
   @Field(() => String, {
-    nullable: true,
-    description: 'Main attachment id; must be inside attachmentIds',
+    description: 'Main attachment id used as cover photo',
   })
-  @IsOptional()
   @IsUUID()
-  mainAttachmentId?: string;
+  mainAttachmentId: string;
 }

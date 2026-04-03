@@ -10,6 +10,7 @@ export interface ErrorArgsMap {
     attachmentIds?: string[];
   };
   'donation.attachment_ids_duplicated': { attachmentIds: string[] };
+  'donation.location_xor_invalid': { locationId: string };
   'upload.max_files_exceeded': { max: number };
   'upload.attachment_not_found': { id: string };
   'upload.attachments_not_found': { ids: string[] };
