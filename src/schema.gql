@@ -65,6 +65,20 @@ type AuthResponse {
   user: User!
 }
 
+type Category {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  sensitivity: CategorySensitivityValues!
+  updatedAt: DateTime!
+}
+
+enum CategorySensitivityValues {
+  HIGH
+  LOW
+  MEDIUM
+}
+
 input ChangePasswordInput {
   """Current password of the user"""
   currentPassword: String!
@@ -76,6 +90,11 @@ input ChangePasswordInput {
 
   """New password to set for the user"""
   newPassword: String!
+}
+
+input CreateCategoryInput {
+  name: String!
+  sensitivity: CategorySensitivityValues
 }
 
 input CreateDonationInput {
@@ -130,6 +149,9 @@ type Donation {
   """Attachment ids for donation photos"""
   attachmentIds: [String!]!
 
+  """Category details"""
+  category: Category
+
   """Category id"""
   categoryId: String!
   createdAt: DateTime!
@@ -143,6 +165,9 @@ type Donation {
 
   """Date when listing expires for visibility"""
   listingExpiresAt: DateTime
+
+  """Pickup location details"""
+  location: Location
 
   """Optional pickup location id"""
   locationId: String
@@ -279,11 +304,17 @@ type Mutation {
   """
   changePassword(changePasswordInput: ChangePasswordInput!): MessageResponse!
 
+  """Create a new category (Administrator only)."""
+  createCategory(input: CreateCategoryInput!): Category!
+
   """Create a donation listing for the authenticated user"""
   createDonation(input: CreateDonationInput!): Donation!
 
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
+
+  """Delete a category by its ID (Administrator only)."""
+  deleteCategory(id: ID!): MessageResponse!
 
   """
   Delete a donation listing owned by the authenticated user using id and owner condition
@@ -330,6 +361,9 @@ type Mutation {
   """
   suspendUser(userId: String!): User!
 
+  """Update an existing category (Administrator only)."""
+  updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
+
   """
   Update a donation listing owned by the authenticated user using id and owner condition
   """
@@ -349,6 +383,15 @@ type Notification {
   title: String!
   type: String!
   updatedAt: DateTime!
+}
+
+type PaginatedCategories {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [Category!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
 }
 
 type PaginatedDonations {
@@ -400,6 +443,12 @@ type Query {
     """Filter by user status"""
     status: String
   ): PaginatedUsers!
+
+  """Retrieve a paginated list of all categories."""
+  categories(pagination: PaginationInput): PaginatedCategories!
+
+  """Retrieve a single category by its ID."""
+  category(id: ID!): Category!
 
   """Get current authenticated user profile"""
   currentUser: User!
@@ -468,6 +517,11 @@ input SendNotificationInput {
 type SendNotificationResponse {
   message: String!
   success: Boolean!
+}
+
+input UpdateCategoryInput {
+  name: String
+  sensitivity: CategorySensitivityValues
 }
 
 input UpdateDonationInput {

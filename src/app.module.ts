@@ -21,6 +21,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
 import { LocationDataLoader } from './common/modules/dataloader/location.dataloader';
 import { AttachmentDataLoader } from './common/modules/dataloader/attachment.dataloader';
+import { CategoryDataLoader } from './common/modules/dataloader/category.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
@@ -52,6 +53,7 @@ import { ErrorsModule } from './common/errors/errors.module';
         userDataLoader: UserDataLoader,
         locationDataLoader: LocationDataLoader,
         attachmentDataLoader: AttachmentDataLoader,
+        categoryDataLoader: CategoryDataLoader,
       ) => ({
         ...graphqlConfiguration,
         // Override context to inject DataLoaders per request
@@ -61,6 +63,7 @@ import { ErrorsModule } from './common/errors/errors.module';
             userLoader: userDataLoader.createLoader(),
             locationLoader: locationDataLoader.createLoader(),
             attachmentLoader: attachmentDataLoader.createLoader(),
+            categoryLoader: categoryDataLoader.createLoader(),
           };
           return { req, res, loaders };
         },
@@ -70,6 +73,7 @@ import { ErrorsModule } from './common/errors/errors.module';
         UserDataLoader,
         LocationDataLoader,
         AttachmentDataLoader,
+        CategoryDataLoader,
       ],
     }),
     InfrastructureModule,
@@ -89,4 +93,4 @@ import { ErrorsModule } from './common/errors/errors.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
