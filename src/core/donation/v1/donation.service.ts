@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import {
   Donation,
   DonationUrgencyValues,
@@ -8,6 +7,7 @@ import {
   type DonationStatus,
   type DonationUrgency,
 } from '../entities/donation.entity';
+import { In, Repository } from 'typeorm';
 import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
@@ -321,9 +321,29 @@ export class DonationService {
       take: limit,
     });
 
-    const items = await Promise.all(
-      donations.map((donation) => this.mapDonationResponse(donation)),
-    );
+    // Batch fetch photos for all donations in the current page
+    const donationIds = donations.map(d => d.id);
+    const allPhotos = donationIds.length > 0 
+      ? await this.donationPhotoRepository.find({
+          where: { donationId: In(donationIds) }
+        })
+      : [];
+
+    // Map photos to their respective donations
+    const photoMap = allPhotos.reduce((acc, photo) => {
+      if (!acc[photo.donationId]) acc[photo.donationId] = [];
+      acc[photo.donationId].push(photo);
+      return acc;
+    }, {} as Record<string, DonationPhoto[]>);
+
+    const items = donations.map((donation) => {
+      const photos = photoMap[donation.id] || [];
+      return {
+        ...donation,
+        attachmentIds: photos.map((photo) => photo.attachmentId),
+        mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
+      };
+    });
 
     return {
       items,

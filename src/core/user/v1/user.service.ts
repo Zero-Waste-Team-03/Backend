@@ -52,7 +52,7 @@ export class UserService {
     @InjectQueue(QUEUE_NAME.MAIL)
     private readonly mailQueue: Queue,
     private readonly attachmentService: AttachmentService,
-  ) {}
+  ) { }
 
   async getPaginatedUsers(
     args: AdminUsersArgs,
@@ -255,26 +255,27 @@ export class UserService {
 
     const { location, settings, avatarAttachmentId, ...restOfData } = data;
 
- //TODO: this should not query attachment (rely on fk instead) but we will come back to this later
+    //TODO: this should not query attachment (rely on fk instead) but we will come back to this later
 
     if (avatarAttachmentId) {
- try{
+      try {
         const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
         user.avatarAttachmentId = attachment.id;
-      }catch{
-          throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
-      }      }
+      } catch {
+        throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
+      }
+    }
 
     if (location) {
-        user.location = this.locationRepository.create({...location, id: user.location?.id});
+      user.location = this.locationRepository.create({ ...location, id: user.location?.id });
     }
 
     if (settings) {
-        user.settings = this.userSettingsRepository.create({
-           id: user.settings?.id,
-          ...settings,
-          userId: user.id,
-        });
+      user.settings = this.userSettingsRepository.create({
+        id: user.settings?.id,
+        ...settings,
+        userId: user.id,
+      });
     }
     Object.assign(user, restOfData);
 
@@ -371,7 +372,7 @@ export class UserService {
     }
     return { message: 'User deleted successfully' };
   }
-  async getUserSettings(userId: string): Promise<UserSettings|null> {
+  async getUserSettings(userId: string): Promise<UserSettings | null> {
     const settings = await this.userSettingsRepository.findOne({
       where: { userId },
     });

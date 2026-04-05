@@ -23,6 +23,10 @@ import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface
 import { User } from '../user/entities/user.entity';
 import { PaginatedDonations } from './graphql/types/paginated-donations.type';
 import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
+import { LocationType } from '../authentication/graphql/types/location.type';
+import { CategoryType } from '../category/graphql/types/category.type';
+import { Location } from 'src/common/locations/entities/location.entity';
+import { Category } from '../category/entities/category.entity';
 
 @Resolver(() => DonationType)
 export class DonationResolver {
@@ -53,6 +57,24 @@ export class DonationResolver {
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<User | null> {
     return loaders.userLoader.load(donation.userId);
+  }
+
+  @ResolveField(() => LocationType, { nullable: true })
+  async location(
+    @Parent() donation: DonationType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<Location | null> {
+    if (!donation.locationId) return null;
+    return loaders.locationLoader.load(donation.locationId);
+  }
+
+  @ResolveField(() => CategoryType, { nullable: true })
+  async category(
+    @Parent() donation: DonationType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<Category | null> {
+    if (!donation.categoryId) return null;
+    return loaders.categoryLoader.load(donation.categoryId);
   }
 
   @UseGuards(AccessTokenGuard)

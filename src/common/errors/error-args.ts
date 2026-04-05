@@ -15,4 +15,5 @@ export interface ErrorArgsMap {
   'upload.attachment_not_found': { id: string };
   'upload.attachments_not_found': { ids: string[] };
   'upload.failed_attachment': { id: string };
+  'category.not_found': { id: string };
 }

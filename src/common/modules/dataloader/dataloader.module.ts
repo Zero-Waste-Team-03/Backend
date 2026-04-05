@@ -6,6 +6,8 @@ import { UserModule } from '../../../core/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Location } from '../../locations/entities/location.entity';
 import { Attachment } from '../attachment/entities/attachment.entity';
+import { CategoryDataLoader } from './category.dataloader';
+import { CategoryModule } from '../../../core/category/category.module';
 
 /**
  * DataLoader Module
@@ -17,8 +19,22 @@ import { Attachment } from '../attachment/entities/attachment.entity';
  * not as singleton services. This module only provides the factory services.
  */
 @Module({
-  imports: [UserModule, TypeOrmModule.forFeature([Location, Attachment])],
-  providers: [UserDataLoader, LocationDataLoader, AttachmentDataLoader],
-  exports: [UserDataLoader, LocationDataLoader, AttachmentDataLoader],
+  imports: [
+    UserModule,
+    CategoryModule,
+    TypeOrmModule.forFeature([Location, Attachment]),
+  ],
+  providers: [
+    UserDataLoader,
+    LocationDataLoader,
+    AttachmentDataLoader,
+    CategoryDataLoader,
+  ],
+  exports: [
+    UserDataLoader,
+    LocationDataLoader,
+    AttachmentDataLoader,
+    CategoryDataLoader,
+  ],
 })
 export class DataLoaderModule {}
