@@ -163,7 +163,7 @@ type Donation {
   specification: JSON
 
   """Donation status"""
-  status: String!
+  status: DonationStatusValues!
 
   """Donation title"""
   title: String!
@@ -172,8 +172,31 @@ type Donation {
   """Urgency level for this listing"""
   urgency: DonationUrgencyValues!
 
+  """The donor of this item"""
+  user: User!
+
   """Owner user id (donor)"""
   userId: String!
+}
+
+type DonationStatistics {
+  """Total number of flagged donations"""
+  flaggedItems: Int!
+
+  """Total number of donations pending approval"""
+  pendingApprovals: Int!
+
+  """Total number of active (published) donations"""
+  totalActiveDonations: Int!
+}
+
+"""Possible statuses for a donation listing"""
+enum DonationStatusValues {
+  COMPLETED
+  DRAFT
+  EXPIRED
+  PUBLISHED
+  RESERVED
 }
 
 """Available urgency levels for donations"""
@@ -181,6 +204,12 @@ enum DonationUrgencyValues {
   HIGH
   LOW
   MEDIUM
+}
+
+input DonationsFilterInput {
+  categoryId: String
+  status: DonationStatusValues
+  urgency: DonationUrgencyValues
 }
 
 """
@@ -322,6 +351,15 @@ type Notification {
   updatedAt: DateTime!
 }
 
+type PaginatedDonations {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [Donation!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
 type PaginatedUsers {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -329,6 +367,11 @@ type PaginatedUsers {
   limit: Int!
   page: Int!
   totalCount: Int!
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
 }
 
 input PaginationQueryInput {
@@ -360,6 +403,14 @@ type Query {
 
   """Get current authenticated user profile"""
   currentUser: User!
+
+  """
+  Get statistics for donations (total active, flagged, pending approvals)
+  """
+  donationStatistics: DonationStatistics!
+
+  """Get all donation listings with optional filters and donor access"""
+  donations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
   notifications(pagination: PaginationQueryInput): [Notification!]!
 }
 

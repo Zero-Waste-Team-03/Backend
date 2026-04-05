@@ -18,6 +18,9 @@ describe('DonationService', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
+    findAndCount: jest.fn(),
+    find: jest.fn(),
   };
 
   const donationPhotoRepository = {
@@ -411,6 +414,55 @@ describe('DonationService', () => {
       await expect(service.deleteDonation('d404', 'u1')).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+  describe('getStatistics', () => {
+    it('returns correct counts for active, flagged and pending donations', async () => {
+      donationRepository.count.mockImplementation((options) => {
+        if (options.where.status === DonationStatusValues.PUBLISHED) return 10;
+        if (options.where.urgency === DonationUrgencyValues.HIGH) return 2;
+        if (options.where.status === DonationStatusValues.DRAFT) return 5;
+        return 0;
+      });
+
+      const result = await service.getStatistics();
+
+      expect(result).toEqual({
+        totalActiveDonations: 10,
+        flaggedItems: 2,
+        pendingApprovals: 5,
+      });
+      expect(donationRepository.count).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('findAll', () => {
+    it('returns paginated items and metadata', async () => {
+      const mockDonations = [
+        { id: 'd1', title: 'Donation 1', userId: 'u1' },
+        { id: 'd2', title: 'Donation 2', userId: 'u1' },
+      ];
+      donationRepository.findAndCount.mockResolvedValue([mockDonations, 20]);
+      donationPhotoRepository.find.mockResolvedValue([]);
+
+      const filter = { categoryId: 'cat1' };
+      const pagination = { page: 2, limit: 10 };
+
+      const result = await service.findAll(filter, pagination);
+
+      expect(donationRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { categoryId: 'cat1' },
+          skip: 10,
+          take: 10,
+        }),
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalCount).toBe(20);
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(10);
+      expect(result.hasNextPage).toBe(false); // 20 <= 10 + 10
+      expect(result.hasPreviousPage).toBe(true);
     });
   });
 });
