@@ -10,9 +10,9 @@ input AdminCreateAccountInput {
   email: String!
 
   """
-  Role to assign: "Administrator", "Organizations", "Stores", or "User"
+  Role to assign: "Administrator", "Organizations", "Stores", "User" or "Local Authority"
   """
-  role: String!
+  role: UserRole!
 }
 
 """Available UI themes for the application"""
@@ -42,7 +42,7 @@ type Attachment {
   jobId: String
 
   """Date the attachment was last updated"""
-  updatedAt: DateTime!
+  updatedAt: DateTime
 
   """Current upload status of the attachment"""
   uploadStatus: UploadStatusValues
@@ -78,15 +78,120 @@ input ChangePasswordInput {
   newPassword: String!
 }
 
+input CreateDonationInput {
+  """Optional additional attachment ids returned by upload endpoint"""
+  attachmentIds: [String!]
+
+  """Category id for this donation listing"""
+  categoryId: String!
+
+  """Detailed donation description"""
+  description: String!
+
+  """Expiry date/time for this donation"""
+  expiryDate: DateTime!
+
+  """Optional listing expiration date/time"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id. On update, explicit null clears location."""
+  locationId: String
+
+  """
+  Optional pickup location payload. Provide either locationId or locationInput, not both.
+  """
+  locationInput: LocationInput
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String!
+
+  """Available quantity in integer units"""
+  quantity: Int!
+
+  """Whether safety checklist was completed"""
+  safetyChecklistCompleted: Boolean
+
+  """Structured specification payload (e.g. packaging, allergens)"""
+  specification: JSONObject
+
+  """Donation title"""
+  title: String!
+
+  """Urgency level for the listing"""
+  urgency: DonationUrgencyValues
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
 
+type Donation {
+  """Attachment ids for donation photos"""
+  attachmentIds: [String!]!
+
+  """Category id"""
+  categoryId: String!
+  createdAt: DateTime!
+
+  """Donation description"""
+  description: String!
+
+  """Donation expiry date"""
+  expiryDate: DateTime!
+  id: ID!
+
+  """Date when listing expires for visibility"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id"""
+  locationId: String
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String
+
+  """Date when listing was published"""
+  publishedAt: DateTime
+
+  """Available quantity"""
+  quantity: Int!
+
+  """Whether safety checklist is completed"""
+  safetyChecklistCompleted: Boolean!
+
+  """Structured specification data"""
+  specification: JSON
+
+  """Donation status"""
+  status: String!
+
+  """Donation title"""
+  title: String!
+  updatedAt: DateTime!
+
+  """Urgency level for this listing"""
+  urgency: DonationUrgencyValues!
+
+  """Owner user id (donor)"""
+  userId: String!
+}
+
+"""Available urgency levels for donations"""
+enum DonationUrgencyValues {
+  HIGH
+  LOW
+  MEDIUM
+}
+
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSON
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
 
 type Location {
   """Location city"""
@@ -145,8 +250,16 @@ type Mutation {
   """
   changePassword(changePasswordInput: ChangePasswordInput!): MessageResponse!
 
+  """Create a donation listing for the authenticated user"""
+  createDonation(input: CreateDonationInput!): Donation!
+
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
+
+  """
+  Delete a donation listing owned by the authenticated user using id and owner condition
+  """
+  deleteDonation(id: ID!): MessageResponse!
   deleteNotification(id: ID!): MessageResponse!
 
   """Send password reset email to user"""
@@ -187,6 +300,11 @@ type Mutation {
   Suspend a user account, preventing them from logging in or accessing services.
   """
   suspendUser(userId: String!): User!
+
+  """
+  Update a donation listing owned by the authenticated user using id and owner condition
+  """
+  updateDonation(id: ID!, input: UpdateDonationInput!): Donation!
 
   """Update current user profile information"""
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
@@ -231,7 +349,7 @@ type Query {
     page: Int! = 1
 
     """Filter by user role"""
-    role: String
+    role: UserRole
 
     """Search by name or email"""
     search: String
@@ -257,6 +375,11 @@ input RegisterInput {
 
   """Password for the new user, must be strong and secure"""
   password: String!
+
+  """
+  Phone number of the user, optional but if provided must be a valid string
+  """
+  phoneNumber: String
 }
 
 input RegisterLocationInput {
@@ -296,6 +419,49 @@ type SendNotificationResponse {
   success: Boolean!
 }
 
+input UpdateDonationInput {
+  """Optional additional attachment ids returned by upload endpoint"""
+  attachmentIds: [String!]
+
+  """Category id for this donation listing"""
+  categoryId: String
+
+  """Detailed donation description"""
+  description: String
+
+  """Expiry date/time for this donation"""
+  expiryDate: DateTime
+
+  """Optional listing expiration date/time"""
+  listingExpiresAt: DateTime
+
+  """Optional pickup location id. On update, explicit null clears location."""
+  locationId: String
+
+  """
+  Optional pickup location payload. Provide either locationId or locationInput, not both.
+  """
+  locationInput: LocationInput
+
+  """Main attachment id used as cover photo"""
+  mainAttachmentId: String
+
+  """Available quantity in integer units"""
+  quantity: Int
+
+  """Whether safety checklist was completed"""
+  safetyChecklistCompleted: Boolean
+
+  """Structured specification payload (e.g. packaging, allergens)"""
+  specification: JSONObject
+
+  """Donation title"""
+  title: String
+
+  """Urgency level for the listing"""
+  urgency: DonationUrgencyValues
+}
+
 input UpdateProfileInput {
   """Avatar attachment ID"""
   avatarAttachmentId: String
@@ -308,6 +474,9 @@ input UpdateProfileInput {
 
   """User location details"""
   location: LocationInput
+
+  """Phone number of the user"""
+  phoneNumber: String
 
   """User account settings"""
   settings: UserSettingsInput
@@ -326,6 +495,9 @@ enum UploadStatusValues {
 }
 
 type User {
+  """Alias for avatar attachment details"""
+  attachment: Attachment
+
   """User avatar attachment details"""
   avatar: Attachment
 
@@ -359,11 +531,14 @@ type User {
   """Location ID reference"""
   locationId: String
 
+  """User phone number"""
+  phoneNumber: String
+
   """User reputation score"""
   reputationScore: Int!
 
   """User role"""
-  role: String!
+  role: UserRole!
 
   """User account settings"""
   settings: UserSettings
@@ -373,6 +548,15 @@ type User {
 
   """Date the user was last updated"""
   updatedAt: DateTime!
+}
+
+"""Available user roles"""
+enum UserRole {
+  ADMINISTRATOR
+  LOCAL_AUTHORITY
+  ORGANIZATION
+  STORE
+  USER
 }
 
 type UserSettings {

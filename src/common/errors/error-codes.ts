@@ -86,6 +86,35 @@ export const ERROR_CODES = {
     message: 'No active notification tokens found for this user.',
   },
 
+  // ── Donation ────────────────────────────────────────────────────────
+  DONATION_NOT_FOUND: {
+    code: 'donation.not_found',
+    httpStatus: 404,
+    message: 'Donation not found.',
+    args: { id: 'string' } as const,
+  },
+  DONATION_INVALID_EXPIRY_DATE: {
+    code: 'donation.invalid_expiry_date',
+    httpStatus: 400,
+    message: 'Donation expiry date is invalid.',
+  },
+  DONATION_MAIN_ATTACHMENT_INVALID: {
+    code: 'donation.main_attachment_invalid',
+    httpStatus: 400,
+    message: 'Main attachment id must be included in attachment ids.',
+  },
+  DONATION_ATTACHMENT_IDS_DUPLICATED: {
+    code: 'donation.attachment_ids_duplicated',
+    httpStatus: 400,
+    message: 'Attachment ids contain duplicate values.',
+  },
+  DONATION_LOCATION_XOR_INVALID: {
+    code: 'donation.location_xor_invalid',
+    httpStatus: 400,
+    message: 'Provide either locationId or locationInput, not both.',
+    args: { locationId: 'string' } as const,
+  },
+
   // ── Upload ──────────────────────────────────────────────────────────
   UPLOAD_FILE_REQUIRED: {
     code: 'upload.file_required',
