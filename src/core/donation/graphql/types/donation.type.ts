@@ -3,12 +3,21 @@ import { GraphQLJSON } from 'graphql-type-json';
 import {
   DonationUrgency,
   DonationUrgencyValues,
+  DonationStatusValues,
+  DonationStatus,
 } from '../../entities/donation.entity';
+import { UserType } from '../../../authentication/graphql/types/user.type';
+
+registerEnumType(DonationStatusValues, {
+  name: 'DonationStatusValues',
+  description: 'Possible statuses for a donation listing',
+});
 
 registerEnumType(DonationUrgencyValues, {
   name: 'DonationUrgencyValues',
   description: 'Available urgency levels for donations',
 });
+
 @ObjectType('Donation')
 export class DonationType {
   @Field(() => ID)
@@ -66,8 +75,11 @@ export class DonationType {
   })
   listingExpiresAt?: Date | null;
 
-  @Field(() => String, { description: 'Donation status' })
-  status: string;
+  @Field(() => DonationStatusValues, { description: 'Donation status' })
+  status: DonationStatus;
+
+  @Field(() => UserType, { description: 'The donor of this item' })
+  user: UserType;
 
   @Field(() => [String], {
     description: 'Attachment ids for donation photos',
