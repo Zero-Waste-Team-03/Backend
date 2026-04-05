@@ -160,6 +160,13 @@ export const ERROR_CODES = {
     message: 'Some attachments were not found.',
     args: { ids: 'string[]' } as const,
   },
+
+  CATEGORY_NOT_FOUND: {
+    code: 'category.not_found',
+    httpStatus: 404,
+    message: 'Category not found.',
+    args: { id: 'string' } as const,
+  },
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;

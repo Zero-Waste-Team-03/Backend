@@ -7,6 +7,8 @@ import {
   DonationStatus,
 } from '../../entities/donation.entity';
 import { UserType } from '../../../authentication/graphql/types/user.type';
+import { LocationType } from '../../../authentication/graphql/types/location.type';
+import { CategoryType } from '../../../category/graphql/types/category.type';
 
 registerEnumType(DonationStatusValues, {
   name: 'DonationStatusValues',
@@ -79,7 +81,19 @@ export class DonationType {
   status: DonationStatus;
 
   @Field(() => UserType, { description: 'The donor of this item' })
-  user: UserType;
+  user?: UserType;
+
+  @Field(() => LocationType, {
+    nullable: true,
+    description: 'Pickup location details',
+  })
+  location?: LocationType;
+
+  @Field(() => CategoryType, {
+    nullable: true,
+    description: 'Category details',
+  })
+  category?: CategoryType;
 
   @Field(() => [String], {
     description: 'Attachment ids for donation photos',
