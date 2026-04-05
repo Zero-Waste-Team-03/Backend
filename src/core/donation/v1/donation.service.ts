@@ -14,6 +14,8 @@ import { throwAppError } from 'src/common/errors';
 import { DonationPhoto } from '../entities/donation-photo.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
+import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
+import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -279,5 +281,57 @@ export class DonationService {
     }
 
     return { message: 'Donation deleted successfully' };
+  }
+
+  async getStatistics() {
+    const [totalActiveDonations, flaggedItems, pendingApprovals] = await Promise.all([
+      this.donationRepository.count({
+        where: { status: DonationStatusValues.PUBLISHED as DonationStatus },
+      }),
+      this.donationRepository.count({
+        where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
+      }),
+      this.donationRepository.count({
+        where: { status: DonationStatusValues.DRAFT as DonationStatus },
+      }),
+    ]);
+
+    return {
+      totalActiveDonations,
+      flaggedItems,
+      pendingApprovals,
+    };
+  }
+
+  async findAll(filter?: DonationsFilterInput, pagination?: PaginationInput) {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filter?.categoryId) where.categoryId = filter.categoryId;
+    if (filter?.urgency) where.urgency = filter.urgency;
+    if (filter?.status) where.status = filter.status;
+
+    const [donations, totalCount] = await this.donationRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    const items = await Promise.all(
+      donations.map((donation) => this.mapDonationResponse(donation)),
+    );
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
   }
 }
