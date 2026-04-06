@@ -283,7 +283,7 @@ export class DonationService {
     return await this.mapDonationResponse(savedDonation);
   }
 
-  async deleteDonation(id: string, userId: string,isAdmin:boolean) {
+  async deleteDonation(id: string, userId: string,isAdmin:boolean=false) {
     let result:DeleteResult;
     if (isAdmin){
 
