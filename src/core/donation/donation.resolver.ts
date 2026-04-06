@@ -100,6 +100,12 @@ export class DonationResolver {
   ): Promise<DonationType> {
     return await this.donationService.updateDonation(id, input, userId);
   }
+  @Query(() => DonationType, {
+    description: 'Get a single donation listing by id',
+  })
+  async donation(@Args('id', { type: () => ID }) id: string): Promise<DonationType> {
+    return await this.donationService.getDonationById(id);
+  }
 
   @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType, {
