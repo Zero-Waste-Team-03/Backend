@@ -82,7 +82,8 @@ export class DonationResolver {
     @Parent() donation:DonationType,
     @Context() {loaders}: {loaders:IDataLoaders}
   ){
-    return loaders.attachmentLoader.load(donation.id);
+    if (!donation.mainAttachmentId) return null;
+    return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
 
   @UseGuards(AccessTokenGuard)
