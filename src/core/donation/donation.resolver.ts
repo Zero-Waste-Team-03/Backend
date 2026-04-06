@@ -27,6 +27,7 @@ import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { Category } from '../category/entities/category.entity';
+import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
 @Resolver(() => DonationType)
 export class DonationResolver {
@@ -75,6 +76,13 @@ export class DonationResolver {
   ): Promise<Category | null> {
     if (!donation.categoryId) return null;
     return loaders.categoryLoader.load(donation.categoryId);
+  }
+  @ResolveField(()=>AttachementType,{nullable:false})
+  async mainAttachment(
+    @Parent() donation:DonationType,
+    @Context() {loaders}: {loaders:IDataLoaders}
+  ){
+    return loaders.attachmentLoader.load(donation.id);
   }
 
   @UseGuards(AccessTokenGuard)
