@@ -7,7 +7,7 @@ import {
   type DonationStatus,
   type DonationUrgency,
 } from '../entities/donation.entity';
-import { In, Repository } from 'typeorm';
+import { DeleteResult, In, Repository } from 'typeorm';
 import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
@@ -283,8 +283,15 @@ export class DonationService {
     return await this.mapDonationResponse(savedDonation);
   }
 
-  async deleteDonation(id: string, userId: string) {
-    const result = await this.donationRepository.delete({ id, userId });
+  async deleteDonation(id: string, userId: string,isAdmin:boolean) {
+    let result:DeleteResult;
+    if (isAdmin){
+
+      result = await this.donationRepository.delete({ id });
+    }
+      else {
+        result= await this.donationRepository.delete({ id, userId });
+      }
 
     if (!result.affected) {
       throwAppError('DONATION_NOT_FOUND', { id });

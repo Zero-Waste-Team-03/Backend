@@ -20,7 +20,7 @@ import { DonationStatisticsType } from './graphql/types/donation-statistics.type
 import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
-import { User } from '../user/entities/user.entity';
+import { User, UserRole } from '../user/entities/user.entity';
 import { PaginatedDonations } from './graphql/types/paginated-donations.type';
 import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
 import { LocationType } from '../authentication/graphql/types/location.type';
@@ -124,7 +124,8 @@ export class DonationResolver {
   async deleteDonation(
     @Args('id', { type: () => ID }) id: string,
     @USER('id') userId: string,
+    @USER('role') role:UserRole
   ): Promise<MessageResponseType> {
-    return await this.donationService.deleteDonation(id, userId);
+    return await this.donationService.deleteDonation(id, userId,role=="Administrator");
   }
 }
