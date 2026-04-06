@@ -73,6 +73,7 @@ export class DonationService {
     return undefined;
   }
 
+  //TODO: TO modify urgently
   private buildUpdatePatch(input: UpdateDonationInput): Partial<Donation> {
     const patch: Partial<Donation> = {};
 
@@ -89,6 +90,15 @@ export class DonationService {
     }
 
     return patch;
+  }
+  async getDonationById(id: string):Promise<DonationResponse> {
+    const donation = await this.donationRepository.findOne({ where: { id } });
+
+    if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id });
+    }
+
+    return await this.mapDonationResponse(donation);
   }
 
   private validatePhotoInput(
