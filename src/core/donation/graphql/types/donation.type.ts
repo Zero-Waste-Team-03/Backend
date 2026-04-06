@@ -9,6 +9,7 @@ import {
 import { UserType } from '../../../authentication/graphql/types/user.type';
 import { LocationType } from '../../../authentication/graphql/types/location.type';
 import { CategoryType } from '../../../category/graphql/types/category.type';
+import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
 registerEnumType(DonationStatusValues, {
   name: 'DonationStatusValues',
@@ -106,6 +107,11 @@ export class DonationType {
   })
   mainAttachmentId?: string;
 
+  @Field(()=>AttachementType,{
+    nullable:false,
+    description:"The Main attahcment used as cover photo"
+  })
+  mainAttachment?:AttachementType
   @Field(() => Date)
   createdAt: Date;
 
