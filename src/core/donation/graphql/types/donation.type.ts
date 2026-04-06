@@ -108,7 +108,7 @@ export class DonationType {
   mainAttachmentId?: string;
 
   @Field(()=>AttachementType,{
-    nullable:false,
+    nullable:true,
     description:"The Main attahcment used as cover photo"
   })
   mainAttachment?:AttachementType
