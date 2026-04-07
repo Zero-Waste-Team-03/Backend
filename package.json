@@ -79,7 +79,7 @@
     "express-basic-auth": "^1.2.1",
     "express-session": "^1.19.0",
     "firebase-admin": "^13.7.0",
-    "glob": "^10.3.12",
+    "glob": "^13.0.6",
     "graphql": "^16.13.1",
     "graphql-type-json": "^0.3.2",
     "handlebars": "^4.7.8",
