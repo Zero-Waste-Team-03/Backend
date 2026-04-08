@@ -172,7 +172,7 @@ type Donation {
   """Optional pickup location id"""
   locationId: String
 
-  """The Main attahcment used as cover photo"""
+  """The Main attachment used as cover photo"""
   mainAttachment: Attachment
 
   """Main attachment id used as cover photo"""
@@ -212,6 +212,9 @@ type DonationMapMarker {
   id: ID!
   latitude: Float!
   longitude: Float!
+
+  """Main attachment id reference"""
+  mainAttachmentId: String!
   markerColor: MarkerColorValues!
   title: String!
   urgency: DonationUrgencyValues!

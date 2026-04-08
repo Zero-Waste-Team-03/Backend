@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import DataLoader from 'dataloader';
 import { DonationService } from '../../../core/donation/v1/donation.service';
-import { Donation } from '../../../core/donation/entities/donation.entity';
 
 /**
  * DataLoader for Donation entity to solve N+1 query problem
@@ -15,15 +14,15 @@ export class DonationDataLoader {
    *
    * @returns DataLoader instance for Donation entities
    */
-  createLoader(): DataLoader<string, Donation | null> {
-    return new DataLoader<string, Donation | null>(
+  createLoader(): DataLoader<string, any | null> {
+    return new DataLoader<string, any | null>(
       async (donationIds: readonly string[]) => {
         const donations = await this.donationService.findByIds(donationIds as string[]);
 
         const donationMap = donations.reduce((map, donation) => {
           map[donation.id] = donation;
           return map;
-        }, {} as Record<string, Donation>);
+        }, {} as Record<string, any>);
 
         return donationIds.map((id) => donationMap[id] || null);
       },

@@ -24,80 +24,137 @@ export class ReservationService {
   ) {}
 
   public async expireReservation(reservationId: string) {
-      await this.reservationRepository.manager.transaction(async (manager) => {
-        try{
-        const reservation = await manager.findOneOrFail(Reservation, {
-          where: { id: reservationId, status: ReservationStatusValues.PENDING },
-          select: ['id', 'donationId'],
-        });
-        await manager.update(Donation, reservation.donationId, { status: DonationStatusValues.PUBLISHED });
-        await manager.update(Reservation, reservationId, { status: ReservationStatusValues.CANCELLED });
-        }catch {
-          throwAppError('RESERVATION_NOT_FOUND', { id: reservationId , status: ReservationStatusValues.PENDING});
-        }
-        this.logger.log(`Reservation ${reservationId} has expired and was cancelled automatically.`);
+    await this.reservationRepository.manager.transaction(async (manager) => {
+      const reservation = await manager.findOne(Reservation, {
+        where: { id: reservationId },
+        lock: { mode: 'pessimistic_write' },
+        select: ['id', 'status', 'donationId'],
       });
-  }
 
-  async reserveDonation(donationId: string, beneficiaryId: string): Promise<Reservation> {
-    const donation = await this.donationRepository.findOne({ where: { id: donationId } });
-    
-    if (!donation) {
-      throwAppError('DONATION_NOT_FOUND', { id: donationId });
-    }
-
-    if (donation.status !== DonationStatusValues.PUBLISHED) {
-      throwAppError('DONATION_NOT_AVAILABLE', { id: donationId, status: donation.status });
-    }
-
-    const reservation = this.reservationRepository.create({
-        donationId,
-        beneficiaryId,
-    });
-
-    await this.reservationRepository.save(reservation);
-
-    donation.status = DonationStatusValues.RESERVED;
-    await this.donationRepository.save(donation);
-
-    await this.reservationQueue.add(
-      RESERVATION_JOBS.EXPIRE_RESERVATION,
-      { reservationId: reservation.id },
-      { 
-        jobId: `reservation-${reservation.id}`,
-        delay: this.EXPIRATION_TIME_MS, 
-        removeOnComplete: true 
+      if (!reservation) {
+        this.logger.warn(
+          `Expiration job failed: Reservation ${reservationId} not found.`,
+        );
+        return;
       }
-    );
+      if (reservation.status !== ReservationStatusValues.PENDING) {
+        this.logger.log(
+          `Expiration job skipped: Reservation ${reservationId} is already ${reservation.status}.`,
+        );
+        return;
+      }
 
-    this.logger.log(`Scheduled expiration job for reservation ${reservation.id} with ${this.EXPIRATION_TIME_MS / 1000}s delay`);
+      await manager.update(Donation, reservation.donationId, {
+        status: DonationStatusValues.PUBLISHED,
+      });
+      await manager.update(Reservation, reservationId, {
+        status: ReservationStatusValues.CANCELLED,
+      });
 
-    return reservation;
+      this.logger.log(
+        `Reservation ${reservationId} has expired and was cancelled automatically.`,
+      );
+    });
   }
 
-  async confirmReservation(reservationId: string, beneficiaryId: string): Promise<Reservation> {
-    const reservation = await this.reservationRepository.findOne({ where: { id: reservationId }, relations: ['donation'] });
-    
-    if (!reservation) {
-      throwAppError('RESERVATION_NOT_FOUND', { id: reservationId, status: 'Not Found' });
-    }
+  async reserveDonation(
+    donationId: string,
+    beneficiaryId: string,
+  ): Promise<Reservation> {
+    return await this.reservationRepository.manager.transaction(
+      async (manager) => {
+        const donation = await manager.findOne(Donation, {
+          where: { id: donationId },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-    if (reservation.beneficiaryId !== beneficiaryId) {
-      throwAppError('RESERVATION_OWNERSHIP_INVALID');
-    }
+        if (!donation) {
+          throwAppError('DONATION_NOT_FOUND', { id: donationId });
+        }
 
-    if (reservation.status !== ReservationStatusValues.PENDING) {
-      throwAppError('RESERVATION_STATUS_INVALID', { status: reservation.status });
-    }
+        if (donation.status !== DonationStatusValues.PUBLISHED) {
+          throwAppError('DONATION_NOT_AVAILABLE', {
+            id: donationId,
+            status: donation.status,
+          });
+        }
 
-    reservation.status = ReservationStatusValues.CONFIRMED;
-    reservation.confirmedAt = new Date();
-    await this.reservationRepository.save(reservation);
+        const reservation = manager.create(Reservation, {
+          donationId,
+          beneficiaryId,
+        });
 
-    await this.reservationQueue.remove(`reservation-${reservationId}`);
+        const savedReservation = await manager.save(Reservation, reservation);
 
-    this.logger.log(`Reservation ${reservationId} confirmed by beneficiary ${beneficiaryId}`);
+        donation.status = DonationStatusValues.RESERVED;
+        await manager.save(Donation, donation);
 
-    return reservation;
+        await this.reservationQueue.add(
+          RESERVATION_JOBS.EXPIRE_RESERVATION,
+          { reservationId: savedReservation.id },
+          {
+            jobId: `reservation-${savedReservation.id}`,
+            delay: this.EXPIRATION_TIME_MS,
+            removeOnComplete: true,
+            removeOnFail: { age: 24 * 3600, count: 100 },
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 1000,
+            },
+          },
+        );
+
+        this.logger.log(
+          `Scheduled expiration job for reservation ${savedReservation.id}`,
+        );
+
+        return savedReservation;
+      },
+    );
+  }
+
+  async confirmReservation(
+    reservationId: string,
+    beneficiaryId: string,
+  ): Promise<Reservation> {
+    return await this.reservationRepository.manager.transaction(
+      async (manager) => {
+        const reservation = await manager.findOne(Reservation, {
+          where: { id: reservationId },
+          lock: { mode: 'pessimistic_write' },
+          relations: ['donation'],
+        });
+
+        if (!reservation) {
+          throwAppError('RESERVATION_NOT_FOUND', {
+            id: reservationId,
+            status: ReservationStatusValues.PENDING,
+          });
+        }
+
+        if (reservation.beneficiaryId !== beneficiaryId) {
+          throwAppError('RESERVATION_OWNERSHIP_INVALID');
+        }
+
+        if (reservation.status !== ReservationStatusValues.PENDING) {
+          throwAppError('RESERVATION_STATUS_INVALID', {
+            status: reservation.status,
+          });
+        }
+
+        reservation.status = ReservationStatusValues.CONFIRMED;
+        reservation.confirmedAt = new Date();
+        const savedReservation = await manager.save(Reservation, reservation);
+
+        await this.reservationQueue.remove(`reservation-${reservationId}`);
+
+        this.logger.log(
+          `Reservation ${reservationId} confirmed by beneficiary ${beneficiaryId}`,
+        );
+
+        return savedReservation;
+      },
+    );
   }
 }

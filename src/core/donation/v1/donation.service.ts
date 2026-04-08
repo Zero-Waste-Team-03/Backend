@@ -106,9 +106,33 @@ export class DonationService {
     return await this.mapDonationResponse(donation);
   }
 
-  async findByIds(ids: string[]): Promise<Donation[]> {
-    return this.donationRepository.find({
+  async findByIds(ids: string[]): Promise<DonationResponse[]> {
+    const donations = await this.donationRepository.find({
       where: { id: In(ids) },
+    });
+
+    if (donations.length === 0) return [];
+
+    const allPhotos = await this.donationPhotoRepository.find({
+      where: { donationId: In(donations.map((d) => d.id)) },
+    });
+
+    const photoMap = allPhotos.reduce(
+      (acc, photo) => {
+        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        acc[photo.donationId].push(photo);
+        return acc;
+      },
+      {} as Record<string, DonationPhoto[]>,
+    );
+
+    return donations.map((donation) => {
+      const photos = photoMap[donation.id] || [];
+      return {
+        ...donation,
+        attachmentIds: photos.map((p) => p.attachmentId),
+        mainAttachmentId: photos.find((p) => p.isMain)?.attachmentId,
+      };
     });
   }
 
@@ -403,6 +427,7 @@ export class DonationService {
       .createQueryBuilder('donation')
       .innerJoinAndSelect('donation.location', 'location')
       .innerJoinAndSelect('donation.category', 'category')
+      .leftJoinAndSelect('donation.photos', 'photos', 'photos.isMain = true')
       .where('donation.status = :status', {
         status: DonationStatusValues.PUBLISHED,
       })
@@ -430,6 +455,7 @@ export class DonationService {
         markerColor,
         urgency: donation.urgency,
         categoryId: donation.categoryId,
+        mainAttachmentId: donation.photos?.[0]?.attachmentId,
       };
     });
   }

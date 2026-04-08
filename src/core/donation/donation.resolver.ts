@@ -28,8 +28,8 @@ import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { Category } from '../category/entities/category.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
+import { Category } from '../category/entities/category.entity';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
@@ -137,5 +137,20 @@ export class DonationResolver {
     @USER('role') role:UserRole
   ): Promise<MessageResponseType> {
     return await this.donationService.deleteDonation(id, userId,role=="Administrator");
+  }
+}
+
+@Resolver(() => DonationMapMarkerType)
+export class DonationMapMarkerResolver {
+  @ResolveField(() => AttachementType, {
+    nullable: true,
+    description: 'Main attachment details for map marker',
+  })
+  async mainAttachment(
+    @Parent() marker: DonationMapMarkerType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ) {
+    if (!marker.mainAttachmentId) return null;
+    return loaders.attachmentLoader.load(marker.mainAttachmentId);
   }
 }

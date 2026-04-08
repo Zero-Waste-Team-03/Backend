@@ -39,4 +39,7 @@ export class DonationMapMarkerType {
 
   @Field(() => String)
   categoryId: string;
+
+  @Field(() => String, { description: 'Main attachment id reference' })
+  mainAttachmentId: string;
 }
