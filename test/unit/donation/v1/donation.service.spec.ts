@@ -13,7 +13,7 @@ import { Location } from 'src/common/locations/entities/location.entity';
 
 import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
 
-import { Not, In } from 'typeorm';
+import { In } from 'typeorm';
 import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
 
 
