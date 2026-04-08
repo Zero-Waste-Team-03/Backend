@@ -16,6 +16,10 @@ export type ApproveSensitiveMessagePayload = {
   messageId: string;
 };
 
+export type MarkTransactionCompletedPayload = {
+  conversationId: string;
+};
+
 export type AckSuccess<T = Record<string, unknown>> = {
   ok: true;
   data: T;

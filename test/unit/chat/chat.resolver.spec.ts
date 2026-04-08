@@ -11,6 +11,7 @@ describe('ChatResolver', () => {
     getMessages: jest.fn(),
     sendMessage: jest.fn(),
     approveSensitiveMessage: jest.fn(),
+    markTransactionCompleted: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -77,5 +78,23 @@ describe('ChatResolver', () => {
       approverId: 'beneficiary-1',
     });
     expect(result).toEqual({ id: 'approval-1' });
+  });
+
+  it('marks transaction completed', async () => {
+    mockChatService.markTransactionCompleted.mockResolvedValue({
+      id: 'conv-1',
+      status: 'Archived',
+    });
+
+    const result = await resolver.markTransactionCompleted(
+      { conversationId: 'conv-1' },
+      'u-1',
+    );
+
+    expect(service.markTransactionCompleted).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      userId: 'u-1',
+    });
+    expect(result).toEqual({ id: 'conv-1', status: 'Archived' });
   });
 });

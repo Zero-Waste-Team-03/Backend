@@ -11,6 +11,7 @@ import { ChatMessageType } from './graphql/types/chat-message.type';
 import { ApproveSensitiveMessageInput } from './graphql/inputs/approve-sensitive-message.input';
 import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
 import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
+import { MarkTransactionCompletedInput } from './graphql/inputs/mark-transaction-completed.input';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ConversationType)
@@ -68,6 +69,20 @@ export class ChatResolver {
       conversationId: input.conversationId,
       messageId: input.messageId,
       approverId: userId,
+    });
+  }
+
+  @Mutation(() => ConversationType, {
+    description: 'Mark transaction as completed from chat context',
+  })
+  @UseGuards(ChatConversationMemberGuard)
+  async markTransactionCompleted(
+    @Args('input') input: MarkTransactionCompletedInput,
+    @USER('id') userId: string,
+  ): Promise<ConversationType> {
+    return this.chatService.markTransactionCompleted({
+      conversationId: input.conversationId,
+      userId,
     });
   }
 }

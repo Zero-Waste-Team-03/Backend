@@ -10,6 +10,7 @@ describe('ChatGateway', () => {
   const mockChatService = {
     sendMessage: jest.fn(),
     approveSensitiveMessage: jest.fn(),
+    markTransactionCompleted: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -83,6 +84,32 @@ describe('ChatGateway', () => {
     expect(ack).toHaveBeenCalledWith({
       ok: true,
       data: { messageId: 'msg-1' },
+    });
+  });
+
+  it('acknowledges mark transaction completed', async () => {
+    const ack = jest.fn();
+    const client = {
+      user: { id: 'u-1' },
+    } as any;
+    mockChatService.markTransactionCompleted.mockResolvedValue({
+      id: 'conv-1',
+      status: 'Archived',
+    });
+
+    await gateway.handleMarkTransactionCompleted(
+      client,
+      { conversationId: 'conv-1' },
+      ack,
+    );
+
+    expect(mockChatService.markTransactionCompleted).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      userId: 'u-1',
+    });
+    expect(ack).toHaveBeenCalledWith({
+      ok: true,
+      data: { status: 'Archived' },
     });
   });
 });

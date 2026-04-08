@@ -21,6 +21,7 @@ import {
   ChatAck,
   JoinConversationPayload,
   LeaveConversationPayload,
+  MarkTransactionCompletedPayload,
   SendMessagePayload,
 } from './types/chat-ws-payloads.type';
 import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
@@ -127,6 +128,28 @@ export class ChatGateway
       });
 
     ack?.({ ok: true, data: { approvalId: approval.id } });
+  }
+
+  @UseGuards(ChatConversationMemberGuard)
+  @SubscribeMessage(CHAT_SUBSCRIBED_EVENTS.MARK_TRANSACTION_COMPLETED)
+  async handleMarkTransactionCompleted(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: MarkTransactionCompletedPayload,
+    @Ack() ack?: (response: ChatAck<{ status: string }>) => void,
+  ) {
+    const conversation = await this.chatService.markTransactionCompleted({
+      conversationId: payload.conversationId,
+      userId: client.user.id,
+    });
+
+    this.server
+      .to(this.getConversationRoom(payload.conversationId))
+      .emit(CHAT_EMITTED_EVENTS.TRANSACTION_COMPLETED, {
+        conversationId: payload.conversationId,
+        status: conversation.status,
+      });
+
+    ack?.({ ok: true, data: { status: conversation.status } });
   }
 
   private getConversationRoom(conversationId: string): string {

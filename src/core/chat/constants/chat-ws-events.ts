@@ -3,6 +3,7 @@ export const CHAT_SUBSCRIBED_EVENTS = {
   LEAVE_CONVERSATION: 'chat:leave-conversation',
   SEND_MESSAGE: 'chat:send-message',
   APPROVE_SENSITIVE_MESSAGE: 'chat:approve-sensitive-message',
+  MARK_TRANSACTION_COMPLETED: 'chat:mark-transaction-completed',
 } as const;
 
 export const CHAT_EMITTED_EVENTS = {
@@ -10,6 +11,7 @@ export const CHAT_EMITTED_EVENTS = {
   CONVERSATION_LEFT: 'chat:conversation-left',
   MESSAGE_CREATED: 'chat:message-created',
   SENSITIVE_MESSAGE_APPROVED: 'chat:sensitive-message-approved',
+  TRANSACTION_COMPLETED: 'chat:transaction-completed',
   CHAT_ERROR: 'chat:error',
 } as const;
 

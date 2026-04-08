@@ -24,6 +24,12 @@ import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { CHAT_JOBS } from 'src/common/constants/jobs';
+import {
+  Donation,
+  DonationStatusValues,
+} from '../donation/entities/donation.entity';
+import { User } from '../user/entities/user.entity';
+import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -260,6 +266,101 @@ export class ChatService {
     return conversation.status;
   }
 
+  async markTransactionCompleted(
+    dto: MarkTransactionCompletedDto,
+  ): Promise<Conversation> {
+    const conversation = await this.requireConversationMember(
+      dto.conversationId,
+      dto.userId,
+    );
+
+    return this.conversationRepository.manager.transaction(async (manager) => {
+      const lockedConversation = await manager.findOne(Conversation, {
+        where: { id: conversation.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!lockedConversation) {
+        throwAppError('CHAT_CONVERSATION_NOT_FOUND', {
+          id: dto.conversationId,
+        });
+      }
+
+      const reservation = await manager.findOne(Reservation, {
+        where: { id: lockedConversation.reservationId },
+        lock: { mode: 'pessimistic_write' },
+        relations: ['donation'],
+      });
+
+      if (!reservation) {
+        throwAppError('RESERVATION_NOT_FOUND', {
+          id: lockedConversation.reservationId,
+          status: ReservationStatusValues.PENDING,
+        });
+      }
+
+      const donorId = reservation.donation.userId;
+      const beneficiaryId = reservation.beneficiaryId;
+
+      const marker = this.getCompletionMarker(dto.userId);
+      const existingMarker = await manager.findOne(Message, {
+        where: {
+          conversationId: lockedConversation.id,
+          senderId: dto.userId,
+          content: marker,
+        },
+      });
+
+      if (!existingMarker) {
+        const completionMessage = manager.create(Message, {
+          conversationId: lockedConversation.id,
+          senderId: dto.userId,
+          content: marker,
+          isModerated: false,
+        });
+        await manager.save(Message, completionMessage);
+      }
+
+      const [donorDone, beneficiaryDone] = await Promise.all([
+        manager.findOne(Message, {
+          where: {
+            conversationId: lockedConversation.id,
+            senderId: donorId,
+            content: this.getCompletionMarker(donorId),
+          },
+        }),
+        manager.findOne(Message, {
+          where: {
+            conversationId: lockedConversation.id,
+            senderId: beneficiaryId,
+            content: this.getCompletionMarker(beneficiaryId),
+          },
+        }),
+      ]);
+
+      if (donorDone && beneficiaryDone) {
+        lockedConversation.status = ConversationStatusValues.ARCHIVED;
+        lockedConversation.lastMessage = 'Transaction completed';
+
+        reservation.status = ReservationStatusValues.COMPLETED;
+        await manager.save(Reservation, reservation);
+
+        await manager.update(Donation, reservation.donationId, {
+          status: DonationStatusValues.COMPLETED,
+        });
+
+        await manager
+          .createQueryBuilder()
+          .update(User)
+          .set({ reputationScore: () => '"reputationScore" + 1' })
+          .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
+          .execute();
+      }
+
+      return manager.save(Conversation, lockedConversation);
+    });
+  }
+
   private async requireAuthorizedReservation(
     reservationId: string,
     requesterId: string,
@@ -351,5 +452,9 @@ export class ChatService {
       messageId,
       approverId,
     };
+  }
+
+  private getCompletionMarker(userId: string): string {
+    return `[COMPLETED_BY]:${userId}`;
   }
 }

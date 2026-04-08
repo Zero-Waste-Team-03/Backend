@@ -12,10 +12,11 @@ import { ChatConversationWritableGuard } from './guards/chat-conversation-writab
 import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { Donation } from '../donation/entities/donation.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Conversation, Message, Reservation]),
+    TypeOrmModule.forFeature([Conversation, Message, Reservation, Donation]),
     UserModule,
     JwtModule,
     NotificationsModule,

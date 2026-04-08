@@ -18,6 +18,10 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { CHAT_JOBS } from 'src/common/constants/jobs';
 import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
+import {
+  Donation,
+  DonationStatusValues,
+} from 'src/core/donation/entities/donation.entity';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -26,6 +30,9 @@ describe('ChatService', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    manager: {
+      transaction: jest.fn(),
+    },
   };
 
   const messageRepository = {
@@ -36,6 +43,9 @@ describe('ChatService', () => {
 
   const reservationRepository = {
     findOne: jest.fn(),
+    manager: {
+      transaction: jest.fn(),
+    },
   };
 
   const notificationsService = {
@@ -307,5 +317,69 @@ describe('ChatService', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].content).toBe('[SENSITIVE:LOCATION] 36.7,3.2');
+  });
+
+  it('archives conversation and updates reputation when both mark completed', async () => {
+    conversationRepository.findOne.mockResolvedValue({
+      id: 'conv-1',
+      reservationId: 'res-1',
+      status: 'Active',
+    });
+
+    reservationRepository.findOne.mockResolvedValue({
+      id: 'res-1',
+      donationId: 'don-1',
+      beneficiaryId: 'beneficiary-1',
+      donation: { userId: 'donor-1' },
+      status: ReservationStatusValues.CONFIRMED,
+    });
+
+    const manager = {
+      findOne: jest
+        .fn()
+        .mockResolvedValueOnce({
+          id: 'conv-1',
+          reservationId: 'res-1',
+          status: 'Active',
+          lastMessage: null,
+        })
+        .mockResolvedValueOnce({
+          id: 'res-1',
+          donationId: 'don-1',
+          beneficiaryId: 'beneficiary-1',
+          donation: { userId: 'donor-1' },
+          status: ReservationStatusValues.CONFIRMED,
+        })
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'done-donor' })
+        .mockResolvedValueOnce({ id: 'done-beneficiary' }),
+      create: jest.fn().mockImplementation((_: any, payload: any) => payload),
+      save: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce({ id: 'conv-1', status: 'Archived' }),
+      update: jest.fn().mockResolvedValue(undefined),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      }),
+    };
+
+    conversationRepository.manager.transaction.mockImplementation(
+      async (fn: any) => fn(manager),
+    );
+
+    const result = await service.markTransactionCompleted({
+      conversationId: 'conv-1',
+      userId: 'donor-1',
+    });
+
+    expect(manager.update).toHaveBeenCalledWith(Donation, 'don-1', {
+      status: DonationStatusValues.COMPLETED,
+    });
+    expect(result.status).toBe('Archived');
   });
 });
