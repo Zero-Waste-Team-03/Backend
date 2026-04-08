@@ -47,10 +47,11 @@ export class DonationResolver {
   })
   async donations(
     @USER('id') userId:string,
+    @USER('role') role:UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-    return this.donationService.findAll(userId,filter, pagination);
+    return this.donationService.findAll(userId,filter, pagination, role === 'Administrator');
   }
 
   @ResolveField(() => UserType)

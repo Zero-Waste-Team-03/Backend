@@ -320,14 +320,19 @@ export class DonationService {
     };
   }
 
-  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput) {
+  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput,isAdmin:Boolean=false) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where: FindOptionsWhere<Donation> = {
-      userId:Not(userId)
-    };
+    
+    const where: FindOptionsWhere<Donation> = {};
+    console.log('isAdmin:', isAdmin);
+    if (!isAdmin){
+      
+      where.userId = Not(userId);
+      where.status= DonationStatusValues.PUBLISHED as DonationStatus;
+    }
 
     if (filter?.categoryId) where.categoryId = filter.categoryId;
     if (filter?.urgency) where.urgency = filter.urgency ;
