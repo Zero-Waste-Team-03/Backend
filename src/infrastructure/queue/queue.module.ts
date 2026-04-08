@@ -13,6 +13,7 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
 import { NotificationProcessor } from './notification/notification.processor';
 import { ReservationProcessor } from './reservation/reservation.processor';
 import { ReservationModule } from 'src/core/reservation/reservation.module';
+import { ChatProcessor } from './chat/chat.processor';
 
 @Global()
 @Module({
@@ -46,7 +47,13 @@ import { ReservationModule } from 'src/core/reservation/reservation.module';
     NotificationsModule,
     ReservationModule,
   ],
-  providers: [MailProcessor, UploadProcessor, NotificationProcessor, ReservationProcessor],
+  providers: [
+    MailProcessor,
+    UploadProcessor,
+    NotificationProcessor,
+    ReservationProcessor,
+    ChatProcessor,
+  ],
   exports: [BullModule],
 })
-export class QueueModule { }
+export class QueueModule {}

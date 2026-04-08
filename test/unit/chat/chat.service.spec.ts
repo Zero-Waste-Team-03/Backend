@@ -13,6 +13,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ChatStateMachineService } from 'src/core/chat/chat-state-machine.service';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { getQueueToken } from '@nestjs/bullmq';
+import { QUEUE_NAME } from 'src/common/constants/queues';
+import { CHAT_JOBS } from 'src/common/constants/jobs';
+import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -33,6 +38,14 @@ describe('ChatService', () => {
     findOne: jest.fn(),
   };
 
+  const notificationsService = {
+    sendNotificationWithoutSaving: jest.fn(),
+  };
+
+  const chatQueue = {
+    add: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +62,14 @@ describe('ChatService', () => {
         {
           provide: getRepositoryToken(Reservation),
           useValue: reservationRepository,
+        },
+        {
+          provide: NotificationsService,
+          useValue: notificationsService,
+        },
+        {
+          provide: getQueueToken(QUEUE_NAME.CHAT),
+          useValue: chatQueue,
         },
         ChatStateMachineService,
       ],
@@ -130,6 +151,11 @@ describe('ChatService', () => {
     }));
 
     conversationRepository.save.mockResolvedValue(undefined);
+    notificationsService.sendNotificationWithoutSaving.mockResolvedValue({
+      success: true,
+      message: 'ok',
+    });
+    chatQueue.add.mockResolvedValue(undefined);
 
     const result = await service.sendMessage({
       conversationId: 'conv-1',
@@ -143,6 +169,29 @@ describe('ChatService', () => {
         senderId: 'donor-1',
         content: 'hello',
       }),
+    );
+    expect(
+      notificationsService.sendNotificationWithoutSaving,
+    ).toHaveBeenCalledWith(
+      'New chat message',
+      'You have received a new message.',
+      'beneficiary-1',
+      NOTIFICATION_TYPE.CHAT_MESSAGE,
+      {
+        conversationId: 'conv-1',
+        messageId: 'msg-1',
+      },
+    );
+    expect(chatQueue.add).toHaveBeenCalledWith(
+      CHAT_JOBS.MODERATE_MESSAGE,
+      {
+        conversationId: 'conv-1',
+        messageId: 'msg-1',
+        senderId: 'donor-1',
+      },
+      {
+        removeOnComplete: true,
+      },
     );
     expect(result.id).toBe('msg-1');
   });

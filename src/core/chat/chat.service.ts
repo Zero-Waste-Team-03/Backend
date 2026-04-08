@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
@@ -18,6 +19,11 @@ import {
   SENSITIVE_PENDING_PLACEHOLDER,
 } from './constants/chat-sensitive-markers';
 import { ApproveSensitiveMessageDto } from './v1/dto/approve-sensitive-message.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
+import { Queue } from 'bullmq';
+import { QUEUE_NAME } from 'src/common/constants/queues';
+import { CHAT_JOBS } from 'src/common/constants/jobs';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -36,6 +42,9 @@ export class ChatService {
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
     private readonly chatStateMachineService: ChatStateMachineService,
+    private readonly notificationsService: NotificationsService,
+    @InjectQueue(QUEUE_NAME.CHAT)
+    private readonly chatQueue: Queue,
   ) {}
 
   async getOrCreateConversation(
@@ -91,6 +100,34 @@ export class ChatService {
 
     conversation.lastMessage = saved.content;
     await this.conversationRepository.save(conversation);
+
+    const receiverId = await this.getCounterpartUserId(
+      conversation.reservationId,
+      dto.senderId,
+    );
+
+    await this.notificationsService.sendNotificationWithoutSaving(
+      'New chat message',
+      'You have received a new message.',
+      receiverId,
+      NOTIFICATION_TYPE.CHAT_MESSAGE,
+      {
+        conversationId: conversation.id,
+        messageId: saved.id,
+      },
+    );
+
+    await this.chatQueue.add(
+      CHAT_JOBS.MODERATE_MESSAGE,
+      {
+        conversationId: conversation.id,
+        messageId: saved.id,
+        senderId: saved.senderId,
+      },
+      {
+        removeOnComplete: true,
+      },
+    );
 
     return saved;
   }
@@ -247,6 +284,29 @@ export class ChatService {
     }
 
     return reservation;
+  }
+
+  private async getCounterpartUserId(
+    reservationId: string,
+    senderId: string,
+  ): Promise<string> {
+    const reservation = await this.reservationRepository.findOne({
+      where: { id: reservationId },
+      relations: ['donation'],
+    });
+
+    if (!reservation) {
+      throwAppError('RESERVATION_NOT_FOUND', {
+        id: reservationId,
+        status: ReservationStatusValues.PENDING,
+      });
+    }
+
+    if (reservation.beneficiaryId === senderId) {
+      return reservation.donation.userId;
+    }
+
+    return reservation.beneficiaryId;
   }
 
   private buildStoredMessageContent(content: string): string {
