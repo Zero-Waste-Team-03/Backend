@@ -71,6 +71,7 @@ describe('DonationResolver', () => {
 
       const result = await resolver.donations(
         'u1',
+        "User",
         filter,
         behaviorContext as any,
         pagination,
@@ -81,6 +82,7 @@ describe('DonationResolver', () => {
         filter,
         behaviorContext,
         pagination,
+        false,
       );
       expect(result).toEqual(mockPaginatedResult);
     });

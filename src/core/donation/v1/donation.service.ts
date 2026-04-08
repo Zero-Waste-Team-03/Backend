@@ -370,7 +370,6 @@ export class DonationService {
     filter?: DonationsFilterInput,
     behaviorContext?: DonationBehaviorContextInput,
     pagination?: PaginationInput,
-    pagination?: PaginationInput,
     isAdmin: boolean = false,
   ) {
     const page = pagination?.page ?? 1;

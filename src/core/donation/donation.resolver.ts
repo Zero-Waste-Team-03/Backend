@@ -72,7 +72,7 @@ export class DonationResolver {
       filter,
       behaviorContext,
       pagination,
-      role === 'Administrator'
+      role=='Administrator',
     );
 
   }
