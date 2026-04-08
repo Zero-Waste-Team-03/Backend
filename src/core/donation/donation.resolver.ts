@@ -46,10 +46,11 @@ export class DonationResolver {
       'Get all donation listings with optional filters and donor access',
   })
   async donations(
+    @USER('id') userId:string,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-    return this.donationService.findAll(filter, pagination);
+    return this.donationService.findAll(userId,filter, pagination);
   }
 
   @ResolveField(() => UserType)

@@ -7,7 +7,7 @@ import {
   type DonationStatus,
   type DonationUrgency,
 } from '../entities/donation.entity';
-import { DeleteResult, In, Repository } from 'typeorm';
+import { DeleteResult, FindOptionsWhere, In, Not, Repository } from 'typeorm';
 import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
@@ -283,7 +283,7 @@ export class DonationService {
     return await this.mapDonationResponse(savedDonation);
   }
 
-  async deleteDonation(id: string, userId: string,isAdmin:boolean=false) {
+  async deleteDonation(id: string, userId: string,isAdmin:boolean) {
     let result:DeleteResult;
     if (isAdmin){
 
@@ -320,16 +320,18 @@ export class DonationService {
     };
   }
 
-  async findAll(filter?: DonationsFilterInput, pagination?: PaginationInput) {
+  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: FindOptionsWhere<Donation> = {
+      userId:Not(userId)
+    };
 
     if (filter?.categoryId) where.categoryId = filter.categoryId;
-    if (filter?.urgency) where.urgency = filter.urgency;
-    if (filter?.status) where.status = filter.status;
+    if (filter?.urgency) where.urgency = filter.urgency ;
+    if (filter?.status) where.status = filter.status ;
 
     const [donations, totalCount] = await this.donationRepository.findAndCount({
       where,
