@@ -128,6 +128,8 @@ export class NotificationProcessor extends WorkerHost {
         tokenPrefix: message.token.substring(0, 20),
         error: JSON.stringify(error),
         context: 'NotificationProcessor',
+
+
       });
       throw error;
     }

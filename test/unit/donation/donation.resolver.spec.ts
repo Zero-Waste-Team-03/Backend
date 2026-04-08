@@ -65,9 +65,9 @@ describe('DonationResolver', () => {
       const filter = { categoryId: 'cat-1', urgency: DonationUrgencyValues.HIGH };
       const pagination = { page: 1, limit: 10 };
 
-      const result = await resolver.donations('u1',filter, pagination);
+      const result = await resolver.donations('u1',"User",filter, pagination);
 
-      expect(service.findAll).toHaveBeenCalledWith('u1',filter, pagination);
+      expect(service.findAll).toHaveBeenCalledWith('u1',filter, pagination,false);
       expect(result).toEqual(mockPaginatedResult);
     });
   });

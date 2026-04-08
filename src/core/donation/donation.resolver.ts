@@ -31,6 +31,7 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { Category } from '../category/entities/category.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 
+@UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
   constructor(private readonly donationService: DonationService) {}
@@ -58,10 +59,11 @@ export class DonationResolver {
   })
   async donations(
     @USER('id') userId:string,
+    @USER('role') role:UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-    return this.donationService.findAll(userId,filter, pagination);
+    return this.donationService.findAll(userId,filter, pagination, role === 'Administrator');
   }
 
   @ResolveField(() => UserType)
@@ -97,8 +99,6 @@ export class DonationResolver {
     if (!donation.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
-
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => DonationType, {
     description: 'Create a donation listing for the authenticated user',
   })
@@ -109,7 +109,6 @@ export class DonationResolver {
     return await this.donationService.createDonation(input, userId);
   }
 
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => DonationType, {
     description:
       'Update a donation listing owned by the authenticated user using id and owner condition',
@@ -128,7 +127,6 @@ export class DonationResolver {
     return await this.donationService.getDonationById(id);
   }
 
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType, {
     description:
       'Delete a donation listing owned by the authenticated user using id and owner condition',
