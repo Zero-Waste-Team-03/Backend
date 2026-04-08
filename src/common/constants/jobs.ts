@@ -32,3 +32,7 @@ export const NOTIFICATION_JOBS = {
   SEND_TEST_NOTIFICATION: 'send-test-notification',
   SEND_WITHOUT_SAVING: 'send-without-saving',
 };
+
+export const RESERVATION_JOBS = {
+  EXPIRE_RESERVATION: 'expire-reservation',
+} as const;

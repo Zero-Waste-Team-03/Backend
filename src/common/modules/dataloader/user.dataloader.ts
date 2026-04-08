@@ -32,15 +32,14 @@ export class UserDataLoader {
   createLoader(): DataLoader<string, User | null> {
     return new DataLoader<string, User | null>(
       async (userIds: readonly string[]) => {
-        // Call existing service method for each ID
-        // DataLoader will automatically batch these calls
-        const users = await Promise.all(
-          userIds.map((id) => this.userService.findById(id)),
-        );
+        const users = await this.userService.findByIds(userIds as string[]);
 
-        // Return users in the same order as requested IDs
-        // This is critical for DataLoader to work correctly
-        return users;
+        const userMap = users.reduce((map, user) => {
+          map[user.id] = user;
+          return map;
+        }, {} as Record<string, User>);
+
+        return userIds.map((id) => userMap[id] || null);
       },
       {
         // Cache results within the same request

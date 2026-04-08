@@ -17,6 +17,8 @@ import { UpdateDonationInput } from './graphql/inputs/update-donation.input';
 import { DonationService } from './v1/donation.service';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { DonationStatisticsType } from './graphql/types/donation-statistics.type';
+import { DonationsMapInput } from './graphql/inputs/donations-map.input';
+import { DonationMapMarkerType } from './graphql/types/donation-map-marker.type';
 import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
@@ -26,8 +28,8 @@ import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { Category } from '../category/entities/category.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
+import { Category } from '../category/entities/category.entity';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
@@ -40,6 +42,15 @@ export class DonationResolver {
   })
   async donationStatistics(): Promise<DonationStatisticsType> {
     return this.donationService.getStatistics();
+  }
+
+  @Query(() => [DonationMapMarkerType], {
+    description: 'Get donations within a radius from a center point for map visualization',
+  })
+  async donationsMap(
+    @Args('input') input: DonationsMapInput,
+  ): Promise<DonationMapMarkerType[]> {
+    return this.donationService.getDonationsForMap(input);
   }
 
   @Query(() => PaginatedDonations, {
@@ -126,5 +137,20 @@ export class DonationResolver {
     @USER('role') role:UserRole
   ): Promise<MessageResponseType> {
     return await this.donationService.deleteDonation(id, userId,role=="Administrator");
+  }
+}
+
+@Resolver(() => DonationMapMarkerType)
+export class DonationMapMarkerResolver {
+  @ResolveField(() => AttachementType, {
+    nullable: true,
+    description: 'Main attachment details for map marker',
+  })
+  async mainAttachment(
+    @Parent() marker: DonationMapMarkerType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ) {
+    if (!marker.mainAttachmentId) return null;
+    return loaders.attachmentLoader.load(marker.mainAttachmentId);
   }
 }

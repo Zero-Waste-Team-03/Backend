@@ -22,6 +22,7 @@ import { UserDataLoader } from './common/modules/dataloader/user.dataloader';
 import { LocationDataLoader } from './common/modules/dataloader/location.dataloader';
 import { AttachmentDataLoader } from './common/modules/dataloader/attachment.dataloader';
 import { CategoryDataLoader } from './common/modules/dataloader/category.dataloader';
+import { DonationDataLoader } from './common/modules/dataloader/donation.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
@@ -54,6 +55,7 @@ import { ErrorsModule } from './common/errors/errors.module';
         locationDataLoader: LocationDataLoader,
         attachmentDataLoader: AttachmentDataLoader,
         categoryDataLoader: CategoryDataLoader,
+        donationDataLoader: DonationDataLoader,
       ) => ({
         ...graphqlConfiguration,
         // Override context to inject DataLoaders per request
@@ -64,6 +66,7 @@ import { ErrorsModule } from './common/errors/errors.module';
             locationLoader: locationDataLoader.createLoader(),
             attachmentLoader: attachmentDataLoader.createLoader(),
             categoryLoader: categoryDataLoader.createLoader(),
+            donationLoader: donationDataLoader.createLoader(),
           };
           return { req, res, loaders };
         },
@@ -74,6 +77,7 @@ import { ErrorsModule } from './common/errors/errors.module';
         LocationDataLoader,
         AttachmentDataLoader,
         CategoryDataLoader,
+        DonationDataLoader,
       ],
     }),
     InfrastructureModule,

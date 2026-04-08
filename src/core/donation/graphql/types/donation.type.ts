@@ -109,7 +109,7 @@ export class DonationType {
 
   @Field(()=>AttachementType,{
     nullable:true,
-    description:"The Main attahcment used as cover photo"
+    description: "The Main attachment used as cover photo"
   })
   mainAttachment?:AttachementType
   @Field(() => Date)

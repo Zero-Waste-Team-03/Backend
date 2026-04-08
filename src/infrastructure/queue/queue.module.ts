@@ -11,6 +11,8 @@ import { EmailModule } from 'src/common/modules/email/email.module';
 import { UserModule } from 'src/core/user/user.module';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 import { NotificationProcessor } from './notification/notification.processor';
+import { ReservationProcessor } from './reservation/reservation.processor';
+import { ReservationModule } from 'src/core/reservation/reservation.module';
 
 @Global()
 @Module({
@@ -42,8 +44,9 @@ import { NotificationProcessor } from './notification/notification.processor';
     UserModule,
     AttachmentModule,
     NotificationsModule,
+    ReservationModule,
   ],
-  providers: [MailProcessor, UploadProcessor, NotificationProcessor],
+  providers: [MailProcessor, UploadProcessor, NotificationProcessor, ReservationProcessor],
   exports: [BullModule],
 })
-export class QueueModule {}
+export class QueueModule { }

@@ -39,7 +39,7 @@ describe('AdminUserResolver', () => {
 
       const result = await resolver.adminGetUsers(args);
 
-      expect(userService.getPaginatedUsers).toHaveBeenCalledWith(args);
+      expect(userService.getPaginatedUsers).toHaveBeenCalledWith(args, undefined);
       expect(result).toEqual(expectedResult);
     });
   });
