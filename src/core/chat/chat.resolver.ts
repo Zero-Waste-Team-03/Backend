@@ -8,6 +8,7 @@ import { ConversationMessagesInput } from './graphql/inputs/conversation-message
 import { PaginatedMessages } from './graphql/types/paginated-messages.type';
 import { SendMessageInput } from './graphql/inputs/send-message.input';
 import { ChatMessageType } from './graphql/types/chat-message.type';
+import { ApproveSensitiveMessageInput } from './graphql/inputs/approve-sensitive-message.input';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ConversationType)
@@ -49,6 +50,20 @@ export class ChatResolver {
       conversationId: input.conversationId,
       senderId: userId,
       content: input.content,
+    });
+  }
+
+  @Mutation(() => ChatMessageType, {
+    description: 'Approve a sensitive message to reveal it to the approver',
+  })
+  async approveSensitiveMessage(
+    @Args('input') input: ApproveSensitiveMessageInput,
+    @USER('id') userId: string,
+  ): Promise<ChatMessageType> {
+    return this.chatService.approveSensitiveMessage({
+      conversationId: input.conversationId,
+      messageId: input.messageId,
+      approverId: userId,
     });
   }
 }

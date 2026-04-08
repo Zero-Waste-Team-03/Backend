@@ -10,6 +10,7 @@ describe('ChatResolver', () => {
     getOrCreateConversation: jest.fn(),
     getMessages: jest.fn(),
     sendMessage: jest.fn(),
+    approveSensitiveMessage: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -58,5 +59,23 @@ describe('ChatResolver', () => {
       content: 'hello',
     });
     expect(result).toEqual({ id: 'msg-1' });
+  });
+
+  it('approves sensitive message', async () => {
+    mockChatService.approveSensitiveMessage.mockResolvedValue({
+      id: 'approval-1',
+    });
+
+    const result = await resolver.approveSensitiveMessage(
+      { conversationId: 'conv-1', messageId: 'msg-1' },
+      'beneficiary-1',
+    );
+
+    expect(service.approveSensitiveMessage).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      messageId: 'msg-1',
+      approverId: 'beneficiary-1',
+    });
+    expect(result).toEqual({ id: 'approval-1' });
   });
 });

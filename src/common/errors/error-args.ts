@@ -19,4 +19,8 @@ export interface ErrorArgsMap {
   'category.not_found': { id: string };
   'reservation.not_found': { id: string; status: string };
   'reservation.status_invalid': { status: string };
+  'chat.conversation_not_found': { id: string };
+  'chat.message_not_found': { id: string };
+  'chat.message_read_only': { status: string };
+  'chat.invalid_approval': { id: string };
 }

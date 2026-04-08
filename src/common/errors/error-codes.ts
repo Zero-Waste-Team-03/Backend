@@ -189,6 +189,30 @@ export const ERROR_CODES = {
     message: 'Reservation cannot be processed in its current status.',
     args: { status: 'string' } as const,
   },
+  CHAT_CONVERSATION_NOT_FOUND: {
+    code: 'chat.conversation_not_found',
+    httpStatus: 404,
+    message: 'Conversation not found.',
+    args: { id: 'string' } as const,
+  },
+  CHAT_MESSAGE_NOT_FOUND: {
+    code: 'chat.message_not_found',
+    httpStatus: 404,
+    message: 'Message not found in this conversation.',
+    args: { id: 'string' } as const,
+  },
+  CHAT_MESSAGE_READ_ONLY: {
+    code: 'chat.message_read_only',
+    httpStatus: 400,
+    message: 'Conversation is read-only in the current state.',
+    args: { status: 'string' } as const,
+  },
+  CHAT_INVALID_APPROVAL: {
+    code: 'chat.invalid_approval',
+    httpStatus: 400,
+    message: 'Cannot approve this message.',
+    args: { id: 'string' } as const,
+  },
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;

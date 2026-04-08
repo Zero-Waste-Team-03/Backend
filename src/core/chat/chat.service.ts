@@ -13,6 +13,18 @@ import {
   ConversationStatusValues,
 } from './entities/conversation.entity';
 import { ChatStateMachineService } from './chat-state-machine.service';
+import {
+  CHAT_SENSITIVE_MARKERS,
+  SENSITIVE_PENDING_PLACEHOLDER,
+} from './constants/chat-sensitive-markers';
+import { ApproveSensitiveMessageDto } from './v1/dto/approve-sensitive-message.dto';
+
+const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
+
+type ApprovalMarker = {
+  messageId: string;
+  approverId: string;
+};
 
 @Injectable()
 export class ChatService {
@@ -71,7 +83,7 @@ export class ChatService {
     const message = this.messageRepository.create({
       conversationId: dto.conversationId,
       senderId: dto.senderId,
-      content: dto.content,
+      content: this.buildStoredMessageContent(dto.content),
       isModerated: false,
     });
 
@@ -102,14 +114,72 @@ export class ChatService {
       take: limit,
     });
 
+    const approvals = items
+      .filter((item) => this.isApprovalMarker(item.content))
+      .map((item) => this.parseApprovalMarker(item.content))
+      .filter((item): item is ApprovalMarker => item !== null);
+
+    const approvedMessageIdsForViewer = new Set(
+      approvals
+        .filter((approval) => approval.approverId === requesterId)
+        .map((approval) => approval.messageId),
+    );
+
+    const visibleItems = items
+      .filter((item) => !this.isApprovalMarker(item.content))
+      .map((item) =>
+        this.mapMessageForViewer(
+          item,
+          requesterId,
+          approvedMessageIdsForViewer,
+        ),
+      );
+
     return {
-      items,
+      items: visibleItems,
       totalCount,
       page,
       limit,
       hasNextPage: totalCount > skip + limit,
       hasPreviousPage: page > 1,
     };
+  }
+
+  async approveSensitiveMessage(
+    dto: ApproveSensitiveMessageDto,
+  ): Promise<Message> {
+    const conversation = await this.requireConversationMember(
+      dto.conversationId,
+      dto.approverId,
+    );
+
+    const message = await this.messageRepository.findOne({
+      where: {
+        id: dto.messageId,
+        conversationId: dto.conversationId,
+      },
+    });
+
+    if (!message) {
+      throwAppError('CHAT_MESSAGE_NOT_FOUND', { id: dto.messageId });
+    }
+
+    if (
+      message.senderId === dto.approverId ||
+      !this.isSensitive(message.content)
+    ) {
+      throwAppError('CHAT_INVALID_APPROVAL', { id: dto.messageId });
+    }
+
+    const marker = `${SENSITIVE_APPROVED_PREFIX}:${message.id}:${dto.approverId}`;
+    const approvalMessage = this.messageRepository.create({
+      conversationId: conversation.id,
+      senderId: dto.approverId,
+      content: marker,
+      isModerated: false,
+    });
+
+    return this.messageRepository.save(approvalMessage);
   }
 
   async requireConversationMember(
@@ -121,7 +191,7 @@ export class ChatService {
     });
 
     if (!conversation) {
-      throwAppError('DONATION_NOT_FOUND', { id: conversationId });
+      throwAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
     }
 
     const reservation = await this.requireAuthorizedReservation(
@@ -177,5 +247,49 @@ export class ChatService {
     }
 
     return reservation;
+  }
+
+  private buildStoredMessageContent(content: string): string {
+    return content.trim();
+  }
+
+  private isSensitive(content: string): boolean {
+    return CHAT_SENSITIVE_MARKERS.some((marker) => content.includes(marker));
+  }
+
+  private isApprovalMarker(content: string): boolean {
+    return content.startsWith(SENSITIVE_APPROVED_PREFIX);
+  }
+
+  private mapMessageForViewer(
+    message: Message,
+    viewerId: string,
+    approvedMessageIds: Set<string>,
+  ): Message {
+    if (this.isApprovalMarker(message.content)) {
+      return { ...message, content: '' } as Message;
+    }
+
+    if (!this.isSensitive(message.content) || message.senderId === viewerId) {
+      return message;
+    }
+
+    if (approvedMessageIds.has(message.id)) {
+      return message;
+    }
+
+    return { ...message, content: SENSITIVE_PENDING_PLACEHOLDER } as Message;
+  }
+
+  private parseApprovalMarker(content: string): ApprovalMarker | null {
+    const [, messageId, approverId] = content.split(':');
+    if (!messageId || !approverId) {
+      return null;
+    }
+
+    return {
+      messageId,
+      approverId,
+    };
   }
 }

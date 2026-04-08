@@ -180,4 +180,83 @@ describe('ChatService', () => {
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('masks sensitive message until recipient approves', async () => {
+    conversationRepository.findOne.mockResolvedValue({
+      id: 'conv-1',
+      reservationId: 'res-1',
+      status: 'Active',
+    });
+    reservationRepository.findOne.mockResolvedValue({
+      id: 'res-1',
+      beneficiaryId: 'beneficiary-1',
+      donation: { userId: 'donor-1' },
+      status: ReservationStatusValues.CONFIRMED,
+    });
+    messageRepository.findAndCount.mockResolvedValue([
+      [
+        {
+          id: 'msg-sensitive',
+          conversationId: 'conv-1',
+          senderId: 'donor-1',
+          content: '[SENSITIVE:LOCATION] 36.7,3.2',
+          isModerated: false,
+          createdAt: new Date(),
+        },
+      ],
+      1,
+    ]);
+
+    const result = await service.getMessages('conv-1', 'beneficiary-1', {
+      page: 1,
+      limit: 10,
+    });
+
+    expect(result.items[0].content).toBe(
+      '[Sensitive details pending recipient approval]',
+    );
+  });
+
+  it('reveals sensitive message after approval marker exists', async () => {
+    conversationRepository.findOne.mockResolvedValue({
+      id: 'conv-1',
+      reservationId: 'res-1',
+      status: 'Active',
+    });
+    reservationRepository.findOne.mockResolvedValue({
+      id: 'res-1',
+      beneficiaryId: 'beneficiary-1',
+      donation: { userId: 'donor-1' },
+      status: ReservationStatusValues.CONFIRMED,
+    });
+    messageRepository.findAndCount.mockResolvedValue([
+      [
+        {
+          id: 'msg-sensitive',
+          conversationId: 'conv-1',
+          senderId: 'donor-1',
+          content: '[SENSITIVE:LOCATION] 36.7,3.2',
+          isModerated: false,
+          createdAt: new Date(),
+        },
+        {
+          id: 'approval-1',
+          conversationId: 'conv-1',
+          senderId: 'beneficiary-1',
+          content: '[SENSITIVE_APPROVED]:msg-sensitive:beneficiary-1',
+          isModerated: false,
+          createdAt: new Date(),
+        },
+      ],
+      2,
+    ]);
+
+    const result = await service.getMessages('conv-1', 'beneficiary-1', {
+      page: 1,
+      limit: 10,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].content).toBe('[SENSITIVE:LOCATION] 36.7,3.2');
+  });
 });
