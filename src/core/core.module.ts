@@ -6,6 +6,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { CategoryModule } from './category/category.module';
 import { DonationModule } from './donation/donation.module';
 import { ReservationModule } from './reservation/reservation.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ReservationModule } from './reservation/reservation.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ChatModule,
   ],
   exports: [
     UserModule,
@@ -25,6 +27,7 @@ import { ReservationModule } from './reservation/reservation.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ChatModule,
   ],
 })
-export class CoreModule { }
+export class CoreModule {}
