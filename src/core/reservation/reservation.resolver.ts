@@ -22,7 +22,7 @@ export class ReservationResolver {
     @Args('donationId', { type: () => ID }) donationId: string,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
-    return this.reservationService.reserveDonation(donationId, beneficiaryId);
+    return this.reservationService.reserveDonation(donationId, beneficiaryId) as any;
   }
 
   @UseGuards(AccessTokenGuard)
@@ -33,7 +33,7 @@ export class ReservationResolver {
     @Args('id', { type: () => ID }) id: string,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
-    return this.reservationService.confirmReservation(id, beneficiaryId);
+    return this.reservationService.confirmReservation(id, beneficiaryId) as any;
   }
 
   @ResolveField(() => DonationType, { nullable: true })
