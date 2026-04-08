@@ -8,6 +8,11 @@ import { throwAppError } from 'src/common/errors';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { ReservationStatusValues } from '../reservation/entities/reservation.entity';
 import { SendMessageDto } from './v1/dto/send-message.dto';
+import {
+  ConversationStatus,
+  ConversationStatusValues,
+} from './entities/conversation.entity';
+import { ChatStateMachineService } from './chat-state-machine.service';
 
 @Injectable()
 export class ChatService {
@@ -18,6 +23,7 @@ export class ChatService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
+    private readonly chatStateMachineService: ChatStateMachineService,
   ) {}
 
   async getOrCreateConversation(
@@ -39,25 +45,28 @@ export class ChatService {
 
     const created = this.conversationRepository.create({
       reservationId,
-      status:
-        reservation.status === ReservationStatusValues.CONFIRMED
-          ? 'Active'
-          : 'Locked',
+      status: ConversationStatusValues.LOCKED,
     });
+
+    this.chatStateMachineService.syncWithReservationStatus(
+      created,
+      reservation.status,
+    );
 
     return this.conversationRepository.save(created);
   }
 
   async sendMessage(dto: SendMessageDto): Promise<Message> {
-    const conversation = await this.conversationRepository.findOne({
-      where: { id: dto.conversationId },
-    });
+    const conversation = await this.requireConversationMember(
+      dto.conversationId,
+      dto.senderId,
+    );
 
-    if (!conversation) {
-      throwAppError('DONATION_NOT_FOUND', { id: dto.conversationId });
+    if (conversation.status !== ConversationStatusValues.ACTIVE) {
+      throwAppError('RESERVATION_STATUS_INVALID', {
+        status: conversation.status,
+      });
     }
-
-    await this.requireConversationMember(dto.conversationId, dto.senderId);
 
     const message = this.messageRepository.create({
       conversationId: dto.conversationId,
@@ -106,7 +115,7 @@ export class ChatService {
   async requireConversationMember(
     conversationId: string,
     requesterId: string,
-  ): Promise<Reservation> {
+  ): Promise<Conversation> {
     const conversation = await this.conversationRepository.findOne({
       where: { id: conversationId },
     });
@@ -120,7 +129,28 @@ export class ChatService {
       requesterId,
     );
 
-    return reservation;
+    const previousStatus = conversation.status;
+    this.chatStateMachineService.syncWithReservationStatus(
+      conversation,
+      reservation.status,
+    );
+
+    if (previousStatus !== conversation.status) {
+      await this.conversationRepository.save(conversation);
+    }
+
+    return conversation;
+  }
+
+  async getConversationStatus(
+    conversationId: string,
+    requesterId: string,
+  ): Promise<ConversationStatus> {
+    const conversation = await this.requireConversationMember(
+      conversationId,
+      requesterId,
+    );
+    return conversation.status;
   }
 
   private async requireAuthorizedReservation(

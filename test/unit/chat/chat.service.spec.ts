@@ -7,7 +7,12 @@ import {
   Reservation,
   ReservationStatusValues,
 } from 'src/core/reservation/entities/reservation.entity';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { ChatStateMachineService } from 'src/core/chat/chat-state-machine.service';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -29,7 +34,7 @@ describe('ChatService', () => {
   };
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatService,
@@ -45,6 +50,7 @@ describe('ChatService', () => {
           provide: getRepositoryToken(Reservation),
           useValue: reservationRepository,
         },
+        ChatStateMachineService,
       ],
     }).compile();
 
@@ -151,5 +157,27 @@ describe('ChatService', () => {
         content: 'hello',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('blocks sending when conversation state is not active', async () => {
+    conversationRepository.findOne.mockResolvedValue({
+      id: 'conv-1',
+      reservationId: 'res-1',
+      status: 'Locked',
+    });
+    reservationRepository.findOne.mockResolvedValue({
+      id: 'res-1',
+      beneficiaryId: 'beneficiary-1',
+      donation: { userId: 'donor-1' },
+      status: ReservationStatusValues.PENDING,
+    });
+
+    await expect(
+      service.sendMessage({
+        conversationId: 'conv-1',
+        senderId: 'donor-1',
+        content: 'hello',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

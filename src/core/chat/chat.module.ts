@@ -5,10 +5,11 @@ import { Message } from './entities/message.entity';
 import { ChatService } from './chat.service';
 import { ChatResolver } from './chat.resolver';
 import { Reservation } from '../reservation/entities/reservation.entity';
+import { ChatStateMachineService } from './chat-state-machine.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Conversation, Message, Reservation])],
-  providers: [ChatService, ChatResolver],
+  providers: [ChatService, ChatResolver, ChatStateMachineService],
   exports: [ChatService],
 })
 export class ChatModule {}
