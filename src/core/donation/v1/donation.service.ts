@@ -16,6 +16,7 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
+import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -31,6 +32,7 @@ export class DonationService {
     private readonly donationPhotoRepository: Repository<DonationPhoto>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    private readonly smartBehaviorPublisher: SmartBehaviorPublisherService,
   ) {}
 
   private async resolveLocationId(
@@ -91,7 +93,7 @@ export class DonationService {
 
     return patch;
   }
-  async getDonationById(id: string):Promise<DonationResponse> {
+  async getDonationById(id: string): Promise<DonationResponse> {
     const donation = await this.donationRepository.findOne({ where: { id } });
 
     if (!donation) {
@@ -224,6 +226,14 @@ export class DonationService {
       input.mainAttachmentId,
     );
 
+    await this.smartBehaviorPublisher.safePublishDonationPublished({
+      donorId: userId,
+      donationId: savedDonation.id,
+      categoryId: savedDonation.categoryId,
+      urgency: savedDonation.urgency,
+      safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
+    });
+
     return await this.mapDonationResponse(savedDonation);
   }
 
@@ -283,15 +293,13 @@ export class DonationService {
     return await this.mapDonationResponse(savedDonation);
   }
 
-  async deleteDonation(id: string, userId: string,isAdmin:boolean) {
-    let result:DeleteResult;
-    if (isAdmin){
-
+  async deleteDonation(id: string, userId: string, isAdmin: boolean) {
+    let result: DeleteResult;
+    if (isAdmin) {
       result = await this.donationRepository.delete({ id });
+    } else {
+      result = await this.donationRepository.delete({ id, userId });
     }
-      else {
-        result= await this.donationRepository.delete({ id, userId });
-      }
 
     if (!result.affected) {
       throwAppError('DONATION_NOT_FOUND', { id });
@@ -301,17 +309,18 @@ export class DonationService {
   }
 
   async getStatistics() {
-    const [totalActiveDonations, flaggedItems, pendingApprovals] = await Promise.all([
-      this.donationRepository.count({
-        where: { status: DonationStatusValues.PUBLISHED as DonationStatus },
-      }),
-      this.donationRepository.count({
-        where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
-      }),
-      this.donationRepository.count({
-        where: { status: DonationStatusValues.DRAFT as DonationStatus },
-      }),
-    ]);
+    const [totalActiveDonations, flaggedItems, pendingApprovals] =
+      await Promise.all([
+        this.donationRepository.count({
+          where: { status: DonationStatusValues.PUBLISHED as DonationStatus },
+        }),
+        this.donationRepository.count({
+          where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
+        }),
+        this.donationRepository.count({
+          where: { status: DonationStatusValues.DRAFT as DonationStatus },
+        }),
+      ]);
 
     return {
       totalActiveDonations,
@@ -320,18 +329,22 @@ export class DonationService {
     };
   }
 
-  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput) {
+  async findAll(
+    userId: string,
+    filter?: DonationsFilterInput,
+    pagination?: PaginationInput,
+  ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<Donation> = {
-      userId:Not(userId)
+      userId: Not(userId),
     };
 
     if (filter?.categoryId) where.categoryId = filter.categoryId;
-    if (filter?.urgency) where.urgency = filter.urgency ;
-    if (filter?.status) where.status = filter.status ;
+    if (filter?.urgency) where.urgency = filter.urgency;
+    if (filter?.status) where.status = filter.status;
 
     const [donations, totalCount] = await this.donationRepository.findAndCount({
       where,
@@ -341,19 +354,23 @@ export class DonationService {
     });
 
     // Batch fetch photos for all donations in the current page
-    const donationIds = donations.map(d => d.id);
-    const allPhotos = donationIds.length > 0 
-      ? await this.donationPhotoRepository.find({
-          where: { donationId: In(donationIds) }
-        })
-      : [];
+    const donationIds = donations.map((d) => d.id);
+    const allPhotos =
+      donationIds.length > 0
+        ? await this.donationPhotoRepository.find({
+            where: { donationId: In(donationIds) },
+          })
+        : [];
 
     // Map photos to their respective donations
-    const photoMap = allPhotos.reduce((acc, photo) => {
-      if (!acc[photo.donationId]) acc[photo.donationId] = [];
-      acc[photo.donationId].push(photo);
-      return acc;
-    }, {} as Record<string, DonationPhoto[]>);
+    const photoMap = allPhotos.reduce(
+      (acc, photo) => {
+        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        acc[photo.donationId].push(photo);
+        return acc;
+      },
+      {} as Record<string, DonationPhoto[]>,
+    );
 
     const items = donations.map((donation) => {
       const photos = photoMap[donation.id] || [];
@@ -363,6 +380,23 @@ export class DonationService {
         mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
       };
     });
+
+    const hasBehaviorSignal =
+      Boolean(filter?.categoryId) ||
+      Boolean(filter?.urgency) ||
+      Boolean(filter?.status) ||
+      Boolean(filter?.distanceBucket) ||
+      Boolean(filter?.origin);
+
+    if (hasBehaviorSignal) {
+      await this.smartBehaviorPublisher.safePublishBeneficiarySearchPerformed({
+        userId,
+        categoryId: filter?.categoryId,
+        urgency: filter?.urgency,
+        distanceBucket: filter?.distanceBucket,
+        origin: filter?.origin,
+      });
+    }
 
     return {
       items,
