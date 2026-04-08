@@ -284,4 +284,44 @@ export class NotificationsService {
     });
     return { success: true, message: 'Notification job added to queue' };
   }
+
+  async sendNotificationWithoutSaving(
+    title: string,
+    body: string,
+    userId: string,
+    type: NotificationType,
+    data?: Record<string, any>,
+  ): Promise<SendNotificationResponseDto> {
+    await this.notificationQueue.add(
+      NOTIFICATION_JOBS.SEND_WITHOUT_SAVING,
+      {
+        title,
+        body,
+        userId,
+        type,
+        translationArgs: data,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: true,
+      },
+    );
+
+    this.logger.log({
+      message: 'Notification (without saving) job added to queue',
+      userId,
+      title,
+      type,
+      context: 'Notifications',
+    });
+
+    return {
+      success: true,
+      message: 'Notification (without saving) job added to queue',
+    };
+  }
 }

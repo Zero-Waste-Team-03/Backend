@@ -16,6 +16,8 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
+import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
+import { DonationBehaviorContextInput } from '../graphql/inputs/donation-behavior-context.input';
 import { DonationsMapInput } from '../graphql/inputs/donations-map.input';
 import {
   MarkerColorValues,
@@ -36,6 +38,7 @@ export class DonationService {
     private readonly donationPhotoRepository: Repository<DonationPhoto>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    private readonly smartBehaviorPublisher: SmartBehaviorPublisherService,
   ) {}
 
   private async resolveLocationId(
@@ -259,6 +262,14 @@ export class DonationService {
       input.mainAttachmentId,
     );
 
+    await this.smartBehaviorPublisher.safePublishDonationPublished({
+      donorId: userId,
+      donationId: savedDonation.id,
+      categoryId: savedDonation.categoryId,
+      urgency: savedDonation.urgency,
+      safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
+    });
+
     return await this.mapDonationResponse(savedDonation);
   }
 
@@ -357,15 +368,14 @@ export class DonationService {
   async findAll(
     userId: string,
     filter?: DonationsFilterInput,
+    behaviorContext?: DonationBehaviorContextInput,
     pagination?: PaginationInput,
     isAdmin: boolean = false,
   ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-
     const where: FindOptionsWhere<Donation> = {};
-
     if (!isAdmin) {
       where.userId = Not(userId);
       where.status = DonationStatusValues.PUBLISHED as DonationStatus;
@@ -409,6 +419,23 @@ export class DonationService {
         mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
       };
     });
+
+    const hasBehaviorSignal =
+      Boolean(filter?.categoryId) ||
+      Boolean(filter?.urgency) ||
+      Boolean(filter?.status) ||
+      Boolean(behaviorContext?.distanceBucket) ||
+      Boolean(behaviorContext?.origin);
+
+    if (hasBehaviorSignal) {
+      await this.smartBehaviorPublisher.safePublishBeneficiarySearchPerformed({
+        userId,
+        categoryId: filter?.categoryId,
+        urgency: filter?.urgency,
+        distanceBucket: behaviorContext?.distanceBucket,
+        origin: behaviorContext?.origin,
+      });
+    }
 
     return {
       items,
