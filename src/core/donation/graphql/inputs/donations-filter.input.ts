@@ -1,6 +1,11 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsOptional, IsUUID, IsEnum } from 'class-validator';
-import { DonationUrgencyValues, DonationStatusValues, DonationUrgency, DonationStatus } from '../../entities/donation.entity';
+import {
+  DonationUrgencyValues,
+  DonationStatusValues,
+  DonationUrgency,
+  DonationStatus,
+} from '../../entities/donation.entity';
 
 @InputType('DonationsFilterInput')
 export class DonationsFilterInput {
