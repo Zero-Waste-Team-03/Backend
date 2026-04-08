@@ -6,10 +6,26 @@ import { ChatService } from './chat.service';
 import { ChatResolver } from './chat.resolver';
 import { Reservation } from '../reservation/entities/reservation.entity';
 import { ChatStateMachineService } from './chat-state-machine.service';
+import { ChatGateway } from './chat.gateway';
+import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
+import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
+import { UserModule } from '../user/user.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Conversation, Message, Reservation])],
-  providers: [ChatService, ChatResolver, ChatStateMachineService],
+  imports: [
+    TypeOrmModule.forFeature([Conversation, Message, Reservation]),
+    UserModule,
+    JwtModule,
+  ],
+  providers: [
+    ChatService,
+    ChatResolver,
+    ChatStateMachineService,
+    ChatGateway,
+    ChatConversationMemberGuard,
+    ChatConversationWritableGuard,
+  ],
   exports: [ChatService],
 })
 export class ChatModule {}

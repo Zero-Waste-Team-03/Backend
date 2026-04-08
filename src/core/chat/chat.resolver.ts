@@ -9,6 +9,8 @@ import { PaginatedMessages } from './graphql/types/paginated-messages.type';
 import { SendMessageInput } from './graphql/inputs/send-message.input';
 import { ChatMessageType } from './graphql/types/chat-message.type';
 import { ApproveSensitiveMessageInput } from './graphql/inputs/approve-sensitive-message.input';
+import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
+import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ConversationType)
@@ -42,6 +44,7 @@ export class ChatResolver {
   @Mutation(() => ChatMessageType, {
     description: 'Send message in an existing conversation',
   })
+  @UseGuards(ChatConversationMemberGuard, ChatConversationWritableGuard)
   async sendMessage(
     @Args('input') input: SendMessageInput,
     @USER('id') userId: string,
@@ -56,6 +59,7 @@ export class ChatResolver {
   @Mutation(() => ChatMessageType, {
     description: 'Approve a sensitive message to reveal it to the approver',
   })
+  @UseGuards(ChatConversationMemberGuard)
   async approveSensitiveMessage(
     @Args('input') input: ApproveSensitiveMessageInput,
     @USER('id') userId: string,
