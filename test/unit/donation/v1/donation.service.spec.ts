@@ -452,13 +452,15 @@ describe('DonationService', () => {
       const result = await service.findAll('u1',filter, pagination);
 
       expect(donationRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { categoryId: 'cat1',userId:Not('u1') },
-          skip: 10,
-          take: 10,
-        }),
-      );
-      expect(result.items).toHaveLength(2);
+  expect.objectContaining({
+    where: expect.objectContaining({
+      categoryId: 'cat1',
+      userId: Not('u1'),
+    }),
+    skip: 10,
+    take: 10,
+  }),
+);      expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(20);
       expect(result.page).toBe(2);
       expect(result.limit).toBe(10);
