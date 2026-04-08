@@ -320,7 +320,7 @@ export class DonationService {
     };
   }
 
-  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput,isAdmin:Boolean=false) {
+  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput,isAdmin:boolean=false) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
