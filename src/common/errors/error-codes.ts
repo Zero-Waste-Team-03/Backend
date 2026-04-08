@@ -114,8 +114,13 @@ export const ERROR_CODES = {
     message: 'Provide either locationId or locationInput, not both.',
     args: { locationId: 'string' } as const,
   },
+  DONATION_NOT_AVAILABLE: {
+    code: 'donation.not_available',
+    httpStatus: 400,
+    message: 'Donation is not available for reservation.',
+    args: { id: 'string', status: 'string' } as const,
+  },
 
-  // ── Upload ──────────────────────────────────────────────────────────
   UPLOAD_FILE_REQUIRED: {
     code: 'upload.file_required',
     httpStatus: 400,
@@ -166,6 +171,23 @@ export const ERROR_CODES = {
     httpStatus: 404,
     message: 'Category not found.',
     args: { id: 'string' } as const,
+  },
+  RESERVATION_NOT_FOUND: {
+    code: 'reservation.not_found',
+    httpStatus: 404,
+    message: 'Reservation not found or already processed.',
+    args: { id: 'string', status: 'string' } as const,
+  },
+  RESERVATION_OWNERSHIP_INVALID: {
+    code: 'reservation.ownership_invalid',
+    httpStatus: 403,
+    message: 'You do not own this reservation.',
+  },
+  RESERVATION_STATUS_INVALID: {
+    code: 'reservation.status_invalid',
+    httpStatus: 400,
+    message: 'Reservation cannot be processed in its current status.',
+    args: { status: 'string' } as const,
   },
 } as const;
 

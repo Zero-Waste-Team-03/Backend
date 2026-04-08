@@ -3,4 +3,5 @@ export const QUEUE_NAME = {
   SEARCH: 'search',
   UPLOAD: 'upload',
   NOTIFICATION: 'notification',
+  RESERVATION: 'reservation',
 } as const;

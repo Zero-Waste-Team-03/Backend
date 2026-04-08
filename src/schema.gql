@@ -172,6 +172,9 @@ type Donation {
   """Optional pickup location id"""
   locationId: String
 
+  """The Main attahcment used as cover photo"""
+  mainAttachment: Attachment
+
   """Main attachment id used as cover photo"""
   mainAttachmentId: String
 
@@ -202,6 +205,16 @@ type Donation {
 
   """Owner user id (donor)"""
   userId: String!
+}
+
+type DonationMapMarker {
+  categoryId: String!
+  id: ID!
+  latitude: Float!
+  longitude: Float!
+  markerColor: MarkerColorValues!
+  title: String!
+  urgency: DonationUrgencyValues!
 }
 
 type DonationStatistics {
@@ -235,6 +248,17 @@ input DonationsFilterInput {
   categoryId: String
   status: DonationStatusValues
   urgency: DonationUrgencyValues
+}
+
+input DonationsMapInput {
+  """Center latitude"""
+  latitude: Float!
+
+  """Center longitude"""
+  longitude: Float!
+
+  """Radius in kilometers"""
+  radius: Float!
 }
 
 """
@@ -283,6 +307,13 @@ input LoginInput {
   password: String!
 }
 
+"""Color of the map marker"""
+enum MarkerColorValues {
+  GREEN
+  ORANGE
+  RED
+}
+
 type MessageResponse {
   """Response message"""
   message: String!
@@ -303,6 +334,9 @@ type Mutation {
   Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password
   """
   changePassword(changePasswordInput: ChangePasswordInput!): MessageResponse!
+
+  """Confirm a pending reservation within the deadline"""
+  confirmReservation(id: ID!): Reservation!
 
   """Create a new category (Administrator only)."""
   createCategory(input: CreateCategoryInput!): Category!
@@ -348,6 +382,9 @@ type Mutation {
     registerInput: RegisterInput!
   ): MessageResponse!
   registerFcmToken(fcmToken: String!): MessageResponse!
+
+  """Create a new reservation for a donation"""
+  reserveDonation(donationId: ID!): Reservation!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
@@ -453,6 +490,9 @@ type Query {
   """Get current authenticated user profile"""
   currentUser: User!
 
+  """Get a single donation listing by id"""
+  donation(id: ID!): Donation!
+
   """
   Get statistics for donations (total active, flagged, pending approvals)
   """
@@ -460,6 +500,11 @@ type Query {
 
   """Get all donation listings with optional filters and donor access"""
   donations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
+
+  """
+  Get donations within a radius from a center point for map visualization
+  """
+  donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
   notifications(pagination: PaginationQueryInput): [Notification!]!
 }
 
@@ -497,6 +542,26 @@ input RegisterLocationInput {
 
   """Neighborhood for user location"""
   neighborhood: String
+}
+
+type Reservation {
+  beneficiary: User
+  beneficiaryId: ID!
+  confirmedAt: DateTime
+  createdAt: DateTime!
+  donation: Donation
+  donationId: ID!
+  id: ID!
+  status: ReservationStatus!
+  updatedAt: DateTime!
+}
+
+"""The possible statuses of a reservation"""
+enum ReservationStatus {
+  CANCELLED
+  COMPLETED
+  CONFIRMED
+  PENDING
 }
 
 input ResetPasswordInput {

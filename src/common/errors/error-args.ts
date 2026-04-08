@@ -11,9 +11,12 @@ export interface ErrorArgsMap {
   };
   'donation.attachment_ids_duplicated': { attachmentIds: string[] };
   'donation.location_xor_invalid': { locationId: string };
+  'donation.not_available': { id: string; status: string };
   'upload.max_files_exceeded': { max: number };
   'upload.attachment_not_found': { id: string };
   'upload.attachments_not_found': { ids: string[] };
   'upload.failed_attachment': { id: string };
   'category.not_found': { id: string };
+  'reservation.not_found': { id: string; status: string };
+  'reservation.status_invalid': { status: string };
 }

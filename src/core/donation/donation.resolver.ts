@@ -17,6 +17,8 @@ import { UpdateDonationInput } from './graphql/inputs/update-donation.input';
 import { DonationService } from './v1/donation.service';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { DonationStatisticsType } from './graphql/types/donation-statistics.type';
+import { DonationsMapInput } from './graphql/inputs/donations-map.input';
+import { DonationMapMarkerType } from './graphql/types/donation-map-marker.type';
 import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
@@ -39,6 +41,15 @@ export class DonationResolver {
   })
   async donationStatistics(): Promise<DonationStatisticsType> {
     return this.donationService.getStatistics();
+  }
+
+  @Query(() => [DonationMapMarkerType], {
+    description: 'Get donations within a radius from a center point for map visualization',
+  })
+  async donationsMap(
+    @Args('input') input: DonationsMapInput,
+  ): Promise<DonationMapMarkerType[]> {
+    return this.donationService.getDonationsForMap(input);
   }
 
   @Query(() => PaginatedDonations, {

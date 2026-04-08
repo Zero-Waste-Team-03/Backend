@@ -99,7 +99,7 @@ export class DonationType {
   @Field(() => [String], {
     description: 'Attachment ids for donation photos',
   })
-  attachmentIds: string[];
+  attachmentIds?: string[];
 
   @Field(() => String, {
     nullable: true,
