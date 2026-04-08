@@ -7,7 +7,7 @@ import {
 } from 'src/core/user/entities/user.entity';
 import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository, LessThan } from 'typeorm';
+import { Not, Repository, LessThan, In } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import {
@@ -52,46 +52,41 @@ export class UserService {
     @InjectQueue(QUEUE_NAME.MAIL)
     private readonly mailQueue: Queue,
     private readonly attachmentService: AttachmentService,
-  ) { }
+  ) {}
 
   async getPaginatedUsers(
     args: AdminUsersArgs,
+    excludedUserId?: string,
   ): Promise<IPaginatedType<UserType>> {
     const { page, limit, search, role, status } = args;
     const skip = (page - 1) * limit;
 
-    let items: User[];
-    let totalCount: number;
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
 
     if (search) {
-      const queryBuilder = this.userRepository.createQueryBuilder('user');
-
       queryBuilder.where(
         '(user.email ILIKE :search OR user.displayName ILIKE :search)',
         { search: `%${search}%` },
       );
+    }
 
-      if (role) {
-        queryBuilder.andWhere('user.role = :role', { role });
-      }
-
-      if (status) {
-        queryBuilder.andWhere('user.status = :status', { status });
-      }
-
-      queryBuilder.skip(skip).take(limit).orderBy('user.createdAt', 'DESC');
-      [items, totalCount] = await queryBuilder.getManyAndCount();
-    } else {
-      const where: Record<string, any> = {};
-      if (role) where.role = role;
-      if (status) where.status = status;
-
-      [items, totalCount] = await this.userRepository.findAndCount({
-        where,
-        skip,
-        take: limit,
+    if (excludedUserId) {
+      queryBuilder.andWhere('user.id != :excludedUserId', {
+        excludedUserId,
       });
     }
+
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('user.status = :status', { status });
+    }
+
+    queryBuilder.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [items, totalCount] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
@@ -106,6 +101,7 @@ export class UserService {
       hasPreviousPage,
     };
   }
+
   async suspendUser(id: string): Promise<UserType> {
     this.logger.log(`Suspending user with ID: ${id}`);
     const user = await this.userRepository.findOneBy({ id });
@@ -259,15 +255,21 @@ export class UserService {
 
     if (avatarAttachmentId) {
       try {
-        const attachment = await this.attachmentService.getAttachmentById(avatarAttachmentId);
+        const attachment =
+          await this.attachmentService.getAttachmentById(avatarAttachmentId);
         user.avatarAttachmentId = attachment.id;
       } catch {
-        throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', { id: avatarAttachmentId });
+        throwAppError('UPLOAD_ATTACHMENT_NOT_FOUND', {
+          id: avatarAttachmentId,
+        });
       }
     }
 
     if (location) {
-      user.location = this.locationRepository.create({ ...location, id: user.location?.id });
+      user.location = this.locationRepository.create({
+        ...location,
+        id: user.location?.id,
+      }) as Location;
     }
 
     if (settings) {
@@ -275,7 +277,7 @@ export class UserService {
         id: user.settings?.id,
         ...settings,
         userId: user.id,
-      });
+      }) as UserSettings;
     }
     Object.assign(user, restOfData);
 
@@ -377,5 +379,11 @@ export class UserService {
       where: { userId },
     });
     return settings;
+  }
+
+  async findByIds(ids: string[]): Promise<User[]> {
+    return this.userRepository.find({
+      where: { id: In(ids) },
+    });
   }
 }

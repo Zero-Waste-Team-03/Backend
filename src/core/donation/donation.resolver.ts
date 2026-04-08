@@ -17,6 +17,8 @@ import { UpdateDonationInput } from './graphql/inputs/update-donation.input';
 import { DonationService } from './v1/donation.service';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { DonationStatisticsType } from './graphql/types/donation-statistics.type';
+import { DonationsMapInput } from './graphql/inputs/donations-map.input';
+import { DonationMapMarkerType } from './graphql/types/donation-map-marker.type';
 import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
 import { DonationBehaviorContextInput } from './graphql/inputs/donation-behavior-context.input';
 import { UserType } from '../authentication/graphql/types/user.type';
@@ -27,9 +29,10 @@ import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { Category } from '../category/entities/category.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
+import { Category } from '../category/entities/category.entity';
 
+@UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
   constructor(private readonly donationService: DonationService) {}
@@ -42,23 +45,36 @@ export class DonationResolver {
     return this.donationService.getStatistics();
   }
 
+  @Query(() => [DonationMapMarkerType], {
+    description: 'Get donations within a radius from a center point for map visualization',
+  })
+  async donationsMap(
+    @Args('input') input: DonationsMapInput,
+  ): Promise<DonationMapMarkerType[]> {
+    return this.donationService.getDonationsForMap(input);
+  }
+
   @Query(() => PaginatedDonations, {
     description:
       'Get all donation listings with optional filters and donor access',
   })
   async donations(
-    @USER('id') userId: string,
+    @USER('id') userId:string,
+    @USER('role') role:UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('behaviorContext', { nullable: true })
     behaviorContext?: DonationBehaviorContextInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
+
     return this.donationService.findAll(
       userId,
       filter,
       behaviorContext,
       pagination,
+      role === 'Administrator'
     );
+
   }
 
   @ResolveField(() => UserType)
@@ -94,8 +110,6 @@ export class DonationResolver {
     if (!donation.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
-
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => DonationType, {
     description: 'Create a donation listing for the authenticated user',
   })
@@ -106,7 +120,6 @@ export class DonationResolver {
     return await this.donationService.createDonation(input, userId);
   }
 
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => DonationType, {
     description:
       'Update a donation listing owned by the authenticated user using id and owner condition',
@@ -127,7 +140,6 @@ export class DonationResolver {
     return await this.donationService.getDonationById(id);
   }
 
-  @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType, {
     description:
       'Delete a donation listing owned by the authenticated user using id and owner condition',
@@ -142,5 +154,20 @@ export class DonationResolver {
       userId,
       role == 'Administrator',
     );
+  }
+}
+
+@Resolver(() => DonationMapMarkerType)
+export class DonationMapMarkerResolver {
+  @ResolveField(() => AttachementType, {
+    nullable: true,
+    description: 'Main attachment details for map marker',
+  })
+  async mainAttachment(
+    @Parent() marker: DonationMapMarkerType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ) {
+    if (!marker.mainAttachmentId) return null;
+    return loaders.attachmentLoader.load(marker.mainAttachmentId);
   }
 }

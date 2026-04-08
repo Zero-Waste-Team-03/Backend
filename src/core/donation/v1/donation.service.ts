@@ -18,6 +18,11 @@ import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
 import { DonationBehaviorContextInput } from '../graphql/inputs/donation-behavior-context.input';
+import { DonationsMapInput } from '../graphql/inputs/donations-map.input';
+import {
+  MarkerColorValues,
+  MarkerColor,
+} from '../graphql/types/donation-map-marker.type';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -102,6 +107,36 @@ export class DonationService {
     }
 
     return await this.mapDonationResponse(donation);
+  }
+
+  async findByIds(ids: string[]): Promise<DonationResponse[]> {
+    const donations = await this.donationRepository.find({
+      where: { id: In(ids) },
+    });
+
+    if (donations.length === 0) return [];
+
+    const allPhotos = await this.donationPhotoRepository.find({
+      where: { donationId: In(donations.map((d) => d.id)) },
+    });
+
+    const photoMap = allPhotos.reduce(
+      (acc, photo) => {
+        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        acc[photo.donationId].push(photo);
+        return acc;
+      },
+      {} as Record<string, DonationPhoto[]>,
+    );
+
+    return donations.map((donation) => {
+      const photos = photoMap[donation.id] || [];
+      return {
+        ...donation,
+        attachmentIds: photos.map((p) => p.attachmentId),
+        mainAttachmentId: photos.find((p) => p.isMain)?.attachmentId,
+      };
+    });
   }
 
   private validatePhotoInput(
@@ -335,14 +370,17 @@ export class DonationService {
     filter?: DonationsFilterInput,
     behaviorContext?: DonationBehaviorContextInput,
     pagination?: PaginationInput,
+    pagination?: PaginationInput,
+    isAdmin: boolean = false,
   ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-
-    const where: FindOptionsWhere<Donation> = {
-      userId: Not(userId),
-    };
+    const where: FindOptionsWhere<Donation> = {};
+    if (!isAdmin) {
+      where.userId = Not(userId);
+      where.status = DonationStatusValues.PUBLISHED as DonationStatus;
+    }
 
     if (filter?.categoryId) where.categoryId = filter.categoryId;
     if (filter?.urgency) where.urgency = filter.urgency;
@@ -408,5 +446,45 @@ export class DonationService {
       hasNextPage: totalCount > skip + limit,
       hasPreviousPage: page > 1,
     };
+  }
+
+  async getDonationsForMap(input: DonationsMapInput) {
+    const { radius, latitude, longitude } = input;
+
+    const donations = await this.donationRepository
+      .createQueryBuilder('donation')
+      .innerJoinAndSelect('donation.location', 'location')
+      .innerJoinAndSelect('donation.category', 'category')
+      .leftJoinAndSelect('donation.photos', 'photos', 'photos.isMain = true')
+      .where('donation.status = :status', {
+        status: DonationStatusValues.PUBLISHED,
+      })
+      .andWhere(
+        '(6371 * acos(cos(radians(:latitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:longitude)) + sin(radians(:latitude)) * sin(radians(location.latitude)))) <= :radius',
+        { latitude, longitude, radius },
+      )
+      .getMany();
+
+    return donations.map((donation) => {
+      const categoryName = donation.category?.name || 'Unknown';
+      let markerColor: MarkerColor = MarkerColorValues.GREEN;
+
+      if (donation.urgency === DonationUrgencyValues.HIGH) {
+        markerColor = MarkerColorValues.RED;
+      } else if (['Bakery', 'Dry Goods', 'Beverages'].includes(categoryName)) {
+        markerColor = MarkerColorValues.ORANGE;
+      }
+
+      return {
+        id: donation.id,
+        title: donation.title,
+        latitude: donation.location!.latitude!,
+        longitude: donation.location!.longitude!,
+        markerColor,
+        urgency: donation.urgency,
+        categoryId: donation.categoryId,
+        mainAttachmentId: donation.photos?.[0]?.attachmentId,
+      };
+    });
   }
 }

@@ -8,6 +8,8 @@ import { Location } from '../../locations/entities/location.entity';
 import { Attachment } from '../attachment/entities/attachment.entity';
 import { CategoryDataLoader } from './category.dataloader';
 import { CategoryModule } from '../../../core/category/category.module';
+import { DonationDataLoader } from './donation.dataloader';
+import { DonationModule } from '../../../core/donation/donation.module';
 
 /**
  * DataLoader Module
@@ -22,6 +24,7 @@ import { CategoryModule } from '../../../core/category/category.module';
   imports: [
     UserModule,
     CategoryModule,
+    DonationModule,
     TypeOrmModule.forFeature([Location, Attachment]),
   ],
   providers: [
@@ -29,12 +32,14 @@ import { CategoryModule } from '../../../core/category/category.module';
     LocationDataLoader,
     AttachmentDataLoader,
     CategoryDataLoader,
+    DonationDataLoader,
   ],
   exports: [
     UserDataLoader,
     LocationDataLoader,
     AttachmentDataLoader,
     CategoryDataLoader,
+    DonationDataLoader,
   ],
 })
 export class DataLoaderModule {}
