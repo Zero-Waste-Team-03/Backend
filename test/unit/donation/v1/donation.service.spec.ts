@@ -468,7 +468,7 @@ describe('DonationService', () => {
       const filter = { categoryId: 'cat1' };
       const pagination = { page: 2, limit: 10 };
 
-      const result = await service.findAll('u1', filter, pagination);
+      const result = await service.findAll('u1', filter, undefined, pagination);
 
       expect(donationRepository.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({

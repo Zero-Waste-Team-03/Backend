@@ -30,4 +30,33 @@ describe('SmartNotificationCommandEvent', () => {
         } as any),
     ).toThrow('Invalid SmartNotificationCommandEvent payload');
   });
+
+  it('throws when payload includes unknown field', () => {
+    expect(
+      () =>
+        new SmartNotificationCommandEvent({
+          eventId: '6e57ce83-c965-4b4f-bc2b-3341f9409c6d',
+          userId: '68a9c74f-53fb-45d7-b9f8-f8e1833737d8',
+          title: 'Hello',
+          body: 'Body',
+          type: NOTIFICATION_TYPE.MESSAGE,
+          save: true,
+          unknownField: 'x',
+        }),
+    ).toThrow('Invalid SmartNotificationCommandEvent payload');
+  });
+
+  it('throws when title/body are not strings', () => {
+    expect(
+      () =>
+        new SmartNotificationCommandEvent({
+          eventId: '6e57ce83-c965-4b4f-bc2b-3341f9409c6d',
+          userId: '68a9c74f-53fb-45d7-b9f8-f8e1833737d8',
+          title: 123,
+          body: null,
+          type: NOTIFICATION_TYPE.MESSAGE,
+          save: true,
+        } as any),
+    ).toThrow('Invalid SmartNotificationCommandEvent payload');
+  });
 });

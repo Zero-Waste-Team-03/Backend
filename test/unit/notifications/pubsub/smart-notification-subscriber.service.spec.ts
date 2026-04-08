@@ -96,4 +96,26 @@ describe('SmartNotificationSubscriberService', () => {
       REDIS_PUBSUB_CHANNELS.SMART_NOTIFICATION_COMMAND,
     );
   });
+
+  it('ignores invalid non-object payloads', async () => {
+    let callback: ((message: string) => Promise<void>) | undefined;
+    redisService.subscribe.mockImplementation(
+      async (_channel: string, cb: (message: string) => Promise<void>) => {
+        callback = cb;
+      },
+    );
+
+    const service = new SmartNotificationSubscriberService(
+      redisService as any,
+      notificationsService as any,
+    );
+
+    await service.onModuleInit();
+    await callback?.(JSON.stringify(['bad', 'payload']));
+
+    expect(notificationsService.sendNotification).not.toHaveBeenCalled();
+    expect(
+      notificationsService.sendNotificationWithoutSaving,
+    ).not.toHaveBeenCalled();
+  });
 });

@@ -62,12 +62,26 @@ describe('DonationResolver', () => {
       };
       mockDonationService.findAll.mockResolvedValue(mockPaginatedResult);
 
-      const filter = { categoryId: 'cat-1', urgency: DonationUrgencyValues.HIGH };
+      const filter = {
+        categoryId: 'cat-1',
+        urgency: DonationUrgencyValues.HIGH,
+      };
+      const behaviorContext = { distanceBucket: '1km', origin: 'list' };
       const pagination = { page: 1, limit: 10 };
 
-      const result = await resolver.donations('u1',filter, pagination);
+      const result = await resolver.donations(
+        'u1',
+        filter,
+        behaviorContext as any,
+        pagination,
+      );
 
-      expect(service.findAll).toHaveBeenCalledWith('u1',filter, pagination);
+      expect(service.findAll).toHaveBeenCalledWith(
+        'u1',
+        filter,
+        behaviorContext,
+        pagination,
+      );
       expect(result).toEqual(mockPaginatedResult);
     });
   });
@@ -82,7 +96,9 @@ describe('DonationResolver', () => {
       };
 
       const donation = { id: 'd1', userId: 'u1' } as any;
-      const result = await resolver.user(donation, { loaders: mockLoaders as any });
+      const result = await resolver.user(donation, {
+        loaders: mockLoaders as any,
+      });
 
       expect(mockLoaders.userLoader.load).toHaveBeenCalledWith('u1');
       expect(result).toEqual(mockUser);

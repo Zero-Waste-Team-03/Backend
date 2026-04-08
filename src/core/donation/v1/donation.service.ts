@@ -17,6 +17,7 @@ import { LocationInput } from 'src/common/locations/graphql/inputs/location.inpu
 import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
+import { DonationBehaviorContextInput } from '../graphql/inputs/donation-behavior-context.input';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -332,6 +333,7 @@ export class DonationService {
   async findAll(
     userId: string,
     filter?: DonationsFilterInput,
+    behaviorContext?: DonationBehaviorContextInput,
     pagination?: PaginationInput,
   ) {
     const page = pagination?.page ?? 1;
@@ -385,16 +387,16 @@ export class DonationService {
       Boolean(filter?.categoryId) ||
       Boolean(filter?.urgency) ||
       Boolean(filter?.status) ||
-      Boolean(filter?.distanceBucket) ||
-      Boolean(filter?.origin);
+      Boolean(behaviorContext?.distanceBucket) ||
+      Boolean(behaviorContext?.origin);
 
     if (hasBehaviorSignal) {
       await this.smartBehaviorPublisher.safePublishBeneficiarySearchPerformed({
         userId,
         categoryId: filter?.categoryId,
         urgency: filter?.urgency,
-        distanceBucket: filter?.distanceBucket,
-        origin: filter?.origin,
+        distanceBucket: behaviorContext?.distanceBucket,
+        origin: behaviorContext?.origin,
       });
     }
 

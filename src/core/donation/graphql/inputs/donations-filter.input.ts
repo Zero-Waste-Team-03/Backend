@@ -6,12 +6,6 @@ import {
   DonationUrgency,
   DonationStatus,
 } from '../../entities/donation.entity';
-import {
-  SEARCH_DISTANCE_BUCKETS,
-  SEARCH_VIEW_ORIGINS,
-  SearchDistanceBucket,
-  SearchViewOrigin,
-} from 'src/common/constants/redis-pubsub';
 
 @InputType('DonationsFilterInput')
 export class DonationsFilterInput {
@@ -29,14 +23,4 @@ export class DonationsFilterInput {
   @IsOptional()
   @IsEnum(DonationStatusValues)
   status?: DonationStatus;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsEnum(SEARCH_DISTANCE_BUCKETS)
-  distanceBucket?: SearchDistanceBucket;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsEnum(SEARCH_VIEW_ORIGINS)
-  origin?: SearchViewOrigin;
 }

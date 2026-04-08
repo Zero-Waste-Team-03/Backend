@@ -7,10 +7,10 @@ import {
 import { RedisService } from 'nestjs-redis-client';
 import { REDIS_PUBSUB_CHANNELS } from 'src/common/constants/redis-pubsub';
 import { NotificationsService } from '../notifications.service';
-import {
-  SmartNotificationCommandEvent,
-  SmartNotificationPayload,
-} from '../events/smart-notification-command.event';
+import { SmartNotificationCommandEvent } from '../events/smart-notification-command.event';
+import { createHash } from 'crypto';
+
+type JsonObject = Record<string, unknown>;
 
 @Injectable()
 export class SmartNotificationSubscriberService
@@ -45,8 +45,26 @@ export class SmartNotificationSubscriberService
   }
 
   private async handleMessage(message: string): Promise<void> {
+    let eventId: string | undefined;
+    let userId: string | undefined;
+
     try {
-      const payload = JSON.parse(message) as SmartNotificationPayload;
+      const payload = JSON.parse(message) as unknown;
+
+      if (!this.isJsonObject(payload)) {
+        throw new Error(
+          'Invalid smart notification message: payload must be object',
+        );
+      }
+
+      if (typeof payload.eventId === 'string') {
+        eventId = payload.eventId;
+      }
+
+      if (typeof payload.userId === 'string') {
+        userId = payload.userId;
+      }
+
       const event = new SmartNotificationCommandEvent(payload);
 
       if (event.save) {
@@ -66,12 +84,21 @@ export class SmartNotificationSubscriberService
           event.meta,
         );
       }
-    } catch {
+    } catch (error) {
+      const messageHash = createHash('sha256').update(message).digest('hex');
       this.logger.warn({
         message: 'Failed to process smart notification pubsub message',
-        rawMessage: message,
+        eventId,
+        userId,
+        payloadHash: messageHash,
+        payloadSize: message.length,
+        reason: error instanceof Error ? error.message : 'Unknown error',
         context: 'SmartNotificationSubscriber',
       });
     }
+  }
+
+  private isJsonObject(value: unknown): value is JsonObject {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }

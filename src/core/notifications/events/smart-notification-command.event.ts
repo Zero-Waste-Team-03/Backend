@@ -28,6 +28,8 @@ export type SmartNotificationPayload = {
   meta?: Record<string, any>;
 };
 
+type RawSmartNotificationPayload = Record<string, unknown>;
+
 export class SmartNotificationCommandEvent {
   @IsDefined()
   @IsUUID()
@@ -59,14 +61,16 @@ export class SmartNotificationCommandEvent {
   @IsObject()
   meta?: Record<string, any>;
 
-  constructor(payload: SmartNotificationPayload) {
-    this.eventId = payload.eventId;
-    this.userId = payload.userId;
-    this.title = sanitizeNotificationText(payload.title, MAX_TITLE_LENGTH);
-    this.body = sanitizeNotificationText(payload.body, MAX_BODY_LENGTH);
-    this.type = payload.type;
-    this.save = payload.save;
-    this.meta = payload.meta;
+  constructor(payload: RawSmartNotificationPayload) {
+    Object.assign(this, payload);
+
+    if (typeof this.title === 'string') {
+      this.title = sanitizeNotificationText(this.title, MAX_TITLE_LENGTH);
+    }
+
+    if (typeof this.body === 'string') {
+      this.body = sanitizeNotificationText(this.body, MAX_BODY_LENGTH);
+    }
 
     const errors = validateSync(this, {
       whitelist: true,
