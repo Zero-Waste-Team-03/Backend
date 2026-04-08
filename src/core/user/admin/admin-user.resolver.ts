@@ -11,6 +11,7 @@ import { UserType } from '../../authentication/graphql/types/user.type';
 import { Paginated } from '../../../common/graphql/types/pagination.type';
 import { ObjectType } from '@nestjs/graphql';
 import { AdminCreateAccountInput } from '../graphql/inputs/admin-create-account.input';
+import { USER } from 'src/core/authentication/decorators/user.decorartor';
 
 @ObjectType('PaginatedUsers')
 export class PaginatedUsersResponse extends Paginated(UserType) {}
@@ -27,8 +28,9 @@ export class AdminUserResolver {
   })
   async adminGetUsers(
     @Args() args: AdminUsersArgs,
+    @USER('id') adminId?: string,
   ): Promise<PaginatedUsersResponse> {
-    return this.userService.getPaginatedUsers(args);
+    return this.userService.getPaginatedUsers(args, adminId);
   }
 
   @Roles(UserRoleValues.ADMINISTRATOR)

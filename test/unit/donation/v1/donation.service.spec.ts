@@ -9,7 +9,8 @@ import {
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { Not } from 'typeorm';
+import { Not, In } from 'typeorm';
+import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -22,6 +23,7 @@ describe('DonationService', () => {
     count: jest.fn(),
     findAndCount: jest.fn(),
     find: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   const donationPhotoRepository = {
@@ -466,6 +468,124 @@ describe('DonationService', () => {
       expect(result.limit).toBe(10);
       expect(result.hasNextPage).toBe(false); // 20 <= 10 + 10
       expect(result.hasPreviousPage).toBe(true);
+    });
+  });
+
+  describe('findByIds', () => {
+    it('returns donations for given ids with mapped photos using In operator', async () => {
+      const ids = ['d1', 'd2'];
+      const mockDonations = [
+        { id: 'd1', title: 'Donation 1' },
+        { id: 'd2', title: 'Donation 2' },
+      ];
+      donationRepository.find.mockResolvedValue(mockDonations);
+      donationPhotoRepository.find.mockResolvedValue([
+        { donationId: 'd1', attachmentId: 'a1', isMain: true },
+      ]);
+
+      const result = await service.findByIds(ids);
+
+      expect(donationRepository.find).toHaveBeenCalledWith({
+        where: { id: In(ids) },
+      });
+      expect(donationPhotoRepository.find).toHaveBeenCalled();
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: 'd1',
+          attachmentIds: ['a1'],
+          mainAttachmentId: 'a1',
+        }),
+      );
+      expect(result[1].attachmentIds).toEqual([]);
+    });
+  });
+
+  describe('getDonationsForMap', () => {
+    it('should return mapped donation markers with correct colors based on urgency and category', async () => {
+      const input = { radius: 10, latitude: 36.7, longitude: 3.0 };
+      const mockDonations = [
+        {
+          id: 'd1',
+          title: 'Produce 1',
+          urgency: DonationUrgencyValues.MEDIUM,
+          categoryId: 'cat1',
+          location: { latitude: 36.71, longitude: 3.01 },
+          category: { name: 'Fresh Produce' },
+        },
+        {
+          id: 'd2',
+          title: 'Bakery 1',
+          urgency: DonationUrgencyValues.MEDIUM,
+          categoryId: 'cat2',
+          location: { latitude: 36.72, longitude: 3.02 },
+          category: { name: 'Bakery' },
+        },
+        {
+          id: 'd3',
+          title: 'Urgent 1',
+          urgency: DonationUrgencyValues.HIGH,
+          categoryId: 'cat3',
+          location: { latitude: 36.73, longitude: 3.03 },
+          category: { name: 'Beverages' },
+        },
+      ];
+
+      const queryBuilder = {
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockDonations),
+      };
+
+      donationRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      const result = await service.getDonationsForMap(input);
+
+      expect(donationRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'donation',
+      );
+      expect(queryBuilder.innerJoinAndSelect).toHaveBeenCalledWith(
+        'donation.location',
+        'location',
+      );
+      expect(queryBuilder.innerJoinAndSelect).toHaveBeenCalledWith(
+        'donation.category',
+        'category',
+      );
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'donation.status = :status',
+        {
+          status: DonationStatusValues.PUBLISHED,
+        },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('acos'),
+        expect.objectContaining({ radius: 10, latitude: 36.7, longitude: 3.0 }),
+      );
+
+      expect(result).toHaveLength(3);
+      // Produce 1 -> GREEN (default)
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: 'd1',
+          markerColor: MarkerColorValues.GREEN,
+        }),
+      );
+      // Bakery 1 -> ORANGE (category match)
+      expect(result[1]).toEqual(
+        expect.objectContaining({
+          id: 'd2',
+          markerColor: MarkerColorValues.ORANGE,
+        }),
+      );
+      // Urgent 1 -> RED (urgency HIGH)
+      expect(result[2]).toEqual(
+        expect.objectContaining({
+          id: 'd3',
+          markerColor: MarkerColorValues.RED,
+        }),
+      );
     });
   });
 });

@@ -16,6 +16,11 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
+import { DonationsMapInput } from '../graphql/inputs/donations-map.input';
+import {
+  MarkerColorValues,
+  MarkerColor,
+} from '../graphql/types/donation-map-marker.type';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -91,7 +96,7 @@ export class DonationService {
 
     return patch;
   }
-  async getDonationById(id: string):Promise<DonationResponse> {
+  async getDonationById(id: string): Promise<DonationResponse> {
     const donation = await this.donationRepository.findOne({ where: { id } });
 
     if (!donation) {
@@ -99,6 +104,36 @@ export class DonationService {
     }
 
     return await this.mapDonationResponse(donation);
+  }
+
+  async findByIds(ids: string[]): Promise<DonationResponse[]> {
+    const donations = await this.donationRepository.find({
+      where: { id: In(ids) },
+    });
+
+    if (donations.length === 0) return [];
+
+    const allPhotos = await this.donationPhotoRepository.find({
+      where: { donationId: In(donations.map((d) => d.id)) },
+    });
+
+    const photoMap = allPhotos.reduce(
+      (acc, photo) => {
+        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        acc[photo.donationId].push(photo);
+        return acc;
+      },
+      {} as Record<string, DonationPhoto[]>,
+    );
+
+    return donations.map((donation) => {
+      const photos = photoMap[donation.id] || [];
+      return {
+        ...donation,
+        attachmentIds: photos.map((p) => p.attachmentId),
+        mainAttachmentId: photos.find((p) => p.isMain)?.attachmentId,
+      };
+    });
   }
 
   private validatePhotoInput(
@@ -283,15 +318,13 @@ export class DonationService {
     return await this.mapDonationResponse(savedDonation);
   }
 
-  async deleteDonation(id: string, userId: string,isAdmin:boolean) {
-    let result:DeleteResult;
-    if (isAdmin){
-
+  async deleteDonation(id: string, userId: string, isAdmin: boolean) {
+    let result: DeleteResult;
+    if (isAdmin) {
       result = await this.donationRepository.delete({ id });
+    } else {
+      result = await this.donationRepository.delete({ id, userId });
     }
-      else {
-        result= await this.donationRepository.delete({ id, userId });
-      }
 
     if (!result.affected) {
       throwAppError('DONATION_NOT_FOUND', { id });
@@ -301,17 +334,18 @@ export class DonationService {
   }
 
   async getStatistics() {
-    const [totalActiveDonations, flaggedItems, pendingApprovals] = await Promise.all([
-      this.donationRepository.count({
-        where: { status: DonationStatusValues.PUBLISHED as DonationStatus },
-      }),
-      this.donationRepository.count({
-        where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
-      }),
-      this.donationRepository.count({
-        where: { status: DonationStatusValues.DRAFT as DonationStatus },
-      }),
-    ]);
+    const [totalActiveDonations, flaggedItems, pendingApprovals] =
+      await Promise.all([
+        this.donationRepository.count({
+          where: { status: DonationStatusValues.PUBLISHED as DonationStatus },
+        }),
+        this.donationRepository.count({
+          where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
+        }),
+        this.donationRepository.count({
+          where: { status: DonationStatusValues.DRAFT as DonationStatus },
+        }),
+      ]);
 
     return {
       totalActiveDonations,
@@ -320,23 +354,26 @@ export class DonationService {
     };
   }
 
-  async findAll(userId:string,filter?: DonationsFilterInput, pagination?: PaginationInput,isAdmin:boolean=false) {
+  async findAll(
+    userId: string,
+    filter?: DonationsFilterInput,
+    pagination?: PaginationInput,
+    isAdmin: boolean = false,
+  ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    
     const where: FindOptionsWhere<Donation> = {};
-    console.log('isAdmin:', isAdmin);
-    if (!isAdmin){
-      
+
+    if (!isAdmin) {
       where.userId = Not(userId);
-      where.status= DonationStatusValues.PUBLISHED as DonationStatus;
+      where.status = DonationStatusValues.PUBLISHED as DonationStatus;
     }
 
     if (filter?.categoryId) where.categoryId = filter.categoryId;
-    if (filter?.urgency) where.urgency = filter.urgency ;
-    if (filter?.status) where.status = filter.status ;
+    if (filter?.urgency) where.urgency = filter.urgency;
+    if (filter?.status) where.status = filter.status;
 
     const [donations, totalCount] = await this.donationRepository.findAndCount({
       where,
@@ -346,19 +383,23 @@ export class DonationService {
     });
 
     // Batch fetch photos for all donations in the current page
-    const donationIds = donations.map(d => d.id);
-    const allPhotos = donationIds.length > 0 
-      ? await this.donationPhotoRepository.find({
-          where: { donationId: In(donationIds) }
-        })
-      : [];
+    const donationIds = donations.map((d) => d.id);
+    const allPhotos =
+      donationIds.length > 0
+        ? await this.donationPhotoRepository.find({
+            where: { donationId: In(donationIds) },
+          })
+        : [];
 
     // Map photos to their respective donations
-    const photoMap = allPhotos.reduce((acc, photo) => {
-      if (!acc[photo.donationId]) acc[photo.donationId] = [];
-      acc[photo.donationId].push(photo);
-      return acc;
-    }, {} as Record<string, DonationPhoto[]>);
+    const photoMap = allPhotos.reduce(
+      (acc, photo) => {
+        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        acc[photo.donationId].push(photo);
+        return acc;
+      },
+      {} as Record<string, DonationPhoto[]>,
+    );
 
     const items = donations.map((donation) => {
       const photos = photoMap[donation.id] || [];
@@ -377,5 +418,45 @@ export class DonationService {
       hasNextPage: totalCount > skip + limit,
       hasPreviousPage: page > 1,
     };
+  }
+
+  async getDonationsForMap(input: DonationsMapInput) {
+    const { radius, latitude, longitude } = input;
+
+    const donations = await this.donationRepository
+      .createQueryBuilder('donation')
+      .innerJoinAndSelect('donation.location', 'location')
+      .innerJoinAndSelect('donation.category', 'category')
+      .leftJoinAndSelect('donation.photos', 'photos', 'photos.isMain = true')
+      .where('donation.status = :status', {
+        status: DonationStatusValues.PUBLISHED,
+      })
+      .andWhere(
+        '(6371 * acos(cos(radians(:latitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:longitude)) + sin(radians(:latitude)) * sin(radians(location.latitude)))) <= :radius',
+        { latitude, longitude, radius },
+      )
+      .getMany();
+
+    return donations.map((donation) => {
+      const categoryName = donation.category?.name || 'Unknown';
+      let markerColor: MarkerColor = MarkerColorValues.GREEN;
+
+      if (donation.urgency === DonationUrgencyValues.HIGH) {
+        markerColor = MarkerColorValues.RED;
+      } else if (['Bakery', 'Dry Goods', 'Beverages'].includes(categoryName)) {
+        markerColor = MarkerColorValues.ORANGE;
+      }
+
+      return {
+        id: donation.id,
+        title: donation.title,
+        latitude: donation.location!.latitude!,
+        longitude: donation.location!.longitude!,
+        markerColor,
+        urgency: donation.urgency,
+        categoryId: donation.categoryId,
+        mainAttachmentId: donation.photos?.[0]?.attachmentId,
+      };
+    });
   }
 }
