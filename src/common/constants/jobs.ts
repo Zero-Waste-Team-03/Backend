@@ -36,3 +36,7 @@ export const NOTIFICATION_JOBS = {
 export const RESERVATION_JOBS = {
   EXPIRE_RESERVATION: 'expire-reservation',
 } as const;
+
+export const CHAT_JOBS = {
+  MODERATE_MESSAGE: 'moderate-message',
+} as const;
