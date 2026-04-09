@@ -510,7 +510,7 @@ describe('DonationService', () => {
           urgency: DonationUrgencyValues.MEDIUM,
           categoryId: 'cat1',
           location: { latitude: 36.71, longitude: 3.01 },
-          category: { name: 'Fresh Produce' },
+          category: { name: 'Fresh Produce', sensitivity: 'Low' },
         },
         {
           id: 'd2',
@@ -518,7 +518,7 @@ describe('DonationService', () => {
           urgency: DonationUrgencyValues.MEDIUM,
           categoryId: 'cat2',
           location: { latitude: 36.72, longitude: 3.02 },
-          category: { name: 'Bakery' },
+          category: { name: 'Bakery', sensitivity: 'Medium' },
         },
         {
           id: 'd3',
@@ -526,7 +526,7 @@ describe('DonationService', () => {
           urgency: DonationUrgencyValues.HIGH,
           categoryId: 'cat3',
           location: { latitude: 36.73, longitude: 3.03 },
-          category: { name: 'Beverages' },
+          category: { name: 'Beverages', sensitivity: 'High' },
         },
       ];
 
