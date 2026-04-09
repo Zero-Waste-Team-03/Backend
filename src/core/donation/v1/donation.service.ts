@@ -23,6 +23,10 @@ import {
   MarkerColorValues,
   MarkerColor,
 } from '../graphql/types/donation-map-marker.type';
+import {
+  CategorySensitivity,
+  CategorySensitivityValues,
+} from '../../category/entities/category.entity';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -98,6 +102,22 @@ export class DonationService {
     }
 
     return patch;
+  }
+
+  /**
+   * Determines the color of a map marker based on category sensitivity.
+   * @param sensitivity The sensitivity level of the category.
+   * @returns The corresponding MarkerColor.
+   * @private
+   */
+  private getMarkerColor(sensitivity: CategorySensitivity): MarkerColor {
+    if (sensitivity === CategorySensitivityValues.LOW) {
+      return MarkerColorValues.GREEN;
+    }
+    if (sensitivity === CategorySensitivityValues.MEDIUM) {
+      return MarkerColorValues.ORANGE;
+    }
+    return MarkerColorValues.RED;
   }
   async getDonationById(id: string): Promise<DonationResponse> {
     const donation = await this.donationRepository.findOne({ where: { id } });
@@ -465,14 +485,9 @@ export class DonationService {
       .getMany();
 
     return donations.map((donation) => {
-      const categoryName = donation.category?.name || 'Unknown';
-      let markerColor: MarkerColor = MarkerColorValues.GREEN;
-
-      if (donation.urgency === DonationUrgencyValues.HIGH) {
-        markerColor = MarkerColorValues.RED;
-      } else if (['Bakery', 'Dry Goods', 'Beverages'].includes(categoryName)) {
-        markerColor = MarkerColorValues.ORANGE;
-      }
+      const markerColor = this.getMarkerColor(
+        donation.category?.sensitivity ?? CategorySensitivityValues.LOW,
+      );
 
       return {
         id: donation.id,
@@ -483,6 +498,11 @@ export class DonationService {
         urgency: donation.urgency,
         categoryId: donation.categoryId,
         mainAttachmentId: donation.photos?.[0]?.attachmentId,
+        donation: {
+          ...donation,
+          attachmentIds: donation.photos?.map((p) => p.attachmentId) || [],
+          mainAttachmentId: donation.photos?.find((p) => p.isMain)?.attachmentId,
+        },
       };
     });
   }

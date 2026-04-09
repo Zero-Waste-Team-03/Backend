@@ -102,7 +102,7 @@ export class DonationType {
   attachmentIds: string[];
 
   @Field(() => String, {
-    nullable: true,
+    nullable:true,
     description: 'Main attachment id used as cover photo',
   })
   mainAttachmentId?: string;

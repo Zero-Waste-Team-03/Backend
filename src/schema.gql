@@ -209,9 +209,15 @@ type Donation {
 
 type DonationMapMarker {
   categoryId: String!
+
+  """Full donation details"""
+  donation: Donation!
   id: ID!
   latitude: Float!
   longitude: Float!
+
+  """Main attachment details"""
+  mainAttachment: Attachment
 
   """Main attachment id reference"""
   mainAttachmentId: String!
