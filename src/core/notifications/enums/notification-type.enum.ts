@@ -2,6 +2,7 @@ import { registerEnumType } from '@nestjs/graphql';
 
 export const NOTIFICATION_TYPE = {
   MESSAGE: 'Message',
+  CHAT_MESSAGE: 'Chat_message',
   NEW_POST: 'New_post',
   TEST: 'Test',
   NEW_ACHIEVEMENT: 'New_achievement',

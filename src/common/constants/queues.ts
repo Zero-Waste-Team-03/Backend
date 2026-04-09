@@ -4,4 +4,5 @@ export const QUEUE_NAME = {
   UPLOAD: 'upload',
   NOTIFICATION: 'notification',
   RESERVATION: 'reservation',
+  CHAT: 'chat',
 } as const;
