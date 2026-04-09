@@ -30,6 +30,7 @@ import {
 } from '../donation/entities/donation.entity';
 import { User } from '../user/entities/user.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
+import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -81,6 +82,59 @@ export class ChatService {
     );
 
     return this.conversationRepository.save(created);
+  }
+
+  async getMyActiveConversations(
+    requesterId: string,
+  ): Promise<ConversationPreviewType[]> {
+    const rows = await this.conversationRepository
+      .createQueryBuilder('conversation')
+      .innerJoin(
+        Reservation,
+        'reservation',
+        'reservation.id = conversation.reservationId',
+      )
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .where(
+        '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
+        { requesterId },
+      )
+      .andWhere('conversation.status = :status', {
+        status: ConversationStatusValues.ACTIVE,
+      })
+      .select([
+        'conversation.id AS id',
+        'conversation.reservationId AS reservationId',
+        'conversation.lastMessage AS lastMessage',
+        'conversation.status AS status',
+        'conversation.createdAt AS createdAt',
+        'reservation.beneficiaryId AS beneficiaryId',
+        'donation.userId AS donorId',
+      ])
+      .orderBy('conversation.createdAt', 'DESC')
+      .getRawMany<{
+        id: string;
+        reservationId: string;
+        lastMessage: string | null;
+        status: ConversationStatus;
+        createdAt: Date;
+        beneficiaryId: string;
+        donorId: string;
+      }>();
+
+    return rows.map((row) => ({
+      id: row.id,
+      reservationId: row.reservationId,
+      lastMessage: row.lastMessage,
+      status: row.status,
+      createdAt: row.createdAt,
+      counterpartUserId:
+        row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
+      counterpart: {
+        displayName: '',
+        avatarUrl: null,
+      },
+    }));
   }
 
   async sendMessage(dto: SendMessageDto): Promise<Message> {

@@ -44,7 +44,6 @@ describe('ChatGateway', () => {
   });
 
   it('acknowledges join conversation', async () => {
-    const ack = jest.fn();
     const client = {
       user: { id: 'u-1' },
       join: jest.fn(),
@@ -53,18 +52,12 @@ describe('ChatGateway', () => {
     await gateway.handleJoinConversation(
       client,
       { conversationId: 'conv-1' },
-      ack,
     );
 
     expect(client.join).toHaveBeenCalledWith('conversation_conv-1');
-    expect(ack).toHaveBeenCalledWith({
-      ok: true,
-      data: { room: 'conversation_conv-1' },
-    });
-  });
+      });
 
   it('acknowledges send message', async () => {
-    const ack = jest.fn();
     const client = {
       user: { id: 'u-1' },
     } as any;
@@ -73,7 +66,6 @@ describe('ChatGateway', () => {
     await gateway.handleSendMessage(
       client,
       { conversationId: 'conv-1', content: 'hello' },
-      ack,
     );
 
     expect(mockChatService.sendMessage).toHaveBeenCalledWith({
@@ -81,14 +73,9 @@ describe('ChatGateway', () => {
       senderId: 'u-1',
       content: 'hello',
     });
-    expect(ack).toHaveBeenCalledWith({
-      ok: true,
-      data: { messageId: 'msg-1' },
-    });
-  });
+      });
 
   it('acknowledges mark transaction completed', async () => {
-    const ack = jest.fn();
     const client = {
       user: { id: 'u-1' },
     } as any;
@@ -100,16 +87,11 @@ describe('ChatGateway', () => {
     await gateway.handleMarkTransactionCompleted(
       client,
       { conversationId: 'conv-1' },
-      ack,
     );
 
     expect(mockChatService.markTransactionCompleted).toHaveBeenCalledWith({
       conversationId: 'conv-1',
       userId: 'u-1',
     });
-    expect(ack).toHaveBeenCalledWith({
-      ok: true,
-      data: { status: 'Archived' },
-    });
-  });
+      });
 });

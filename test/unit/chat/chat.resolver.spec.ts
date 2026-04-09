@@ -9,6 +9,7 @@ describe('ChatResolver', () => {
   const mockChatService = {
     getOrCreateConversation: jest.fn(),
     getMessages: jest.fn(),
+    getMyActiveConversations: jest.fn(),
     sendMessage: jest.fn(),
     approveSensitiveMessage: jest.fn(),
     markTransactionCompleted: jest.fn(),
@@ -96,5 +97,23 @@ describe('ChatResolver', () => {
       userId: 'u-1',
     });
     expect(result).toEqual({ id: 'conv-1', status: 'Archived' });
+  });
+
+  it('returns active conversation previews', async () => {
+    mockChatService.getMyActiveConversations.mockResolvedValue([
+      {
+        id: 'conv-1',
+        reservationId: 'res-1',
+        status: 'Active',
+        createdAt: new Date(),
+        counterpartUserId: 'u-2',
+        counterpart: { displayName: '', avatarUrl: null },
+      },
+    ]);
+
+    const result = await resolver.myActiveConversations('u-1');
+
+    expect(service.getMyActiveConversations).toHaveBeenCalledWith('u-1');
+    expect(result).toHaveLength(1);
   });
 });

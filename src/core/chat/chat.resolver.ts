@@ -1,4 +1,13 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  ID,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
@@ -12,9 +21,12 @@ import { ApproveSensitiveMessageInput } from './graphql/inputs/approve-sensitive
 import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
 import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
 import { MarkTransactionCompletedInput } from './graphql/inputs/mark-transaction-completed.input';
+import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
+import { ChatCounterpartPreviewType } from './graphql/types/chat-counterpart-preview.type';
+import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 
 @UseGuards(AccessTokenGuard)
-@Resolver(() => ConversationType)
+@Resolver(() => ConversationPreviewType)
 export class ChatResolver {
   constructor(private readonly chatService: ChatService) {}
 
@@ -40,6 +52,16 @@ export class ChatResolver {
       userId,
       input.pagination,
     );
+  }
+
+  @Query(() => [ConversationPreviewType], {
+    description:
+      'Get active conversations with minimal counterpart preview (name and image only)',
+  })
+  async myActiveConversations(
+    @USER('id') userId: string,
+  ): Promise<ConversationPreviewType[]> {
+    return this.chatService.getMyActiveConversations(userId);
   }
 
   @Mutation(() => ChatMessageType, {
@@ -84,5 +106,26 @@ export class ChatResolver {
       conversationId: input.conversationId,
       userId,
     });
+  }
+
+  @ResolveField(() => ChatCounterpartPreviewType)
+  async counterpart(
+    @Parent() conversation: ConversationPreviewType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<ChatCounterpartPreviewType> {
+    const user = await loaders.userLoader.load(conversation.counterpartUserId);
+
+    let avatarUrl: string | null = null;
+    if (user?.avatarAttachmentId) {
+      const attachment = await loaders.attachmentLoader.load(
+        user.avatarAttachmentId,
+      );
+      avatarUrl = attachment?.url || null;
+    }
+
+    return {
+      displayName: user?.displayName || 'User',
+      avatarUrl,
+    };
   }
 }

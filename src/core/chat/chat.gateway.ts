@@ -1,5 +1,4 @@
 import {
-  Ack,
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
@@ -56,16 +55,14 @@ export class ChatGateway
   async handleJoinConversation(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: JoinConversationPayload,
-    @Ack() ack?: (response: ChatAck<{ room: string }>) => void,
-  ) {
+  ): Promise<ChatAck<{ room: string }>> {
     const room = this.getConversationRoom(payload.conversationId);
     await client.join(room);
     this.server.to(room).emit(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, {
       conversationId: payload.conversationId,
       userId: client.user.id,
     });
-
-    ack?.({ ok: true, data: { room } });
+    return { ok: true, data: { room } };
   }
 
   @UseGuards(ChatConversationMemberGuard)
@@ -73,17 +70,16 @@ export class ChatGateway
   async handleLeaveConversation(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: LeaveConversationPayload,
-    @Ack() ack?: (response: ChatAck<{ room: string }>) => void,
-  ) {
+  ): Promise<ChatAck<{ room: string }>> {
     const room = this.getConversationRoom(payload.conversationId);
     await client.leave(room);
 
-    this.server.to(room).emit(CHAT_EMITTED_EVENTS.CONVERSATION_LEFT, {
+    client.to(room).emit(CHAT_EMITTED_EVENTS.CONVERSATION_LEFT, {
       conversationId: payload.conversationId,
       userId: client.user.id,
     });
 
-    ack?.({ ok: true, data: { room } });
+    return { ok: true, data: { room } };
   }
 
   @UseGuards(ChatConversationMemberGuard, ChatConversationWritableGuard)
@@ -91,8 +87,7 @@ export class ChatGateway
   async handleSendMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: SendMessagePayload,
-    @Ack() ack?: (response: ChatAck<{ messageId: string }>) => void,
-  ) {
+  ): Promise<ChatAck<{ messageId: string }>> {
     const message = await this.chatService.sendMessage({
       conversationId: payload.conversationId,
       senderId: client.user.id,
@@ -103,7 +98,7 @@ export class ChatGateway
       .to(this.getConversationRoom(payload.conversationId))
       .emit(CHAT_EMITTED_EVENTS.MESSAGE_CREATED, message);
 
-    ack?.({ ok: true, data: { messageId: message.id } });
+    return { ok: true, data: { messageId: message.id } };
   }
 
   @UseGuards(ChatConversationMemberGuard)
@@ -111,8 +106,7 @@ export class ChatGateway
   async handleApproveSensitiveMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: ApproveSensitiveMessagePayload,
-    @Ack() ack?: (response: ChatAck<{ approvalId: string }>) => void,
-  ) {
+  ): Promise<ChatAck<{ approvalId: string }>> {
     const approval = await this.chatService.approveSensitiveMessage({
       conversationId: payload.conversationId,
       messageId: payload.messageId,
@@ -127,7 +121,7 @@ export class ChatGateway
         approverId: client.user.id,
       });
 
-    ack?.({ ok: true, data: { approvalId: approval.id } });
+    return { ok: true, data: { approvalId: approval.id } };
   }
 
   @UseGuards(ChatConversationMemberGuard)
@@ -135,8 +129,7 @@ export class ChatGateway
   async handleMarkTransactionCompleted(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: MarkTransactionCompletedPayload,
-    @Ack() ack?: (response: ChatAck<{ status: string }>) => void,
-  ) {
+  ): Promise<ChatAck<{ status: string }>> {
     const conversation = await this.chatService.markTransactionCompleted({
       conversationId: payload.conversationId,
       userId: client.user.id,
@@ -149,7 +142,7 @@ export class ChatGateway
         status: conversation.status,
       });
 
-    ack?.({ ok: true, data: { status: conversation.status } });
+    return { ok: true, data: { status: conversation.status } };
   }
 
   private getConversationRoom(conversationId: string): string {

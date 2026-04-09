@@ -30,6 +30,7 @@ describe('ChatService', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn(),
     manager: {
       transaction: jest.fn(),
     },
@@ -381,5 +382,37 @@ describe('ChatService', () => {
       status: DonationStatusValues.COMPLETED,
     });
     expect(result.status).toBe('Archived');
+  });
+
+  it('returns active conversations with counterpart ids', async () => {
+    const queryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        {
+          id: 'conv-1',
+          reservationId: 'res-1',
+          lastMessage: 'hello',
+          status: 'Active',
+          createdAt: new Date('2030-01-01T00:00:00.000Z'),
+          beneficiaryId: 'beneficiary-1',
+          donorId: 'donor-1',
+        },
+      ]),
+    };
+    conversationRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getMyActiveConversations('beneficiary-1');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'conv-1',
+        counterpartUserId: 'donor-1',
+      }),
+    );
   });
 });
