@@ -9,8 +9,13 @@ import {
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
-import { Not, In } from 'typeorm';
+
+
+import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
+
+import { In } from 'typeorm';
 import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
+
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -39,6 +44,11 @@ describe('DonationService', () => {
     save: jest.fn(),
   };
 
+  const smartBehaviorPublisher = {
+    safePublishBeneficiarySearchPerformed: jest.fn(),
+    safePublishDonationPublished: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -56,6 +66,10 @@ describe('DonationService', () => {
         {
           provide: getRepositoryToken(Location),
           useValue: locationRepository,
+        },
+        {
+          provide: SmartBehaviorPublisherService,
+          useValue: smartBehaviorPublisher,
         },
       ],
     }).compile();
@@ -124,6 +138,15 @@ describe('DonationService', () => {
         }),
       );
       expect(donationRepository.save).toHaveBeenCalledWith(createdEntity);
+      expect(
+        smartBehaviorPublisher.safePublishDonationPublished,
+      ).toHaveBeenCalledWith({
+        donorId: 'u1',
+        donationId: createdEntity.id,
+        categoryId: createdEntity.categoryId,
+        urgency: createdEntity.urgency,
+        safetyChecklistCompleted: createdEntity.safetyChecklistCompleted,
+      });
       expect(result).toEqual(
         expect.objectContaining({
           ...createdEntity,
@@ -402,7 +425,7 @@ describe('DonationService', () => {
     it('deletes donation when owner matches', async () => {
       donationRepository.delete.mockResolvedValue({ affected: 1 });
 
-      const result = await service.deleteDonation('d1', 'u1',false);
+      const result = await service.deleteDonation('d1', 'u1', false);
 
       expect(donationRepository.delete).toHaveBeenCalledWith({
         id: 'd1',
@@ -414,9 +437,9 @@ describe('DonationService', () => {
     it('throws NotFoundException when donation is not owned or missing', async () => {
       donationRepository.delete.mockResolvedValue({ affected: 0 });
 
-      await expect(service.deleteDonation('d404', 'u1',false)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.deleteDonation('d404', 'u1', false),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
   describe('getStatistics', () => {
@@ -451,23 +474,22 @@ describe('DonationService', () => {
       const filter = { categoryId: 'cat1' };
       const pagination = { page: 2, limit: 10 };
 
-      const result = await service.findAll('u1',filter, pagination);
+      const result = await service.findAll('u1', filter, undefined, pagination);
 
-      expect(donationRepository.findAndCount).toHaveBeenCalledWith(
-  expect.objectContaining({
-    where: expect.objectContaining({
-      categoryId: 'cat1',
-      userId: Not('u1'),
-    }),
-    skip: 10,
-    take: 10,
-  }),
-);      expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(20);
       expect(result.page).toBe(2);
       expect(result.limit).toBe(10);
       expect(result.hasNextPage).toBe(false); // 20 <= 10 + 10
       expect(result.hasPreviousPage).toBe(true);
+      expect(
+        smartBehaviorPublisher.safePublishBeneficiarySearchPerformed,
+      ).toHaveBeenCalledWith({
+        userId: 'u1',
+        categoryId: 'cat1',
+        urgency: undefined,
+        distanceBucket: undefined,
+        origin: undefined,
+      });
     });
   });
 

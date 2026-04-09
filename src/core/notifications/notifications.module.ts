@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Token } from './entities/token.entity';
 import { Notification } from './entities/notification.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SmartNotificationSubscriberService } from './pubsub/smart-notification-subscriber.service';
+import { SmartBehaviorPublisherService } from './pubsub/smart-behavior-publisher.service';
 
 @Global()
 @Module({
@@ -13,7 +15,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
   ],
   controllers: [],
-  providers: [NotificationsService, NotificationsResolver],
-  exports: [NotificationsService],
+  providers: [
+    NotificationsService,
+    NotificationsResolver,
+    SmartNotificationSubscriberService,
+    SmartBehaviorPublisherService,
+  ],
+  exports: [NotificationsService, SmartBehaviorPublisherService],
 })
 export class NotificationsModule {}

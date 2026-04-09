@@ -20,6 +20,7 @@ import { DonationStatisticsType } from './graphql/types/donation-statistics.type
 import { DonationsMapInput } from './graphql/inputs/donations-map.input';
 import { DonationMapMarkerType } from './graphql/types/donation-map-marker.type';
 import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
+import { DonationBehaviorContextInput } from './graphql/inputs/donation-behavior-context.input';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 import { User, UserRole } from '../user/entities/user.entity';
@@ -61,9 +62,19 @@ export class DonationResolver {
     @USER('id') userId:string,
     @USER('role') role:UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('behaviorContext', { nullable: true })
+    behaviorContext?: DonationBehaviorContextInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-    return this.donationService.findAll(userId,filter, pagination, role === 'Administrator');
+
+    return this.donationService.findAll(
+      userId,
+      filter,
+      behaviorContext,
+      pagination,
+      role=='Administrator',
+    );
+
   }
 
   @ResolveField(() => UserType)
@@ -94,9 +105,9 @@ export class DonationResolver {
 
   @ResolveField(()=>AttachementType,{nullable:true})
   async mainAttachment(
-    @Parent() donation:DonationType,
-    @Context() {loaders}: {loaders:IDataLoaders}
-  ){
+    @Parent() donation: DonationType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ) {
     if (!donation.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
@@ -124,7 +135,9 @@ export class DonationResolver {
   @Query(() => DonationType, {
     description: 'Get a single donation listing by id',
   })
-  async donation(@Args('id', { type: () => ID }) id: string): Promise<DonationType> {
+  async donation(
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<DonationType> {
     return await this.donationService.getDonationById(id);
   }
 
@@ -135,9 +148,13 @@ export class DonationResolver {
   async deleteDonation(
     @Args('id', { type: () => ID }) id: string,
     @USER('id') userId: string,
-    @USER('role') role:UserRole
+    @USER('role') role: UserRole,
   ): Promise<MessageResponseType> {
-    return await this.donationService.deleteDonation(id, userId,role=="Administrator");
+    return await this.donationService.deleteDonation(
+      id,
+      userId,
+      role == 'Administrator',
+    );
   }
 }
 
