@@ -91,7 +91,8 @@ export class DonationResolver {
     if (!donation.categoryId) return null;
     return loaders.categoryLoader.load(donation.categoryId);
   }
-  @ResolveField(()=>AttachementType,{nullable:false})
+
+  @ResolveField(()=>AttachementType,{nullable:true})
   async mainAttachment(
     @Parent() donation:DonationType,
     @Context() {loaders}: {loaders:IDataLoaders}
