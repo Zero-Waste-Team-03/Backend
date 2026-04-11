@@ -9,13 +9,13 @@ import {
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
-
+import { Reservation } from 'src/core/reservation/entities/reservation.entity';
+import { User } from 'src/core/user/entities/user.entity';
 
 import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
 
 import { In } from 'typeorm';
 import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
-
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -44,6 +44,14 @@ describe('DonationService', () => {
     save: jest.fn(),
   };
 
+  const reservationRepository = {
+    createQueryBuilder: jest.fn(),
+  };
+
+  const userRepository = {
+    createQueryBuilder: jest.fn(),
+  };
+
   const smartBehaviorPublisher = {
     safePublishBeneficiarySearchPerformed: jest.fn(),
     safePublishDonationPublished: jest.fn(),
@@ -68,6 +76,14 @@ describe('DonationService', () => {
           useValue: locationRepository,
         },
         {
+          provide: getRepositoryToken(Reservation),
+          useValue: reservationRepository,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: userRepository,
+        },
+        {
           provide: SmartBehaviorPublisherService,
           useValue: smartBehaviorPublisher,
         },
@@ -88,6 +104,7 @@ describe('DonationService', () => {
         title: 'Bread packs',
         description: 'Fresh bread packs from the bakery',
         quantity: 12,
+        foodWeightKg: 6,
         specification: { packaging: 'paper bags' },
         expiryDate: new Date('2030-01-01T10:00:00.000Z'),
         urgency: DonationUrgencyValues.MEDIUM,
@@ -162,6 +179,7 @@ describe('DonationService', () => {
         title: 'No image donation',
         description: 'Donation without media',
         quantity: 3,
+        foodWeightKg: 1.5,
         specification: { note: 'text only' },
         expiryDate: new Date('2030-01-01T10:00:00.000Z'),
         urgency: DonationUrgencyValues.LOW,
@@ -226,6 +244,7 @@ describe('DonationService', () => {
             title: 'Dup photos',
             description: 'Duplicate ids',
             quantity: 2,
+            foodWeightKg: 1,
             specification: {},
             expiryDate: new Date('2030-01-01T10:00:00.000Z'),
             urgency: DonationUrgencyValues.LOW,
@@ -247,6 +266,7 @@ describe('DonationService', () => {
         title: 'Location input donation',
         description: 'Created with inline location payload',
         quantity: 2,
+        foodWeightKg: 1,
         specification: {},
         expiryDate: new Date('2030-01-01T10:00:00.000Z'),
         urgency: DonationUrgencyValues.MEDIUM,
@@ -298,6 +318,7 @@ describe('DonationService', () => {
             title: 'Location xor',
             description: 'Invalid location payload',
             quantity: 3,
+            foodWeightKg: 1.5,
             specification: {},
             expiryDate: new Date('2030-01-01T10:00:00.000Z'),
             urgency: DonationUrgencyValues.MEDIUM,

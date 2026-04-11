@@ -63,7 +63,7 @@ export class User {
   @Column({
     type: 'varchar',
     nullable: true,
-    length:20
+    length: 20,
   })
   phoneNumber?: string;
 

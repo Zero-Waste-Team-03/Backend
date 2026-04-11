@@ -213,6 +213,37 @@ export const ERROR_CODES = {
     message: 'Cannot approve this message.',
     args: { id: 'string' } as const,
   },
+  BADGE_NOT_FOUND: {
+    code: 'badge.not_found',
+    httpStatus: 404,
+    message: 'Badge not found.',
+    args: { id: 'string' } as const,
+  },
+
+  REPORT_NOT_FOUND: {
+    code: 'report.not_found',
+    httpStatus: 404,
+    message: 'Report not found.',
+    args: { id: 'string' } as const,
+  },
+  REPORT_DUPLICATE_OPEN: {
+    code: 'report.duplicate_open',
+    httpStatus: 409,
+    message: 'You already have an open report for this target.',
+    args: { targetType: 'string', targetId: 'string' } as const,
+  },
+  REPORT_STATUS_INVALID: {
+    code: 'report.status_invalid',
+    httpStatus: 400,
+    message: 'Provided report status is invalid for this action.',
+    args: { status: 'string' } as const,
+  },
+  REPORT_EXPORT_DATASET_INVALID: {
+    code: 'report.export_dataset_invalid',
+    httpStatus: 400,
+    message: 'Invalid export dataset.',
+    args: { dataset: 'string' } as const,
+  },
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;

@@ -2,7 +2,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import mailConfig from './config/mail.config';
 import redisConfig from './config/redis.config';
@@ -28,6 +27,7 @@ import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { ErrorsModule } from './common/errors/errors.module';
+import { DatabaseExceptionFilter } from './common/filter/db.filer';
 
 @Module({
   imports: [
@@ -95,6 +95,10 @@ import { ErrorsModule } from './common/errors/errors.module';
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseExceptionFilter,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}
