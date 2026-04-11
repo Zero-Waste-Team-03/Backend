@@ -23,4 +23,9 @@ export interface ErrorArgsMap {
   'chat.message_not_found': { id: string };
   'chat.message_read_only': { status: string };
   'chat.invalid_approval': { id: string };
+  'badge.not_found': { id: string };
+  'report.not_found': { id: string };
+  'report.duplicate_open': { targetType: string; targetId: string };
+  'report.status_invalid': { status: string };
+  'report.export_dataset_invalid': { dataset: string };
 }

@@ -1,4 +1,4 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, Float, InputType, Int } from '@nestjs/graphql';
 import {
   ArrayUnique,
   IsDate,
@@ -11,6 +11,7 @@ import {
   IsUUID,
   ValidateNested,
   Min,
+  IsNumber,
 } from 'class-validator';
 import {
   DonationUrgency,
@@ -42,6 +43,13 @@ export class CreateDonationInput {
   @IsInt()
   @Min(1)
   quantity: number;
+
+  @Field(() => Float, {
+    description: 'Approximate food weight in kilograms',
+  })
+  @IsNumber()
+  @Min(0)
+  foodWeightKg: number;
 
   @Field(() => GraphQLJSONObject, {
     nullable: true,

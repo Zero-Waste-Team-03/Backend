@@ -31,6 +31,7 @@ import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as crypto from 'crypto';
 import { throwAppError } from 'src/common/errors';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
+import { Report } from 'src/core/reporting/entities/report.entity';
 
 export interface OAuthUserPayload {
   email: string;
@@ -47,6 +48,8 @@ export class UserService {
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(UserSettings)
     private readonly userSettingsRepository: Repository<UserSettings>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
     @Inject(appConfig.KEY)
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     @InjectQueue(QUEUE_NAME.MAIL)
@@ -135,12 +138,19 @@ export class UserService {
   async getUserStats(): Promise<UserStatsResponse> {
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
 
     const [
       totalUsers,
       activeAccounts,
       previousTotalUsers,
       previousActiveAccounts,
+      reportedIssues,
+      previousReportedIssues,
     ] = await Promise.all([
       this.userRepository.count(),
       this.userRepository.count({
@@ -155,6 +165,21 @@ export class UserService {
           createdAt: LessThan(startOfCurrentMonth),
         },
       }),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .getCount(),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfPreviousMonth', {
+          startOfPreviousMonth,
+        })
+        .andWhere('report.createdAt < :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .getCount(),
     ]);
 
     const calculateIncrease = (current: number, previous: number) => {
@@ -172,8 +197,10 @@ export class UserService {
       previousActiveAccounts,
     );
 
-    const reportedIssues = 0;
-    const reportedIssuesIncrease = 0;
+    const reportedIssuesIncrease = calculateIncrease(
+      reportedIssues,
+      previousReportedIssues,
+    );
 
     return {
       totalUsers,
