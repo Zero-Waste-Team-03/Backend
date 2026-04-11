@@ -5,9 +5,17 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { RESERVATION_JOBS } from 'src/common/constants/jobs';
-import { Reservation, ReservationStatusValues } from './entities/reservation.entity';
-import { Donation, DonationStatusValues } from '../donation/entities/donation.entity';
+import {
+  Reservation,
+  ReservationStatusValues,
+} from './entities/reservation.entity';
+import {
+  Donation,
+  DonationStatusValues,
+} from '../donation/entities/donation.entity';
 import { throwAppError } from 'src/common/errors/throw-app-error';
+import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
+import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
 
 @Injectable()
 export class ReservationService {
@@ -22,6 +30,57 @@ export class ReservationService {
     @InjectQueue(QUEUE_NAME.RESERVATION)
     private readonly reservationQueue: Queue,
   ) {}
+
+  async findMyReservations(
+    userId: string,
+    pagination?: PaginationInput,
+  ): Promise<PaginatedReservations> {
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .where('reservation.beneficiaryId = :userId', { userId })
+      .orWhere('donation.userId = :userId', { userId })
+      .orderBy('reservation.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: items as any,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  async findMyReservationById(
+    reservationId: string,
+    userId: string,
+  ): Promise<Reservation> {
+    const reservation = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .where('reservation.id = :reservationId', { reservationId })
+      .andWhere(
+        '(reservation.beneficiaryId = :userId OR donation.userId = :userId)',
+        { userId },
+      )
+      .getOne();
+
+    if (!reservation) {
+      throwAppError('RESERVATION_NOT_FOUND', {
+        id: reservationId,
+        status: ReservationStatusValues.PENDING,
+      });
+    }
+
+    return reservation;
+  }
 
   public async expireReservation(reservationId: string) {
     await this.reservationRepository.manager.transaction(async (manager) => {
@@ -123,7 +182,6 @@ export class ReservationService {
         const reservation = await manager.findOne(Reservation, {
           where: { id: reservationId },
           lock: { mode: 'pessimistic_write' },
-          relations: ['donation'],
         });
 
         if (!reservation) {

@@ -2,7 +2,6 @@ import { Inject, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
-import { isString } from 'node:util';
 import { AccessTokenPayload } from '../authentication/interfaces/access-token-payload.interface';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/v1/user.service';
@@ -72,7 +71,7 @@ export class WsConnectionsManagerGateway
     if (!RawToken) {
       return null;
     }
-    if (!isString(RawToken)) {
+    if (typeof RawToken !== 'string') {
       return null;
     }
 

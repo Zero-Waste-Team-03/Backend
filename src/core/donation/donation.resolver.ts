@@ -26,6 +26,8 @@ import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface
 import { User, UserRole } from '../user/entities/user.entity';
 import { PaginatedDonations } from './graphql/types/paginated-donations.type';
 import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
+import { DonationsHeatmapInput } from './graphql/inputs/donations-heatmap.input';
+import { DonationsHeatmapType } from './graphql/types/donations-heatmap.type';
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
@@ -46,7 +48,8 @@ export class DonationResolver {
   }
 
   @Query(() => [DonationMapMarkerType], {
-    description: 'Get donations within a radius from a center point for map visualization',
+    description:
+      'Get donations within a radius from a center point for map visualization',
   })
   async donationsMap(
     @Args('input') input: DonationsMapInput,
@@ -54,27 +57,35 @@ export class DonationResolver {
     return this.donationService.getDonationsForMap(input);
   }
 
+  @Query(() => DonationsHeatmapType, {
+    description:
+      'Get viewport-based donation activity heatmap cells with normalized score',
+  })
+  async donationsHeatmap(
+    @Args('input') input: DonationsHeatmapInput,
+  ): Promise<DonationsHeatmapType> {
+    return this.donationService.getDonationsHeatmap(input);
+  }
+
   @Query(() => PaginatedDonations, {
     description:
       'Get all donation listings with optional filters and donor access',
   })
   async donations(
-    @USER('id') userId:string,
-    @USER('role') role:UserRole,
+    @USER('id') userId: string,
+    @USER('role') role: UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('behaviorContext', { nullable: true })
     behaviorContext?: DonationBehaviorContextInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-
     return this.donationService.findAll(
       userId,
       filter,
       behaviorContext,
       pagination,
-      role=='Administrator',
+      role == 'Administrator',
     );
-
   }
 
   @ResolveField(() => UserType)
@@ -103,7 +114,7 @@ export class DonationResolver {
     return loaders.categoryLoader.load(donation.categoryId);
   }
 
-  @ResolveField(()=>AttachementType,{nullable:true})
+  @ResolveField(() => AttachementType, { nullable: true })
   async mainAttachment(
     @Parent() donation: DonationType,
     @Context() { loaders }: { loaders: IDataLoaders },

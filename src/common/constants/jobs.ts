@@ -40,3 +40,7 @@ export const RESERVATION_JOBS = {
 export const CHAT_JOBS = {
   MODERATE_MESSAGE: 'moderate-message',
 } as const;
+
+export const GAMIFICATION_JOBS = {
+  EVALUATE_COMPLETION_ACHIEVEMENTS: 'evaluate-completion-achievements',
+} as const;

@@ -9,13 +9,13 @@ import {
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
-
+import { Reservation } from 'src/core/reservation/entities/reservation.entity';
+import { User } from 'src/core/user/entities/user.entity';
 
 import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/smart-behavior-publisher.service';
 
 import { In } from 'typeorm';
 import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
-
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -44,6 +44,14 @@ describe('DonationService', () => {
     save: jest.fn(),
   };
 
+  const reservationRepository = {
+    createQueryBuilder: jest.fn(),
+  };
+
+  const userRepository = {
+    createQueryBuilder: jest.fn(),
+  };
+
   const smartBehaviorPublisher = {
     safePublishBeneficiarySearchPerformed: jest.fn(),
     safePublishDonationPublished: jest.fn(),
@@ -66,6 +74,14 @@ describe('DonationService', () => {
         {
           provide: getRepositoryToken(Location),
           useValue: locationRepository,
+        },
+        {
+          provide: getRepositoryToken(Reservation),
+          useValue: reservationRepository,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: userRepository,
         },
         {
           provide: SmartBehaviorPublisherService,

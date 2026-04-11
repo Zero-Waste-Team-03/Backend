@@ -23,7 +23,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
-import { CHAT_JOBS } from 'src/common/constants/jobs';
+import { CHAT_JOBS, GAMIFICATION_JOBS } from 'src/common/constants/jobs';
 import {
   Donation,
   DonationStatusValues,
@@ -52,6 +52,8 @@ export class ChatService {
     private readonly notificationsService: NotificationsService,
     @InjectQueue(QUEUE_NAME.CHAT)
     private readonly chatQueue: Queue,
+    @InjectQueue(QUEUE_NAME.GAMIFICATION)
+    private readonly gamificationQueue: Queue,
   ) {}
 
   async getOrCreateConversation(
@@ -328,91 +330,113 @@ export class ChatService {
       dto.userId,
     );
 
-    return this.conversationRepository.manager.transaction(async (manager) => {
-      const lockedConversation = await manager.findOne(Conversation, {
-        where: { id: conversation.id },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!lockedConversation) {
-        throwAppError('CHAT_CONVERSATION_NOT_FOUND', {
-          id: dto.conversationId,
+    const updatedConversation =
+      await this.conversationRepository.manager.transaction(async (manager) => {
+        const lockedConversation = await manager.findOne(Conversation, {
+          where: { id: conversation.id },
+          lock: { mode: 'pessimistic_write' },
         });
-      }
 
-      const reservation = await manager.findOne(Reservation, {
-        where: { id: lockedConversation.reservationId },
-        lock: { mode: 'pessimistic_write' },
-        relations: ['donation'],
-      });
+        if (!lockedConversation) {
+          throwAppError('CHAT_CONVERSATION_NOT_FOUND', {
+            id: dto.conversationId,
+          });
+        }
 
-      if (!reservation) {
-        throwAppError('RESERVATION_NOT_FOUND', {
-          id: lockedConversation.reservationId,
-          status: ReservationStatusValues.PENDING,
+        const reservation = await manager.findOne(Reservation, {
+          where: { id: lockedConversation.reservationId },
+          lock: { mode: 'pessimistic_write' },
         });
-      }
 
-      const donorId = reservation.donation.userId;
-      const beneficiaryId = reservation.beneficiaryId;
+        if (!reservation) {
+          throwAppError('RESERVATION_NOT_FOUND', {
+            id: lockedConversation.reservationId,
+            status: ReservationStatusValues.PENDING,
+          });
+        }
 
-      const marker = this.getCompletionMarker(dto.userId);
-      const existingMarker = await manager.findOne(Message, {
-        where: {
-          conversationId: lockedConversation.id,
-          senderId: dto.userId,
-          content: marker,
-        },
-      });
-
-      if (!existingMarker) {
-        const completionMessage = manager.create(Message, {
-          conversationId: lockedConversation.id,
-          senderId: dto.userId,
-          content: marker,
-          isModerated: false,
+        const donation = await manager.findOne(Donation, {
+          where: { id: reservation.donationId },
+          lock: { mode: 'pessimistic_write' },
         });
-        await manager.save(Message, completionMessage);
-      }
 
-      const [donorDone, beneficiaryDone] = await Promise.all([
-        manager.findOne(Message, {
+        if (!donation) {
+          throwAppError('DONATION_NOT_FOUND', { id: reservation.donationId });
+        }
+
+        const donorId = donation.userId;
+        const beneficiaryId = reservation.beneficiaryId;
+
+        const marker = this.getCompletionMarker(dto.userId);
+        const existingMarker = await manager.findOne(Message, {
           where: {
             conversationId: lockedConversation.id,
-            senderId: donorId,
-            content: this.getCompletionMarker(donorId),
+            senderId: dto.userId,
+            content: marker,
           },
-        }),
-        manager.findOne(Message, {
-          where: {
-            conversationId: lockedConversation.id,
-            senderId: beneficiaryId,
-            content: this.getCompletionMarker(beneficiaryId),
-          },
-        }),
-      ]);
-
-      if (donorDone && beneficiaryDone) {
-        lockedConversation.status = ConversationStatusValues.ARCHIVED;
-        lockedConversation.lastMessage = 'Transaction completed';
-
-        reservation.status = ReservationStatusValues.COMPLETED;
-        await manager.save(Reservation, reservation);
-
-        await manager.update(Donation, reservation.donationId, {
-          status: DonationStatusValues.COMPLETED,
         });
 
-        await manager
-          .createQueryBuilder()
-          .update(User)
-          .set({ reputationScore: () => '"reputationScore" + 1' })
-          .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
-          .execute();
-      }
+        if (!existingMarker) {
+          const completionMessage = manager.create(Message, {
+            conversationId: lockedConversation.id,
+            senderId: dto.userId,
+            content: marker,
+            isModerated: false,
+          });
+          await manager.save(Message, completionMessage);
+        }
 
-      return manager.save(Conversation, lockedConversation);
-    });
+        const [donorDone, beneficiaryDone] = await Promise.all([
+          manager.findOne(Message, {
+            where: {
+              conversationId: lockedConversation.id,
+              senderId: donorId,
+              content: this.getCompletionMarker(donorId),
+            },
+          }),
+          manager.findOne(Message, {
+            where: {
+              conversationId: lockedConversation.id,
+              senderId: beneficiaryId,
+              content: this.getCompletionMarker(beneficiaryId),
+            },
+          }),
+        ]);
+
+        if (donorDone && beneficiaryDone) {
+          lockedConversation.status = ConversationStatusValues.ARCHIVED;
+          lockedConversation.lastMessage = 'Transaction completed';
+
+          reservation.status = ReservationStatusValues.COMPLETED;
+          await manager.save(Reservation, reservation);
+
+          await manager.update(Donation, reservation.donationId, {
+            status: DonationStatusValues.COMPLETED,
+          });
+
+          await manager
+            .createQueryBuilder()
+            .update(User)
+            .set({ reputationScore: () => '"reputationScore" + 5' })
+            .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
+            .execute();
+
+          await this.gamificationQueue.add(
+            GAMIFICATION_JOBS.EVALUATE_COMPLETION_ACHIEVEMENTS,
+            {
+              donorId,
+              beneficiaryId,
+            },
+            {
+              removeOnComplete: true,
+            },
+          );
+        }
+
+        return manager.save(Conversation, lockedConversation);
+      });
+
+    return updatedConversation;
   }
 
   private async requireAuthorizedReservation(

@@ -14,6 +14,8 @@ import { NotificationProcessor } from './notification/notification.processor';
 import { ReservationProcessor } from './reservation/reservation.processor';
 import { ReservationModule } from 'src/core/reservation/reservation.module';
 import { ChatProcessor } from './chat/chat.processor';
+import { GamificationProcessor } from './gamification/gamification.processor';
+import { GamificationModule } from 'src/core/gamification/gamification.module';
 
 @Global()
 @Module({
@@ -46,6 +48,7 @@ import { ChatProcessor } from './chat/chat.processor';
     AttachmentModule,
     NotificationsModule,
     ReservationModule,
+    GamificationModule,
   ],
   providers: [
     MailProcessor,
@@ -53,6 +56,7 @@ import { ChatProcessor } from './chat/chat.processor';
     NotificationProcessor,
     ReservationProcessor,
     ChatProcessor,
+    GamificationProcessor,
   ],
   exports: [BullModule],
 })

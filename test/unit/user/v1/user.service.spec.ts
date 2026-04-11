@@ -18,6 +18,7 @@ import { AdminCreateAccountInput } from 'src/core/user/graphql/inputs/admin-crea
 import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as hashUtils from 'src/common/utils/authentication/hash.utils';
 import { EntityNotFoundError } from 'typeorm';
+import { Report } from 'src/core/reporting/entities/report.entity';
 
 describe('UserService', () => {
   let service: UserService;
@@ -42,6 +43,9 @@ describe('UserService', () => {
   };
   let attachmentService: {
     getAttachmentById: jest.Mock;
+  };
+  let reportRepository: {
+    createQueryBuilder: jest.Mock;
   };
 
   type MockQueryBuilder = {
@@ -92,6 +96,10 @@ describe('UserService', () => {
       getAttachmentById: jest.fn(),
     };
 
+    reportRepository = {
+      createQueryBuilder: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -100,6 +108,10 @@ describe('UserService', () => {
         {
           provide: getRepositoryToken(UserSettings),
           useValue: userSettingsRepository,
+        },
+        {
+          provide: getRepositoryToken(Report),
+          useValue: reportRepository,
         },
         {
           provide: appConfig.KEY,
@@ -233,6 +245,21 @@ describe('UserService', () => {
 
   describe('getUserStats', () => {
     it('should return correct user stats', async () => {
+      const reportCurrentMonthQb = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(12),
+      };
+      const reportPreviousMonthQb = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(8),
+      };
+
+      reportRepository.createQueryBuilder
+        .mockReturnValueOnce(reportCurrentMonthQb)
+        .mockReturnValueOnce(reportPreviousMonthQb);
+
       userRepository.count.mockImplementation(
         (options?: { where?: Record<string, any> }) => {
           if (!options || !options.where) return 100; // totalUsers
@@ -259,8 +286,8 @@ describe('UserService', () => {
         totalUsersIncrease: 25, // (100 - 80) / 80 * 100
         activeAccounts: 80,
         activeAccountsIncrease: 33.33, // (80 - 60) / 60 * 100
-        reportedIssues: 0,
-        reportedIssuesIncrease: 0,
+        reportedIssues: 12,
+        reportedIssuesIncrease: 50,
       });
     });
   });

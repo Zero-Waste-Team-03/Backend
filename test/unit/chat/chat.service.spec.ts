@@ -57,6 +57,10 @@ describe('ChatService', () => {
     add: jest.fn(),
   };
 
+  const gamificationQueue = {
+    add: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -81,6 +85,10 @@ describe('ChatService', () => {
         {
           provide: getQueueToken(QUEUE_NAME.CHAT),
           useValue: chatQueue,
+        },
+        {
+          provide: getQueueToken(QUEUE_NAME.GAMIFICATION),
+          useValue: gamificationQueue,
         },
         ChatStateMachineService,
       ],
@@ -350,6 +358,10 @@ describe('ChatService', () => {
           beneficiaryId: 'beneficiary-1',
           donation: { userId: 'donor-1' },
           status: ReservationStatusValues.CONFIRMED,
+        })
+        .mockResolvedValueOnce({
+          id: 'don-1',
+          userId: 'donor-1',
         })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: 'done-donor' })

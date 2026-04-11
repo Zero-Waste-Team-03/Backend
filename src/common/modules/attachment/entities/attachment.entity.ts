@@ -6,9 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   Relation,
-  BeforeInsert,
 } from 'typeorm';
-import { v7 as uuidv7 } from 'uuid';
 import { User } from '../../../../core/user/entities/user.entity';
 
 export const UploadStatusValues = {
@@ -56,9 +54,4 @@ export class Attachment {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @BeforeInsert()
-  generateId() {
-    this.id = uuidv7();
-  }
 }
