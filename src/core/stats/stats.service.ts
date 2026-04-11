@@ -212,7 +212,7 @@ export class StatsService {
 
     const raw = await qb
       .select(
-        'COALESCE(SUM(COALESCE(donation."foodWeightKg", donation.quantity * :fallbackKgPerUnit)), 0)',
+        'COALESCE(SUM(COALESCE(donation."foodWeightKg"::double precision, donation.quantity::double precision * CAST(:fallbackKgPerUnit AS double precision))), 0)',
         'totalFoodKg',
       )
       .setParameter('fallbackKgPerUnit', this.fallbackFoodKgPerQuantityUnit)

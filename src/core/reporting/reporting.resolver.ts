@@ -13,6 +13,8 @@ import { PaginatedReports } from './graphql/types/paginated-reports.type';
 import { ReviewReportInput } from './graphql/inputs/review-report.input';
 import { DangerousDonationsArgs } from './graphql/inputs/dangerous-donations.args';
 import { PaginatedDangerousDonations } from './graphql/types/paginated-dangerous-donations.type';
+import { ReportStatsInput } from './graphql/inputs/report-stats.input';
+import { ReportStatsType } from './graphql/types/report-stats.type';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ReportType)
@@ -72,5 +74,17 @@ export class ReportingResolver {
     @Args() args: DangerousDonationsArgs,
   ): Promise<PaginatedDangerousDonations> {
     return this.reportingService.getDangerousDonations(args.page, args.limit);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Query(() => ReportStatsType, {
+    description:
+      'Admin: get total/open reports and report growth chart for selected period and status filter',
+  })
+  async adminReportStats(
+    @Args('input') input: ReportStatsInput,
+  ): Promise<ReportStatsType> {
+    return this.reportingService.getReportStats(input);
   }
 }

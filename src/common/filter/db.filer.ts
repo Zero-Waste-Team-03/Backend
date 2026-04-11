@@ -7,6 +7,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { GqlArgumentsHost } from '@nestjs/graphql';
+import { GraphQLError } from 'graphql';
 import { QueryFailedError, EntityNotFoundError } from 'typeorm';
 import { AlertingService } from 'src/monitoring/alerting/interfaces/alerting.interface';
 import { isPostgresError, PostgresErrorCode } from '../constants/db-code';
@@ -34,6 +35,7 @@ type ReplyLike = {
   status?: (statusCode: number) => ReplyLike;
   send?: (body: unknown) => void;
   json?: (body: unknown) => void;
+  headersSent?: boolean;
 };
 
 @Catch(QueryFailedError, EntityNotFoundError)
@@ -77,7 +79,23 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       message: errorResult.message,
     };
 
+    if (isGraphql) {
+      throw new GraphQLError(errorResult.message, {
+        extensions: {
+          code: this.mapStatusToCode(errorResult.status),
+          statusCode: errorResult.status,
+          success: false,
+          error: errorResult.error,
+          timestamp: errorResponse.timestamp,
+        },
+      });
+    }
+
     if (!response) {
+      return;
+    }
+
+    if (response.headersSent) {
       return;
     }
 
@@ -169,6 +187,13 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
             error: 'db.exclusionViolation.error',
           };
 
+        case PostgresErrorCode.INVALID_TEXT_REPRESENTATION:
+          return {
+            status: HttpStatus.BAD_REQUEST,
+            message: this.extractInvalidTextRepresentationMessage(driverError),
+            error: 'db.invalidInput.error',
+          };
+
         default:
           return {
             status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -248,5 +273,30 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       return 'db.notNullViolation.message';
     }
     return 'db.notNullViolation.defaultMessage';
+  }
+
+  private extractInvalidTextRepresentationMessage(
+    driverError: PostgresDriverError,
+  ): string {
+    const detail = driverError?.detail;
+
+    if (typeof detail === 'string' && detail.length > 0) {
+      return `db.invalidInput.message: ${detail}`;
+    }
+
+    return 'db.invalidInput.defaultMessage';
+  }
+
+  private mapStatusToCode(status: number): string {
+    const statusMap: Record<number, string> = {
+      400: 'BAD_REQUEST',
+      401: 'UNAUTHENTICATED',
+      403: 'FORBIDDEN',
+      404: 'NOT_FOUND',
+      409: 'CONFLICT',
+      422: 'UNPROCESSABLE_ENTITY',
+      429: 'TOO_MANY_REQUESTS',
+    };
+    return statusMap[status] || 'INTERNAL_SERVER_ERROR';
   }
 }

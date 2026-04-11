@@ -45,13 +45,11 @@ export class CreateDonationInput {
   quantity: number;
 
   @Field(() => Float, {
-    nullable: true,
     description: 'Approximate food weight in kilograms',
   })
-  @IsOptional()
   @IsNumber()
   @Min(0)
-  foodWeightKg?: number;
+  foodWeightKg: number;
 
   @Field(() => GraphQLJSONObject, {
     nullable: true,

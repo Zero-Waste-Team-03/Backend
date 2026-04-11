@@ -75,8 +75,8 @@ export class Donation {
   @Column({ type: 'int' })
   quantity: number;
 
-  @Column({ type: 'double precision', nullable: true })
-  foodWeightKg?: number | null;
+  @Column({ type: 'double precision' })
+  foodWeightKg: number;
 
   @Column({ type: 'jsonb', default: {} })
   specification: Record<string, any>;

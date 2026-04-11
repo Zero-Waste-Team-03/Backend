@@ -123,7 +123,8 @@ export class DonationResolver {
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
   @Mutation(() => DonationType, {
-    description: 'Create a donation listing for the authenticated user',
+    description:
+      'Create a donation listing for the authenticated user, including required foodWeightKg',
   })
   async createDonation(
     @Args('input') input: CreateDonationInput,
@@ -134,7 +135,7 @@ export class DonationResolver {
 
   @Mutation(() => DonationType, {
     description:
-      'Update a donation listing owned by the authenticated user using id and owner condition',
+      'Update a donation listing owned by the authenticated user using id and owner condition (including foodWeightKg)',
   })
   async updateDonation(
     @Args('id', { type: () => ID }) id: string,

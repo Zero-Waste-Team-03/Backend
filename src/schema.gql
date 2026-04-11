@@ -214,7 +214,7 @@ input CreateDonationInput {
   expiryDate: DateTime!
 
   """Approximate food weight in kilograms"""
-  foodWeightKg: Float
+  foodWeightKg: Float!
 
   """Optional listing expiration date/time"""
   listingExpiresAt: DateTime
@@ -534,7 +534,9 @@ type Mutation {
   """Create a new category (Administrator only)."""
   createCategory(input: CreateCategoryInput!): Category!
 
-  """Create a donation listing for the authenticated user"""
+  """
+  Create a donation listing for the authenticated user, including required foodWeightKg
+  """
   createDonation(input: CreateDonationInput!): Donation!
 
   """Create a report for a user, message, or donation"""
@@ -610,7 +612,7 @@ type Mutation {
   updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
 
   """
-  Update a donation listing owned by the authenticated user using id and owner condition
+  Update a donation listing owned by the authenticated user using id and owner condition (including foodWeightKg)
   """
   updateDonation(id: ID!, input: UpdateDonationInput!): Donation!
 
@@ -734,6 +736,11 @@ type Query {
   """Admin growth chart for donations and users"""
   adminGrowthStats(input: StatsGrowthInput!): StatsGrowth!
 
+  """
+  Admin: get total/open reports and report growth chart for selected period and status filter
+  """
+  adminReportStats(input: ReportStatsInput!): ReportStats!
+
   """Admin: list reports with filters"""
   adminReports(limit: Int! = 10, page: Int! = 1, status: ReportStatus, targetId: String, targetType: ReportTargetType): PaginatedReports!
 
@@ -843,6 +850,41 @@ type Report {
   targetId: ID!
   targetType: ReportTargetType!
   updatedAt: DateTime!
+}
+
+type ReportStats {
+  chart: [ReportStatsPoint!]!
+  openReports: Int!
+  openReportsIncrease: Float!
+  totalReports: Int!
+  totalReportsIncrease: Float!
+}
+
+input ReportStatsInput {
+  period: ReportStatsPeriod!
+  statusFilter: ReportStatsStatusFilter = ALL
+}
+
+"""Time period for reporting chart"""
+enum ReportStatsPeriod {
+  LAST_MONTH
+  LAST_WEEK
+  LAST_YEAR
+}
+
+type ReportStatsPoint {
+  period: String!
+  reportsCount: Int!
+}
+
+"""Status filter for reports chart (accepted is treated as resolved)"""
+enum ReportStatsStatusFilter {
+  ACCEPTED
+  ALL
+  OPEN
+  REJECTED
+  RESOLVED
+  UNDER_REVIEW
 }
 
 """Moderation status of the report"""

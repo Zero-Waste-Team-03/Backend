@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Entity,
   PrimaryColumn,
   Column,
@@ -7,6 +8,7 @@ import {
   JoinColumn,
   Relation,
 } from 'typeorm';
+import { v7 as uuidv7 } from 'uuid';
 import { User } from '../../../../core/user/entities/user.entity';
 
 export const UploadStatusValues = {
@@ -39,7 +41,7 @@ export class Attachment {
   @JoinColumn({ name: 'uploadedById' })
   uploadedBy: Relation<User>;
 
-  @Column('string')
+  @Column('uuid')
   uploadedById: string;
 
   @Column({
@@ -54,4 +56,11 @@ export class Attachment {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv7();
+    }
+  }
 }

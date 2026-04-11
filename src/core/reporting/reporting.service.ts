@@ -18,6 +18,12 @@ import {
   CategorySensitivity,
   CategorySensitivityValues,
 } from '../category/entities/category.entity';
+import {
+  ReportStatsInput,
+  ReportStatsPeriodValues,
+  ReportStatsStatusFilterValues,
+} from './graphql/inputs/report-stats.input';
+import { ReportStatsType } from './graphql/types/report-stats.type';
 
 type DangerousDonationRow = {
   donationId: string;
@@ -237,6 +243,90 @@ export class ReportingService {
     };
   }
 
+  async getReportStats(input: ReportStatsInput): Promise<ReportStatsType> {
+    const now = new Date();
+    const statusFilter =
+      input.statusFilter ?? ReportStatsStatusFilterValues.ALL;
+
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
+
+    const [
+      totalReports,
+      openReports,
+      previousTotalReports,
+      previousOpenReports,
+    ] = await Promise.all([
+      this.reportRepository.count(),
+      this.reportRepository.count({
+        where: { status: ReportStatusValues.OPEN },
+      }),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfPreviousMonth', {
+          startOfPreviousMonth,
+        })
+        .andWhere('report.createdAt < :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .getCount(),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfPreviousMonth', {
+          startOfPreviousMonth,
+        })
+        .andWhere('report.createdAt < :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .andWhere('report.status = :status', {
+          status: ReportStatusValues.OPEN,
+        })
+        .getCount(),
+    ]);
+
+    const totalReportsIncrease = this.calculateIncrease(
+      totalReports,
+      previousTotalReports,
+    );
+    const openReportsIncrease = this.calculateIncrease(
+      openReports,
+      previousOpenReports,
+    );
+
+    const { fromDate, granularity } = this.resolvePeriodWindow(
+      input.period,
+      now,
+    );
+    const rows = await this.getReportGrowthRows(
+      fromDate,
+      granularity,
+      statusFilter,
+    );
+
+    const countMap = new Map<string, number>();
+    for (const row of rows) {
+      countMap.set(row.period, Number(row.count));
+    }
+
+    const buckets = this.buildPeriods(fromDate, now, granularity);
+    const chart = buckets.map((period) => ({
+      period,
+      reportsCount: countMap.get(period) ?? 0,
+    }));
+
+    return {
+      totalReports,
+      totalReportsIncrease,
+      openReports,
+      openReportsIncrease,
+      chart,
+    };
+  }
+
   async getReportsForExport() {
     return this.reportRepository.find({
       order: { createdAt: 'DESC' },
@@ -288,5 +378,117 @@ export class ReportingService {
     }
 
     return 1;
+  }
+
+  private resolvePeriodWindow(
+    period: string,
+    now: Date,
+  ): { fromDate: Date; granularity: 'day' | 'month' } {
+    if (period === ReportStatsPeriodValues.LAST_WEEK) {
+      const fromDate = new Date(now);
+      fromDate.setDate(now.getDate() - 6);
+      fromDate.setHours(0, 0, 0, 0);
+      return { fromDate, granularity: 'day' };
+    }
+
+    if (period === ReportStatsPeriodValues.LAST_MONTH) {
+      const fromDate = new Date(now);
+      fromDate.setDate(now.getDate() - 29);
+      fromDate.setHours(0, 0, 0, 0);
+      return { fromDate, granularity: 'day' };
+    }
+
+    const fromDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    fromDate.setHours(0, 0, 0, 0);
+    return { fromDate, granularity: 'month' };
+  }
+
+  private async getReportGrowthRows(
+    fromDate: Date,
+    granularity: 'day' | 'month',
+    statusFilter: string,
+  ) {
+    const dateFormat = granularity === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
+
+    const qb = this.reportRepository
+      .createQueryBuilder('report')
+      .select(`TO_CHAR(report.createdAt, '${dateFormat}')`, 'period')
+      .addSelect('COUNT(report.id)', 'count')
+      .where('report.createdAt >= :fromDate', { fromDate })
+      .groupBy('period')
+      .orderBy('period', 'ASC');
+
+    const normalizedStatus = this.mapStatusFilterToStatus(statusFilter);
+    if (normalizedStatus) {
+      qb.andWhere('report.status = :status', { status: normalizedStatus });
+    }
+
+    return qb.getRawMany<{ period: string; count: string }>();
+  }
+
+  private mapStatusFilterToStatus(statusFilter: string): ReportStatus | null {
+    if (statusFilter === ReportStatsStatusFilterValues.ALL) {
+      return null;
+    }
+
+    if (statusFilter === ReportStatsStatusFilterValues.OPEN) {
+      return ReportStatusValues.OPEN;
+    }
+
+    if (statusFilter === ReportStatsStatusFilterValues.UNDER_REVIEW) {
+      return ReportStatusValues.UNDER_REVIEW;
+    }
+
+    if (
+      statusFilter === ReportStatsStatusFilterValues.RESOLVED ||
+      statusFilter === ReportStatsStatusFilterValues.ACCEPTED
+    ) {
+      return ReportStatusValues.RESOLVED;
+    }
+
+    return ReportStatusValues.REJECTED;
+  }
+
+  private buildPeriods(
+    fromDate: Date,
+    toDate: Date,
+    granularity: 'day' | 'month',
+  ): string[] {
+    const periods: string[] = [];
+    const cursor = new Date(fromDate);
+
+    if (granularity === 'day') {
+      while (cursor <= toDate) {
+        periods.push(this.formatDay(cursor));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return periods;
+    }
+
+    while (cursor <= toDate) {
+      periods.push(this.formatMonth(cursor));
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return periods;
+  }
+
+  private formatDay(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatMonth(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    return `${year}-${month}`;
+  }
+
+  private calculateIncrease(current: number, previous: number): number {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    const increase = ((current - previous) / previous) * 100;
+    return Math.round(increase * 100) / 100;
   }
 }
