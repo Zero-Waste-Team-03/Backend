@@ -12,6 +12,7 @@ import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
 import { DonationPhoto } from '../entities/donation-photo.entity';
+import { DonationLike } from '../entities/donation-like.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { LocationInput } from 'src/common/locations/graphql/inputs/location.input';
 import { DonationsFilterInput } from '../graphql/inputs/donations-filter.input';
@@ -38,6 +39,7 @@ import { DonationsHeatmapType } from '../graphql/types/donations-heatmap.type';
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
   mainAttachmentId?: string;
+  isLikedByMe: boolean;
 };
 
 @Injectable()
@@ -47,6 +49,8 @@ export class DonationService {
     private readonly donationRepository: Repository<Donation>,
     @InjectRepository(DonationPhoto)
     private readonly donationPhotoRepository: Repository<DonationPhoto>,
+    @InjectRepository(DonationLike)
+    private readonly donationLikeRepository: Repository<DonationLike>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(Reservation)
@@ -422,44 +426,83 @@ export class DonationService {
     }
     return MarkerColorValues.RED;
   }
-  async getDonationById(id: string): Promise<DonationResponse> {
-    const donation = await this.donationRepository.findOne({ where: { id } });
-
-    if (!donation) {
-      throwAppError('DONATION_NOT_FOUND', { id });
+  private async buildDonationResponses(
+    donations: Donation[],
+    viewerUserId?: string,
+    options?: {
+      skipLikesLookup?: boolean;
+      forceIsLikedByMe?: boolean;
+    },
+  ): Promise<DonationResponse[]> {
+    if (!donations.length) {
+      return [];
     }
 
-    return await this.mapDonationResponse(donation);
-  }
-
-  async findByIds(ids: string[]): Promise<DonationResponse[]> {
-    const donations = await this.donationRepository.find({
-      where: { id: In(ids) },
-    });
-
-    if (donations.length === 0) return [];
-
+    const donationIds = donations.map((donation) => donation.id);
     const allPhotos = await this.donationPhotoRepository.find({
-      where: { donationId: In(donations.map((d) => d.id)) },
+      where: { donationId: In(donationIds) },
     });
 
     const photoMap = allPhotos.reduce(
       (acc, photo) => {
-        if (!acc[photo.donationId]) acc[photo.donationId] = [];
+        if (!acc[photo.donationId]) {
+          acc[photo.donationId] = [];
+        }
         acc[photo.donationId].push(photo);
         return acc;
       },
       {} as Record<string, DonationPhoto[]>,
     );
 
+    let likedDonationIds = new Set<string>();
+    if (viewerUserId && !options?.skipLikesLookup) {
+      const likes = await this.donationLikeRepository.find({
+        where: {
+          userId: viewerUserId,
+          donationId: In(donationIds),
+        },
+        select: ['donationId'],
+      });
+      likedDonationIds = new Set(likes.map((like) => like.donationId));
+    }
+
     return donations.map((donation) => {
       const photos = photoMap[donation.id] || [];
+      const isLikedByMe = options?.forceIsLikedByMe
+        ? true
+        : likedDonationIds.has(donation.id);
+
       return {
         ...donation,
-        attachmentIds: photos.map((p) => p.attachmentId),
-        mainAttachmentId: photos.find((p) => p.isMain)?.attachmentId,
+        attachmentIds: photos.map((photo) => photo.attachmentId),
+        mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
+        isLikedByMe,
       };
     });
+  }
+
+  async getDonationById(
+    id: string,
+    viewerUserId?: string,
+  ): Promise<DonationResponse> {
+    const donation = await this.donationRepository.findOne({ where: { id } });
+
+    if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id });
+    }
+
+    return await this.mapDonationResponse(donation, viewerUserId);
+  }
+
+  async findByIds(
+    ids: string[],
+    viewerUserId?: string,
+  ): Promise<DonationResponse[]> {
+    const donations = await this.donationRepository.find({
+      where: { id: In(ids) },
+    });
+
+    return this.buildDonationResponses(donations, viewerUserId);
   }
 
   private validatePhotoInput(
@@ -491,16 +534,13 @@ export class DonationService {
 
   private async mapDonationResponse(
     donation: Donation,
+    viewerUserId?: string,
   ): Promise<DonationResponse> {
-    const photos = await this.donationPhotoRepository.find({
-      where: { donationId: donation.id },
-    });
-
-    return {
-      ...donation,
-      attachmentIds: photos.map((photo) => photo.attachmentId),
-      mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
-    };
+    const [mapped] = await this.buildDonationResponses(
+      [donation],
+      viewerUserId,
+    );
+    return mapped;
   }
 
   private async replaceDonationPhotos(
@@ -594,7 +634,7 @@ export class DonationService {
       safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
     });
 
-    return await this.mapDonationResponse(savedDonation);
+    return await this.mapDonationResponse(savedDonation, userId);
   }
 
   async updateDonation(id: string, input: UpdateDonationInput, userId: string) {
@@ -650,7 +690,90 @@ export class DonationService {
       await this.setMainDonationPhoto(savedDonation.id, input.mainAttachmentId);
     }
 
-    return await this.mapDonationResponse(savedDonation);
+    return await this.mapDonationResponse(savedDonation, userId);
+  }
+
+  async likeDonation(donationId: string, userId: string) {
+    const donation = await this.donationRepository.findOne({
+      where: { id: donationId },
+      select: ['id', 'userId'],
+    });
+
+    if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id: donationId });
+    }
+
+    if (donation.userId === userId) {
+      throwAppError('DONATION_LIKE_TARGET_INVALID', { id: donationId });
+    }
+
+    await this.donationLikeRepository
+      .createQueryBuilder()
+      .insert()
+      .into(DonationLike)
+      .values({ donationId, userId })
+      .orIgnore()
+      .execute();
+
+    return { message: 'Donation liked successfully' };
+  }
+
+  async unlikeDonation(donationId: string, userId: string) {
+    await this.donationLikeRepository.delete({ donationId, userId });
+    return { message: 'Donation unliked successfully' };
+  }
+
+  async findLikedDonations(
+    userId: string,
+    filter?: DonationsFilterInput,
+    pagination?: PaginationInput,
+  ) {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const query = this.donationRepository
+      .createQueryBuilder('donation')
+      .innerJoin(
+        DonationLike,
+        'donation_like',
+        'donation_like.donationId = donation.id AND donation_like.userId = :userId',
+        { userId },
+      )
+      .orderBy('donation_like.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (filter?.categoryId) {
+      query.andWhere('donation.categoryId = :categoryId', {
+        categoryId: filter.categoryId,
+      });
+    }
+
+    if (filter?.urgency) {
+      query.andWhere('donation.urgency = :urgency', {
+        urgency: filter.urgency,
+      });
+    }
+
+    if (filter?.status) {
+      query.andWhere('donation.status = :status', { status: filter.status });
+    }
+
+    const [donations, totalCount] = await query.getManyAndCount();
+    const items = await this.buildDonationResponses(donations, userId, {
+      skipLikesLookup: true,
+      forceIsLikedByMe: true,
+    });
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
   }
 
   async deleteDonation(id: string, userId: string, isAdmin: boolean) {
@@ -716,33 +839,7 @@ export class DonationService {
       take: limit,
     });
 
-    // Batch fetch photos for all donations in the current page
-    const donationIds = donations.map((d) => d.id);
-    const allPhotos =
-      donationIds.length > 0
-        ? await this.donationPhotoRepository.find({
-            where: { donationId: In(donationIds) },
-          })
-        : [];
-
-    // Map photos to their respective donations
-    const photoMap = allPhotos.reduce(
-      (acc, photo) => {
-        if (!acc[photo.donationId]) acc[photo.donationId] = [];
-        acc[photo.donationId].push(photo);
-        return acc;
-      },
-      {} as Record<string, DonationPhoto[]>,
-    );
-
-    const items = donations.map((donation) => {
-      const photos = photoMap[donation.id] || [];
-      return {
-        ...donation,
-        attachmentIds: photos.map((photo) => photo.attachmentId),
-        mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
-      };
-    });
+    const items = await this.buildDonationResponses(donations, userId);
 
     const hasBehaviorSignal =
       Boolean(filter?.categoryId) ||
@@ -771,7 +868,7 @@ export class DonationService {
     };
   }
 
-  async getDonationsForMap(input: DonationsMapInput) {
+  async getDonationsForMap(input: DonationsMapInput, userId?: string) {
     const { radius, latitude, longitude } = input;
 
     const donations = await this.donationRepository
@@ -787,6 +884,20 @@ export class DonationService {
         { latitude, longitude, radius },
       )
       .getMany();
+
+    const donationIds = donations.map((donation) => donation.id);
+    let likedDonationIds = new Set<string>();
+
+    if (userId && donationIds.length) {
+      const likes = await this.donationLikeRepository.find({
+        where: {
+          userId,
+          donationId: In(donationIds),
+        },
+        select: ['donationId'],
+      });
+      likedDonationIds = new Set(likes.map((like) => like.donationId));
+    }
 
     return donations.map((donation) => {
       const markerColor = this.getMarkerColor(
@@ -807,6 +918,7 @@ export class DonationService {
           attachmentIds: donation.photos?.map((p) => p.attachmentId) || [],
           mainAttachmentId: donation.photos?.find((p) => p.isMain)
             ?.attachmentId,
+          isLikedByMe: likedDonationIds.has(donation.id),
         },
       };
     });
