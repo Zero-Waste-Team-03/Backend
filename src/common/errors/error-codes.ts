@@ -120,6 +120,12 @@ export const ERROR_CODES = {
     message: 'Donation is not available for reservation.',
     args: { id: 'string', status: 'string' } as const,
   },
+  DONATION_LIKE_TARGET_INVALID: {
+    code: 'donation.like_target_invalid',
+    httpStatus: 400,
+    message: 'Cannot like your own donation.',
+    args: { id: 'string' } as const,
+  },
 
   UPLOAD_FILE_REQUIRED: {
     code: 'upload.file_required',

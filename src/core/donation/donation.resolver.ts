@@ -52,9 +52,10 @@ export class DonationResolver {
       'Get donations within a radius from a center point for map visualization',
   })
   async donationsMap(
+    @USER('id') userId: string,
     @Args('input') input: DonationsMapInput,
   ): Promise<DonationMapMarkerType[]> {
-    return this.donationService.getDonationsForMap(input);
+    return this.donationService.getDonationsForMap(input, userId);
   }
 
   @Query(() => DonationsHeatmapType, {
@@ -86,6 +87,18 @@ export class DonationResolver {
       pagination,
       role == 'Administrator',
     );
+  }
+
+  @Query(() => PaginatedDonations, {
+    description:
+      'Get liked donations for the authenticated user with the same standard filters and pagination',
+  })
+  async likedDonations(
+    @USER('id') userId: string,
+    @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedDonations> {
+    return this.donationService.findLikedDonations(userId, filter, pagination);
   }
 
   @ResolveField(() => UserType)
@@ -149,8 +162,29 @@ export class DonationResolver {
   })
   async donation(
     @Args('id', { type: () => ID }) id: string,
+    @USER('id') userId: string,
   ): Promise<DonationType> {
-    return await this.donationService.getDonationById(id);
+    return await this.donationService.getDonationById(id, userId);
+  }
+
+  @Mutation(() => MessageResponseType, {
+    description: 'Like a donation for the authenticated user',
+  })
+  async likeDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') userId: string,
+  ): Promise<MessageResponseType> {
+    return this.donationService.likeDonation(donationId, userId);
+  }
+
+  @Mutation(() => MessageResponseType, {
+    description: 'Unlike a donation for the authenticated user',
+  })
+  async unlikeDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') userId: string,
+  ): Promise<MessageResponseType> {
+    return this.donationService.unlikeDonation(donationId, userId);
   }
 
   @Mutation(() => MessageResponseType, {

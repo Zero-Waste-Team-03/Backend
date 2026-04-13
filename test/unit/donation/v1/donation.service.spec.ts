@@ -8,6 +8,7 @@ import {
   DonationStatusValues,
 } from 'src/core/donation/entities/donation.entity';
 import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity';
+import { DonationLike } from 'src/core/donation/entities/donation-like.entity';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { Reservation } from 'src/core/reservation/entities/reservation.entity';
 import { User } from 'src/core/user/entities/user.entity';
@@ -44,6 +45,12 @@ describe('DonationService', () => {
     save: jest.fn(),
   };
 
+  const donationLikeRepository = {
+    find: jest.fn(),
+    createQueryBuilder: jest.fn(),
+    delete: jest.fn(),
+  };
+
   const reservationRepository = {
     createQueryBuilder: jest.fn(),
   };
@@ -76,6 +83,10 @@ describe('DonationService', () => {
           useValue: locationRepository,
         },
         {
+          provide: getRepositoryToken(DonationLike),
+          useValue: donationLikeRepository,
+        },
+        {
           provide: getRepositoryToken(Reservation),
           useValue: reservationRepository,
         },
@@ -91,6 +102,7 @@ describe('DonationService', () => {
     }).compile();
 
     service = module.get<DonationService>(DonationService);
+    donationLikeRepository.find.mockResolvedValue([]);
   });
 
   it('should be defined', () => {
@@ -540,6 +552,185 @@ describe('DonationService', () => {
         }),
       );
       expect(result[1].attachmentIds).toEqual([]);
+      expect(result[0].isLikedByMe).toBe(false);
+    });
+
+    it('returns isLikedByMe=true when viewer user has liked donations', async () => {
+      const ids = ['d1'];
+      donationRepository.find.mockResolvedValue([
+        { id: 'd1', title: 'Donation 1' },
+      ]);
+      donationPhotoRepository.find.mockResolvedValue([]);
+      donationLikeRepository.find.mockResolvedValue([{ donationId: 'd1' }]);
+
+      const result = await service.findByIds(ids, 'u-viewer');
+
+      expect(donationLikeRepository.find).toHaveBeenCalledWith({
+        where: { userId: 'u-viewer', donationId: In(ids) },
+        select: ['donationId'],
+      });
+      expect(result[0].isLikedByMe).toBe(true);
+    });
+  });
+
+  describe('findLikedDonations optimization', () => {
+    it('does not trigger likes lookup when list is already scoped to liked rows', async () => {
+      const qb = {
+        innerJoin: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[{ id: 'd1' }], 1]),
+      };
+
+      donationRepository.createQueryBuilder.mockReturnValue(qb);
+      donationPhotoRepository.find.mockResolvedValue([]);
+
+      await service.findLikedDonations('u1', undefined, { page: 1, limit: 10 });
+
+      expect(donationLikeRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('likeDonation', () => {
+    it('likes donation when donation exists and is not owned by user', async () => {
+      const insertBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      };
+
+      donationRepository.findOne.mockResolvedValue({
+        id: 'd1',
+        userId: 'u-owner',
+      });
+      donationLikeRepository.createQueryBuilder.mockReturnValue(insertBuilder);
+
+      const result = await service.likeDonation('d1', 'u-viewer');
+
+      expect(result).toEqual({ message: 'Donation liked successfully' });
+      expect(donationRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'd1' },
+        select: ['id', 'userId'],
+      });
+      expect(insertBuilder.values).toHaveBeenCalledWith({
+        donationId: 'd1',
+        userId: 'u-viewer',
+      });
+    });
+
+    it('throws BadRequestException when user likes own donation', async () => {
+      donationRepository.findOne.mockResolvedValue({
+        id: 'd1',
+        userId: 'u1',
+      });
+
+      await expect(service.likeDonation('d1', 'u1')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('throws NotFoundException when donation does not exist', async () => {
+      donationRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.likeDonation('missing', 'u1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('unlikeDonation', () => {
+    it('deletes like relation and returns success message', async () => {
+      donationLikeRepository.delete.mockResolvedValue({ affected: 1 });
+
+      const result = await service.unlikeDonation('d1', 'u1');
+
+      expect(donationLikeRepository.delete).toHaveBeenCalledWith({
+        donationId: 'd1',
+        userId: 'u1',
+      });
+      expect(result).toEqual({ message: 'Donation unliked successfully' });
+    });
+  });
+
+  describe('findLikedDonations', () => {
+    it('returns liked donations with same filter contract and liked flag', async () => {
+      const qb = {
+        innerJoin: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [
+            {
+              id: 'd1',
+              title: 'Donation 1',
+              userId: 'owner-1',
+            },
+          ],
+          1,
+        ]),
+      };
+
+      donationRepository.createQueryBuilder.mockReturnValue(qb);
+      donationPhotoRepository.find.mockResolvedValue([
+        { donationId: 'd1', attachmentId: 'a1', isMain: true },
+      ]);
+      donationLikeRepository.find.mockResolvedValue([{ donationId: 'd1' }]);
+
+      const result = await service.findLikedDonations(
+        'u1',
+        {
+          categoryId: 'cat1',
+          urgency: DonationUrgencyValues.HIGH,
+          status: DonationStatusValues.PUBLISHED,
+        },
+        { page: 1, limit: 10 },
+      );
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'donation.categoryId = :categoryId',
+        { categoryId: 'cat1' },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith('donation.urgency = :urgency', {
+        urgency: DonationUrgencyValues.HIGH,
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('donation.status = :status', {
+        status: DonationStatusValues.PUBLISHED,
+      });
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          id: 'd1',
+          isLikedByMe: true,
+          mainAttachmentId: 'a1',
+        }),
+      );
+      expect(result.totalCount).toBe(1);
+      expect(donationLikeRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getDonationById', () => {
+    it('returns donation with isLikedByMe=true for liked donation', async () => {
+      donationRepository.findOne.mockResolvedValue({
+        id: 'd1',
+        title: 'Donation 1',
+      });
+      donationPhotoRepository.find.mockResolvedValue([]);
+      donationLikeRepository.find.mockResolvedValue([{ donationId: 'd1' }]);
+
+      const result = await service.getDonationById('d1', 'u1');
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: 'd1',
+          isLikedByMe: true,
+        }),
+      );
     });
   });
 

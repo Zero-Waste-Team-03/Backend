@@ -66,7 +66,7 @@ import { DatabaseExceptionFilter } from './common/filter/db.filer';
             locationLoader: locationDataLoader.createLoader(),
             attachmentLoader: attachmentDataLoader.createLoader(),
             categoryLoader: categoryDataLoader.createLoader(),
-            donationLoader: donationDataLoader.createLoader(),
+            donationLoader: donationDataLoader.createLoader(req?.user?.id),
           };
           return { req, res, loaders };
         },

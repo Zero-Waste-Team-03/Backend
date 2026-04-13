@@ -125,6 +125,12 @@ export class DonationType {
     description: 'The Main attachment used as cover photo',
   })
   mainAttachment?: AttachementType;
+
+  @Field(() => Boolean, {
+    description: 'Whether the authenticated user liked this donation',
+  })
+  isLikedByMe: boolean;
+
   @Field(() => Date)
   createdAt: Date;
 
