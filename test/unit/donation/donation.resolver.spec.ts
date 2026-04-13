@@ -10,10 +10,19 @@ describe('DonationResolver', () => {
   const mockDonationService = {
     getStatistics: jest.fn(),
     findAll: jest.fn(),
+    findLikedDonations: jest.fn(),
+    getDonationById: jest.fn(),
+    likeDonation: jest.fn(),
+    unlikeDonation: jest.fn(),
+    getDonationsForMap: jest.fn(),
     createDonation: jest.fn(),
     updateDonation: jest.fn(),
     deleteDonation: jest.fn(),
   };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,7 +80,7 @@ describe('DonationResolver', () => {
 
       const result = await resolver.donations(
         'u1',
-        "User",
+        'User',
         filter,
         behaviorContext as any,
         pagination,
@@ -85,6 +94,96 @@ describe('DonationResolver', () => {
         false,
       );
       expect(result).toEqual(mockPaginatedResult);
+    });
+  });
+
+  describe('likedDonations', () => {
+    it('should return paginated liked donations', async () => {
+      const mockPaginatedResult = {
+        items: [{ id: 'd1', title: 'Liked Donation', isLikedByMe: true }],
+        totalCount: 1,
+        page: 1,
+        limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      };
+      mockDonationService.findLikedDonations.mockResolvedValue(
+        mockPaginatedResult,
+      );
+
+      const filter = { categoryId: 'cat-1' };
+      const pagination = { page: 1, limit: 10 };
+
+      const result = await resolver.likedDonations('u1', filter, pagination);
+
+      expect(service.findLikedDonations).toHaveBeenCalledWith(
+        'u1',
+        filter,
+        pagination,
+      );
+      expect(result).toEqual(mockPaginatedResult);
+    });
+  });
+
+  describe('donation', () => {
+    it('should return donation by id with viewer context', async () => {
+      const payload = { id: 'd1', title: 'Donation', isLikedByMe: true };
+      mockDonationService.getDonationById.mockResolvedValue(payload);
+
+      const result = await resolver.donation('d1', 'u1');
+
+      expect(service.getDonationById).toHaveBeenCalledWith('d1', 'u1');
+      expect(result).toEqual(payload);
+    });
+  });
+
+  describe('likeDonation', () => {
+    it('should call service likeDonation', async () => {
+      mockDonationService.likeDonation.mockResolvedValue({
+        message: 'Donation liked successfully',
+      });
+
+      const result = await resolver.likeDonation('d1', 'u1');
+
+      expect(service.likeDonation).toHaveBeenCalledWith('d1', 'u1');
+      expect(result).toEqual({ message: 'Donation liked successfully' });
+    });
+  });
+
+  describe('unlikeDonation', () => {
+    it('should call service unlikeDonation', async () => {
+      mockDonationService.unlikeDonation.mockResolvedValue({
+        message: 'Donation unliked successfully',
+      });
+
+      const result = await resolver.unlikeDonation('d1', 'u1');
+
+      expect(service.unlikeDonation).toHaveBeenCalledWith('d1', 'u1');
+      expect(result).toEqual({ message: 'Donation unliked successfully' });
+    });
+  });
+
+  describe('donationsMap', () => {
+    it('should include user context for liked marker state', async () => {
+      const payload = [
+        {
+          id: 'd1',
+          title: 'Map donation',
+          latitude: 1,
+          longitude: 2,
+          markerColor: 'Green',
+          urgency: DonationUrgencyValues.LOW,
+          categoryId: 'cat-1',
+          mainAttachmentId: 'a1',
+        },
+      ];
+      mockDonationService.getDonationsForMap.mockResolvedValue(payload);
+
+      const input = { radius: 10, latitude: 36.7, longitude: 3.0 };
+      const result = await resolver.donationsMap('u1', input as any);
+
+      expect(service.getDonationsForMap).toHaveBeenCalledWith(input, 'u1');
+      expect(result).toEqual(payload);
     });
   });
 
