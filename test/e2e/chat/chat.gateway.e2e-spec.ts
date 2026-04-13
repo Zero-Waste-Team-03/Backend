@@ -15,7 +15,6 @@ import { JwtService } from '@nestjs/jwt';
 import { io, Socket } from 'socket.io-client';
 import { AccessTokenGuard } from 'src/core/authentication/guards/access-token.guard';
 import { CHAT_SUBSCRIBED_EVENTS } from 'src/core/chat/constants/chat-ws-events';
-import { CHAT_EMITTED_EVENTS } from 'src/core/chat/constants/chat-ws-events';
 import { ChatGateway } from 'src/core/chat/chat.gateway';
 import { ChatService } from 'src/core/chat/chat.service';
 import { ChatConversationMemberGuard } from 'src/core/chat/guards/chat-conversation-member.guard';
@@ -85,6 +84,7 @@ class ChatGatewayE2eResolver {
 }
 
 describe('ChatGateway (e2e)', () => {
+  const conversationId = '019d8615-8f8b-7129-abfe-e8fe3068e65a';
   let app: INestApplication;
   let client: Socket;
   let baseUrl: string;
@@ -156,20 +156,20 @@ describe('ChatGateway (e2e)', () => {
     });
 
     mockChatService.requireConversationMember.mockResolvedValue({
-      id: 'conv-1',
+      id: conversationId,
       status: 'Active',
     });
     mockChatService.getConversationStatus.mockResolvedValue('Active');
     mockChatService.sendMessage.mockResolvedValue({
       id: 'msg-1',
-      conversationId: 'conv-1',
+      conversationId,
       senderId: 'user-1',
       content: 'hello',
       isModerated: false,
       createdAt: new Date(),
     });
     mockChatService.markTransactionCompleted.mockResolvedValue({
-      id: 'conv-1',
+      id: conversationId,
       status: 'Archived',
     });
   });
@@ -204,25 +204,28 @@ describe('ChatGateway (e2e)', () => {
 
   it('acknowledges join conversation with room name', async () => {
     mockChatService.requireConversationMember.mockResolvedValue({
-      id: 'conv-1',
+      id: conversationId,
       status: 'Active',
     });
 
     client = await connectClient();
 
-    const joined = await new Promise<{
-      conversationId: string;
-      userId: string;
-    }>((resolve) => {
-      client.once(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, resolve);
-      client.emit(CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION, {
-        conversationId: 'conv-1',
-      });
-    });
+    const ack = await new Promise<{ ok: boolean; data?: { room: string } }>(
+      (resolve) => {
+        client.emit(
+          CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION,
+          { conversationId },
+          resolve,
+        );
+      },
+    );
 
-    expect(joined).toEqual({ conversationId: 'conv-1', userId: 'user-1' });
+    expect(ack).toEqual({
+      ok: true,
+      data: { room: `conversation_${conversationId}` },
+    });
     expect(mockChatService.requireConversationMember).toHaveBeenCalledWith(
-      'conv-1',
+      conversationId,
       'user-1',
     );
   });
@@ -230,12 +233,13 @@ describe('ChatGateway (e2e)', () => {
   it('acknowledges send message event', async () => {
     client = await connectClient();
 
-    await new Promise<void>((resolve) => {
-      client.once(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, () => resolve());
-      client.emit(CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION, {
-        conversationId: 'conv-1',
-      });
-    });
+    await new Promise((resolve) =>
+      client.emit(
+        CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION,
+        { conversationId },
+        resolve,
+      ),
+    );
 
     const ack = await new Promise<{
       ok: boolean;
@@ -244,7 +248,7 @@ describe('ChatGateway (e2e)', () => {
       client.emit(
         CHAT_SUBSCRIBED_EVENTS.SEND_MESSAGE,
         {
-          conversationId: 'conv-1',
+          conversationId,
           content: 'hello from socket',
         },
         resolve,
@@ -253,7 +257,7 @@ describe('ChatGateway (e2e)', () => {
 
     expect(ack).toEqual({ ok: true, data: { messageId: 'msg-1' } });
     expect(mockChatService.sendMessage).toHaveBeenCalledWith({
-      conversationId: 'conv-1',
+      conversationId,
       senderId: 'user-1',
       content: 'hello from socket',
     });
@@ -262,19 +266,20 @@ describe('ChatGateway (e2e)', () => {
   it('acknowledges mark transaction completed event', async () => {
     client = await connectClient();
 
-    await new Promise<void>((resolve) => {
-      client.once(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, () => resolve());
-      client.emit(CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION, {
-        conversationId: 'conv-1',
-      });
-    });
+    await new Promise((resolve) =>
+      client.emit(
+        CHAT_SUBSCRIBED_EVENTS.JOIN_CONVERSATION,
+        { conversationId },
+        resolve,
+      ),
+    );
 
     const ack = await new Promise<{ ok: boolean; data?: { status: string } }>(
       (resolve) => {
         client.emit(
           CHAT_SUBSCRIBED_EVENTS.MARK_TRANSACTION_COMPLETED,
           {
-            conversationId: 'conv-1',
+            conversationId,
           },
           resolve,
         );
@@ -283,7 +288,7 @@ describe('ChatGateway (e2e)', () => {
 
     expect(ack).toEqual({ ok: true, data: { status: 'Archived' } });
     expect(mockChatService.markTransactionCompleted).toHaveBeenCalledWith({
-      conversationId: 'conv-1',
+      conversationId,
       userId: 'user-1',
     });
   });
