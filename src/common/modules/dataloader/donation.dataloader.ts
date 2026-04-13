@@ -14,15 +14,21 @@ export class DonationDataLoader {
    *
    * @returns DataLoader instance for Donation entities
    */
-  createLoader(): DataLoader<string, any | null> {
+  createLoader(viewerUserId?: string): DataLoader<string, any | null> {
     return new DataLoader<string, any | null>(
       async (donationIds: readonly string[]) => {
-        const donations = await this.donationService.findByIds(donationIds as string[]);
+        const donations = await this.donationService.findByIds(
+          donationIds as string[],
+          viewerUserId,
+        );
 
-        const donationMap = donations.reduce((map, donation) => {
-          map[donation.id] = donation;
-          return map;
-        }, {} as Record<string, any>);
+        const donationMap = donations.reduce(
+          (map, donation) => {
+            map[donation.id] = donation;
+            return map;
+          },
+          {} as Record<string, any>,
+        );
 
         return donationIds.map((id) => donationMap[id] || null);
       },

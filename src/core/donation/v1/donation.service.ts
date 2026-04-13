@@ -429,6 +429,10 @@ export class DonationService {
   private async buildDonationResponses(
     donations: Donation[],
     viewerUserId?: string,
+    options?: {
+      skipLikesLookup?: boolean;
+      forceIsLikedByMe?: boolean;
+    },
   ): Promise<DonationResponse[]> {
     if (!donations.length) {
       return [];
@@ -451,7 +455,7 @@ export class DonationService {
     );
 
     let likedDonationIds = new Set<string>();
-    if (viewerUserId) {
+    if (viewerUserId && !options?.skipLikesLookup) {
       const likes = await this.donationLikeRepository.find({
         where: {
           userId: viewerUserId,
@@ -464,11 +468,15 @@ export class DonationService {
 
     return donations.map((donation) => {
       const photos = photoMap[donation.id] || [];
+      const isLikedByMe = options?.forceIsLikedByMe
+        ? true
+        : likedDonationIds.has(donation.id);
+
       return {
         ...donation,
         attachmentIds: photos.map((photo) => photo.attachmentId),
         mainAttachmentId: photos.find((photo) => photo.isMain)?.attachmentId,
-        isLikedByMe: likedDonationIds.has(donation.id),
+        isLikedByMe,
       };
     });
   }
@@ -486,12 +494,15 @@ export class DonationService {
     return await this.mapDonationResponse(donation, viewerUserId);
   }
 
-  async findByIds(ids: string[]): Promise<DonationResponse[]> {
+  async findByIds(
+    ids: string[],
+    viewerUserId?: string,
+  ): Promise<DonationResponse[]> {
     const donations = await this.donationRepository.find({
       where: { id: In(ids) },
     });
 
-    return this.buildDonationResponses(donations);
+    return this.buildDonationResponses(donations, viewerUserId);
   }
 
   private validatePhotoInput(
@@ -750,7 +761,10 @@ export class DonationService {
     }
 
     const [donations, totalCount] = await query.getManyAndCount();
-    const items = await this.buildDonationResponses(donations, userId);
+    const items = await this.buildDonationResponses(donations, userId, {
+      skipLikesLookup: true,
+      forceIsLikedByMe: true,
+    });
 
     return {
       items,

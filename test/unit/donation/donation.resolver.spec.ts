@@ -187,6 +187,28 @@ describe('DonationResolver', () => {
     });
   });
 
+  describe('reservation nested donation path compatibility', () => {
+    it('should still expose getDonationsForMap contract unchanged for resolver tests', async () => {
+      mockDonationService.getDonationsForMap.mockResolvedValue([]);
+
+      const result = await resolver.donationsMap('u1', {
+        radius: 5,
+        latitude: 36.7,
+        longitude: 3,
+      } as any);
+
+      expect(result).toEqual([]);
+      expect(service.getDonationsForMap).toHaveBeenCalledWith(
+        {
+          radius: 5,
+          latitude: 36.7,
+          longitude: 3,
+        },
+        'u1',
+      );
+    });
+  });
+
   describe('user (ResolveField)', () => {
     it('should load donor user using dataloader', async () => {
       const mockUser = { id: 'u1', email: 'donor@example.com' };

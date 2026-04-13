@@ -552,6 +552,44 @@ describe('DonationService', () => {
         }),
       );
       expect(result[1].attachmentIds).toEqual([]);
+      expect(result[0].isLikedByMe).toBe(false);
+    });
+
+    it('returns isLikedByMe=true when viewer user has liked donations', async () => {
+      const ids = ['d1'];
+      donationRepository.find.mockResolvedValue([
+        { id: 'd1', title: 'Donation 1' },
+      ]);
+      donationPhotoRepository.find.mockResolvedValue([]);
+      donationLikeRepository.find.mockResolvedValue([{ donationId: 'd1' }]);
+
+      const result = await service.findByIds(ids, 'u-viewer');
+
+      expect(donationLikeRepository.find).toHaveBeenCalledWith({
+        where: { userId: 'u-viewer', donationId: In(ids) },
+        select: ['donationId'],
+      });
+      expect(result[0].isLikedByMe).toBe(true);
+    });
+  });
+
+  describe('findLikedDonations optimization', () => {
+    it('does not trigger likes lookup when list is already scoped to liked rows', async () => {
+      const qb = {
+        innerJoin: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[{ id: 'd1' }], 1]),
+      };
+
+      donationRepository.createQueryBuilder.mockReturnValue(qb);
+      donationPhotoRepository.find.mockResolvedValue([]);
+
+      await service.findLikedDonations('u1', undefined, { page: 1, limit: 10 });
+
+      expect(donationLikeRepository.find).not.toHaveBeenCalled();
     });
   });
 
@@ -672,6 +710,7 @@ describe('DonationService', () => {
         }),
       );
       expect(result.totalCount).toBe(1);
+      expect(donationLikeRepository.find).not.toHaveBeenCalled();
     });
   });
 

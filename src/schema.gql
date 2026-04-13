@@ -296,6 +296,9 @@ type Donation {
   foodWeightKg: Float
   id: ID!
 
+  """Whether the authenticated user liked this donation"""
+  isLikedByMe: Boolean!
+
   """Date when listing expires for visibility"""
   listingExpiresAt: DateTime
 
@@ -560,6 +563,9 @@ type Mutation {
   """Create or get conversation by reservation id"""
   getOrCreateConversation(reservationId: ID!): Conversation!
 
+  """Like a donation for the authenticated user"""
+  likeDonation(donationId: ID!): MessageResponse!
+
   """Login user and issue access and refresh tokens"""
   login(loginInput: LoginInput!): AuthResponse!
 
@@ -604,6 +610,9 @@ type Mutation {
   Suspend a user account, preventing them from logging in or accessing services.
   """
   suspendUser(userId: String!): User!
+
+  """Unlike a donation for the authenticated user"""
+  unlikeDonation(donationId: ID!): MessageResponse!
 
   """Update a badge (Administrator only)"""
   updateBadge(id: ID!, input: UpdateBadgeInput!): Badge!
@@ -779,6 +788,11 @@ type Query {
   Get donations within a radius from a center point for map visualization
   """
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
+
+  """
+  Get liked donations for the authenticated user with the same standard filters and pagination
+  """
+  likedDonations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
 
   """Get current user achievements"""
   myAchievements: [Achievement!]!
