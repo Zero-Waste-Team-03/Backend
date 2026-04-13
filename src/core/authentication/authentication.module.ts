@@ -6,7 +6,7 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule} from '@nestjs/jwt';
 import { GoogleGuard } from './guards/oauth/google.guard';
 import { GoogleStrategy } from './strategies/oauth/google.strategy';
 import { QueueModule } from 'src/infrastructure/queue/queue.module';
@@ -15,6 +15,8 @@ import { AuthenticationController } from './v1/authentication.controller';
 import { AuthenticationService } from './v1/authentication.service';
 import { AuthenticationResolver } from './authentication.resolver';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
+import { ConfigType } from '@nestjs/config';
+import authConfig from 'src/config/auth.config';
 
 /**
  * Authentication module
@@ -30,8 +32,13 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
  */
 @Module({
   imports: [
-    JwtModule.register({
-      global: true,
+    JwtModule.registerAsync({
+      useFactory: (conf:ConfigType<typeof authConfig>) =>({
+        secret: conf.jwt.accessTokenSecret,
+        signOptions: { expiresIn: conf.jwt.accessTokenExpiresIn },
+        global: true,
+      }),
+      inject: [authConfig.KEY],
     }),
     UserModule,
     QueueModule,
@@ -51,6 +58,6 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
     RefreshTokenGuard,
     RolesGuard,
   ],
-  exports: [AccessTokenGuard, RolesGuard],
+  exports: [AccessTokenGuard, RolesGuard,JwtModule],
 })
 export class AuthenticationModule {}

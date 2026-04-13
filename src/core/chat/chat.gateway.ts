@@ -5,8 +5,9 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { WsConnectionsManagerGateway } from '../websocket/ws-connections-manager.gateway';
 import { AuthenticatedSocket } from '../websocket/types/authenticated-socket.type';
@@ -26,6 +27,16 @@ import {
 import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
 import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
 
+@UsePipes(
+  new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    exceptionFactory(errors) {
+      return new WsException(errors);
+    },
+  }),
+)
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
@@ -58,7 +69,7 @@ export class ChatGateway
   ): Promise<ChatAck<{ room: string }>> {
     const room = this.getConversationRoom(payload.conversationId);
     await client.join(room);
-    this.server.to(room).emit(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, {
+    client.to(room).emit(CHAT_EMITTED_EVENTS.CONVERSATION_JOINED, {
       conversationId: payload.conversationId,
       userId: client.user.id,
     });
@@ -94,7 +105,7 @@ export class ChatGateway
       content: payload.content,
     });
 
-    this.server
+    client
       .to(this.getConversationRoom(payload.conversationId))
       .emit(CHAT_EMITTED_EVENTS.MESSAGE_CREATED, message);
 
@@ -113,7 +124,7 @@ export class ChatGateway
       approverId: client.user.id,
     });
 
-    this.server
+    client
       .to(this.getConversationRoom(payload.conversationId))
       .emit(CHAT_EMITTED_EVENTS.SENSITIVE_MESSAGE_APPROVED, {
         conversationId: payload.conversationId,
@@ -135,7 +146,7 @@ export class ChatGateway
       userId: client.user.id,
     });
 
-    this.server
+    client
       .to(this.getConversationRoom(payload.conversationId))
       .emit(CHAT_EMITTED_EVENTS.TRANSACTION_COMPLETED, {
         conversationId: payload.conversationId,

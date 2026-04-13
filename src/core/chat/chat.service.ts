@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere,  Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { Reservation } from '../reservation/entities/reservation.entity';
@@ -106,14 +106,15 @@ export class ChatService {
       })
       .select([
         'conversation.id AS id',
-        'conversation.reservationId AS reservationId',
-        'conversation.lastMessage AS lastMessage',
-        'conversation.status AS status',
-        'conversation.createdAt AS createdAt',
-        'reservation.beneficiaryId AS beneficiaryId',
-        'donation.userId AS donorId',
+        'conversation."reservationId" AS "reservationId"',
+        'conversation."lastMessage" AS "lastMessage"',
+        'conversation.status AS "status"',
+        'conversation."createdAt" AS "createdAt"',
+        'reservation."beneficiaryId" AS "beneficiaryId"',
+        'donation."userId" AS "donorId"',
       ])
       .orderBy('conversation.createdAt', 'DESC')
+      
       .getRawMany<{
         id: string;
         reservationId: string;
@@ -123,6 +124,8 @@ export class ChatService {
         beneficiaryId: string;
         donorId: string;
       }>();
+
+    
 
     return rows.map((row) => ({
       id: row.id,
