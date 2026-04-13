@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
-import { FindOptionsWhere, Or, Repository } from 'typeorm';
+import { FindOptionsWhere,  Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { Reservation } from '../reservation/entities/reservation.entity';
@@ -41,7 +41,6 @@ type ApprovalMarker = {
 
 @Injectable()
 export class ChatService {
-  private readonly logger=new Logger(ChatService.name) 
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
@@ -90,7 +89,6 @@ export class ChatService {
   async getMyActiveConversations(
     requesterId: string,
   ): Promise<ConversationPreviewType[]> {
-    this.conversationRepository.find
     const rows = await this.conversationRepository
       .createQueryBuilder('conversation')
       .innerJoin(
@@ -128,7 +126,6 @@ export class ChatService {
       }>();
 
     
-      console.log(rows)
 
     return rows.map((row) => ({
       id: row.id,

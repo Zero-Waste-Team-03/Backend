@@ -6,7 +6,7 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule} from '@nestjs/jwt';
 import { GoogleGuard } from './guards/oauth/google.guard';
 import { GoogleStrategy } from './strategies/oauth/google.strategy';
 import { QueueModule } from 'src/infrastructure/queue/queue.module';
