@@ -9,6 +9,7 @@ import { SendNotificationResponseType } from './graphql/types/responses.type';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
+import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
 
 @Resolver(() => NotificationTypeGraphQL)
 export class NotificationsResolver {
@@ -17,7 +18,7 @@ export class NotificationsResolver {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @UseGuards(AccessTokenGuard)
-  @Query(() => [NotificationTypeGraphQL], { name: 'notifications' })
+  @Query(() => PaginatedNotifications)
   async getNotifications(
     @Args('pagination', { nullable: true }) pagination: PaginationQueryInput,
     @USER('id') userId: string,

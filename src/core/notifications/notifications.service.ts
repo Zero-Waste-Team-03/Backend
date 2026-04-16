@@ -14,6 +14,7 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { isError } from 'lodash';
 import { throwAppError } from 'src/common/errors';
+import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
 
 const OLD_NOTIFICATION_DELETE_DAYS = 7;
 
@@ -70,15 +71,22 @@ export class NotificationsService {
    * @param paginationaQuery - The pagination query parameters.
    * @returns A promise that resolves to a list of notifications.
    */
-  async findAll(paginationQuery: PaginationQueryDto, userId: string) {
+  async findAll(paginationQuery: PaginationQueryDto, userId: string):Promise<PaginatedNotifications> {
     const { limit, page } = paginationQuery;
-    const notification = await this.notificationRepo.find({
+    const [items,count]= await this.notificationRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       where: { receiverId: userId },
       order: { createdAt: 'DESC' },
     });
-    return notification;
+    return {
+      page,
+      limit,
+      items,
+      totalCount: count,
+      hasNextPage: page * limit < count,
+      hasPreviousPage: page > 1,
+    };
   }
 
   /**
