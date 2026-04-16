@@ -20,6 +20,7 @@ import { Donation } from '../donation/entities/donation.entity';
 import { User } from '../user/entities/user.entity';
 import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
+import { ReservationsFilterInput } from './graphql/inputs/reservations-filter.input';
 
 @Resolver(() => ReservationType)
 export class ReservationResolver {
@@ -33,8 +34,9 @@ export class ReservationResolver {
   async myReservations(
     @USER('id') userId: string,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+    @Args('filter',{nullable:true}) filter?: ReservationsFilterInput,
   ): Promise<PaginatedReservations> {
-    return this.reservationService.findMyReservations(userId, pagination);
+    return this.reservationService.findMyReservations(userId,filter, pagination);
   }
 
   @UseGuards(AccessTokenGuard)
@@ -57,6 +59,7 @@ export class ReservationResolver {
     @Args('donationId', { type: () => ID }) donationId: string,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
+    //TODO: fix this type
     return this.reservationService.reserveDonation(
       donationId,
       beneficiaryId,

@@ -50,10 +50,10 @@ describe('ReservationResolver', () => {
       const filter = { status: ReservationStatusValues.PENDING };
       const pagination = { page: 1, limit: 10 };
 
-      const result = await (resolver as any).myReservations(
+      const result = await resolver .myReservations(
         'u1',
-        filter,
         pagination,
+        filter,
       );
 
       expect(service.findMyReservations).toHaveBeenCalledWith(

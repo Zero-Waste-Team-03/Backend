@@ -7,6 +7,7 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { RESERVATION_JOBS } from 'src/common/constants/jobs';
 import {
   Reservation,
+  ReservationStatus,
   ReservationStatusValues,
 } from './entities/reservation.entity';
 import {
@@ -33,12 +34,13 @@ export class ReservationService {
 
   async findMyReservations(
     userId: string,
+    filter: { status?: ReservationStatus} = {},
     pagination?: PaginationInput,
   ): Promise<PaginatedReservations> {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
-    const [items, totalCount] = await this.reservationRepository
+    const queryBuilder=this.reservationRepository
       .createQueryBuilder('reservation')
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
       .where('reservation.beneficiaryId = :userId', { userId })
@@ -46,7 +48,14 @@ export class ReservationService {
       .orderBy('reservation.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
-      .getManyAndCount();
+      if (filter.status) {
+        queryBuilder.andWhere(
+          '(reservation.status = :status)',
+          { status: filter.status },
+        );
+      }
+
+    const [items, totalCount] = await queryBuilder.getManyAndCount();
 
     return {
       items: items as any,
