@@ -11,26 +11,62 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 
 describe('ReservationService', () => {
   let service: ReservationService;
-
-  const reservationRepository = {
-    findAndCount: jest.fn(),
-    createQueryBuilder: jest.fn(),
+  let reservationRepository: {
+    createQueryBuilder: jest.Mock;
     manager: {
-      transaction: jest.fn(),
-    },
+      transaction: jest.Mock;
+    };
+  };
+  let donationRepository: {
+    findOne: jest.Mock;
+  };
+  let reservationQueue: {
+    add: jest.Mock;
+    remove: jest.Mock;
   };
 
-  const donationRepository = {
-    findOne: jest.fn(),
+  type MockQueryBuilder = {
+    innerJoin: jest.Mock;
+    where: jest.Mock;
+    orWhere: jest.Mock;
+    andWhere: jest.Mock;
+    orderBy: jest.Mock;
+    skip: jest.Mock;
+    take: jest.Mock;
+    getManyAndCount: jest.Mock;
   };
 
-  const reservationQueue = {
-    add: jest.fn(),
-    remove: jest.fn(),
-  };
+  let queryBuilder: MockQueryBuilder;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    queryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orWhere: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+
+    reservationRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      manager: {
+        transaction: jest.fn(),
+      },
+    };
+
+    donationRepository = {
+      findOne: jest.fn(),
+    };
+
+    reservationQueue = {
+      add: jest.fn(),
+      remove: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,7 +95,7 @@ describe('ReservationService', () => {
 
   describe('findMyReservations', () => {
     it('adds status filter for both beneficiary and donor branches', async () => {
-      reservationRepository.findAndCount.mockResolvedValue([[], 0]);
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findMyReservations(
         'u1',
@@ -67,48 +103,41 @@ describe('ReservationService', () => {
         { page: 1, limit: 10 },
       );
 
-      expect(reservationRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: [
-            {
-              beneficiaryId: 'u1',
-              status: ReservationStatusValues.PENDING,
-            },
-            {
-              donation: { userId: 'u1' },
-              status: ReservationStatusValues.PENDING,
-            },
-          ],
-          skip: 0,
-          take: 10,
-        }),
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'reservation.beneficiaryId = :userId',
+        { userId: 'u1' },
+      );
+      expect(queryBuilder.orWhere).toHaveBeenCalledWith(
+        'donation.userId = :userId',
+        { userId: 'u1' },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        '(reservation.status = :status)',
+        { status: ReservationStatusValues.PENDING },
       );
     });
 
     it('does not add status filter when missing', async () => {
-      reservationRepository.findAndCount.mockResolvedValue([[], 0]);
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findMyReservations('u1', undefined, {
         page: 1,
         limit: 10,
       });
 
-      expect(reservationRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: [
-            {
-              beneficiaryId: 'u1',
-            },
-            {
-              donation: { userId: 'u1' },
-            },
-          ],
-        }),
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'reservation.beneficiaryId = :userId',
+        { userId: 'u1' },
       );
+      expect(queryBuilder.orWhere).toHaveBeenCalledWith(
+        'donation.userId = :userId',
+        { userId: 'u1' },
+      );
+      expect(queryBuilder.andWhere).not.toHaveBeenCalled();
     });
 
     it('maps reservation entities to reservation type shape', async () => {
-      reservationRepository.findAndCount.mockResolvedValue([
+      queryBuilder.getManyAndCount.mockResolvedValue([
         [
           {
             id: 'r1',
@@ -128,6 +157,7 @@ describe('ReservationService', () => {
         limit: 10,
       });
 
+      expect(result.totalCount).toBe(1);
       expect(result.items[0]).toEqual(
         expect.objectContaining({
           id: 'r1',
