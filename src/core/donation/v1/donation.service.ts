@@ -811,6 +811,32 @@ export class DonationService {
       pendingApprovals,
     };
   }
+  async getMyDonations(userId:string,filer?:DonationsFilterInput,pagination?:PaginationInput){
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+    const skip = (page - 1) * limit;
+    const where: FindOptionsWhere<Donation> = {userId:userId};
+
+    if (filer?.categoryId) where.categoryId = filer.categoryId;
+    if (filer?.urgency) where.urgency = filer.urgency;
+    if (filer?.status) where.status = filer.status;
+
+    const [donations, totalCount] = await this.donationRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+    const items = await this.buildDonationResponses(donations, userId,{skipLikesLookup:true});
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
+  }
 
   async findAll(
     userId: string,
