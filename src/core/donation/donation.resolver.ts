@@ -88,6 +88,17 @@ export class DonationResolver {
       role == 'Administrator',
     );
   }
+  @Query(() => PaginatedDonations, {
+    description:
+      'Get donation listings created by the authenticated user with optional filters and pagination',
+  })
+  async myDonations(
+    @USER('id') userId: string,
+    @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedDonations> {
+    return this.donationService.getMyDonations(userId, filter, pagination);
+  }
 
   @Query(() => PaginatedDonations, {
     description:
