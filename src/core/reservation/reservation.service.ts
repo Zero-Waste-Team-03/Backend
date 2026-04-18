@@ -17,6 +17,8 @@ import {
 import { throwAppError } from 'src/common/errors/throw-app-error';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
 
 @Injectable()
 export class ReservationService {
@@ -30,30 +32,30 @@ export class ReservationService {
     private readonly donationRepository: Repository<Donation>,
     @InjectQueue(QUEUE_NAME.RESERVATION)
     private readonly reservationQueue: Queue,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findMyReservations(
     userId: string,
-    filter: { status?: ReservationStatus} = {},
+    filter: { status?: ReservationStatus } = {},
     pagination?: PaginationInput,
   ): Promise<PaginatedReservations> {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
-    const queryBuilder=this.reservationRepository
+    const queryBuilder = this.reservationRepository
       .createQueryBuilder('reservation')
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
       .where('reservation.beneficiaryId = :userId', { userId })
       .orWhere('donation.userId = :userId', { userId })
       .orderBy('reservation.createdAt', 'DESC')
       .skip(skip)
-      .take(limit)
-      if (filter.status) {
-        queryBuilder.andWhere(
-          '(reservation.status = :status)',
-          { status: filter.status },
-        );
-      }
+      .take(limit);
+    if (filter.status) {
+      queryBuilder.andWhere('(reservation.status = :status)', {
+        status: filter.status,
+      });
+    }
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 
@@ -92,11 +94,15 @@ export class ReservationService {
   }
 
   public async expireReservation(reservationId: string) {
+    let donorId: string | null = null;
+    let beneficiaryId: string | null = null;
+    let donationId: string | null = null;
+
     await this.reservationRepository.manager.transaction(async (manager) => {
       const reservation = await manager.findOne(Reservation, {
         where: { id: reservationId },
         lock: { mode: 'pessimistic_write' },
-        select: ['id', 'status', 'donationId'],
+        select: ['id', 'status', 'donationId', 'beneficiaryId'],
       });
 
       if (!reservation) {
@@ -112,6 +118,18 @@ export class ReservationService {
         return;
       }
 
+      const donation = await manager.findOne(Donation, {
+        where: { id: reservation.donationId },
+        select: ['id', 'userId'],
+      });
+
+      if (!donation) {
+        this.logger.warn(
+          `Expiration job failed: Donation ${reservation.donationId} not found for reservation ${reservationId}.`,
+        );
+        return;
+      }
+
       await manager.update(Donation, reservation.donationId, {
         status: DonationStatusValues.PUBLISHED,
       });
@@ -122,14 +140,47 @@ export class ReservationService {
       this.logger.log(
         `Reservation ${reservationId} has expired and was cancelled automatically.`,
       );
+
+      donorId = donation.userId;
+      beneficiaryId = reservation.beneficiaryId;
+      donationId = reservation.donationId;
     });
+
+    if (!donorId || !beneficiaryId || !donationId) {
+      return;
+    }
+
+    await Promise.allSettled([
+      this.notificationsService.sendNotification(
+        'Reservation expired',
+        'A pending reservation for your donation expired automatically.',
+        donorId,
+        NOTIFICATION_TYPE.RESERVATION_ALERT,
+        {
+          reservationId,
+          donationId,
+          status: ReservationStatusValues.CANCELLED,
+        },
+      ),
+      this.notificationsService.sendNotification(
+        'Reservation expired',
+        'Your reservation expired because it was not confirmed in time.',
+        beneficiaryId,
+        NOTIFICATION_TYPE.RESERVATION_ALERT,
+        {
+          reservationId,
+          donationId,
+          status: ReservationStatusValues.CANCELLED,
+        },
+      ),
+    ]);
   }
 
   async reserveDonation(
     donationId: string,
     beneficiaryId: string,
   ): Promise<Reservation> {
-    return await this.reservationRepository.manager.transaction(
+    const result = await this.reservationRepository.manager.transaction(
       async (manager) => {
         const donation = await manager.findOne(Donation, {
           where: { id: donationId },
@@ -177,16 +228,34 @@ export class ReservationService {
           `Scheduled expiration job for reservation ${savedReservation.id}`,
         );
 
-        return savedReservation;
+        return {
+          reservation: savedReservation,
+          donorId: donation.userId,
+        };
       },
     );
+
+    await this.notificationsService.sendNotification(
+      'Donation reserved',
+      'A beneficiary has reserved your donation.',
+      result.donorId,
+      NOTIFICATION_TYPE.RESERVATION_ALERT,
+      {
+        reservationId: result.reservation.id,
+        donationId,
+        beneficiaryId,
+        status: ReservationStatusValues.PENDING,
+      },
+    );
+
+    return result.reservation;
   }
 
   async confirmReservation(
     reservationId: string,
     beneficiaryId: string,
   ): Promise<Reservation> {
-    return await this.reservationRepository.manager.transaction(
+    const result = await this.reservationRepository.manager.transaction(
       async (manager) => {
         const reservation = await manager.findOne(Reservation, {
           where: { id: reservationId },
@@ -214,14 +283,42 @@ export class ReservationService {
         reservation.confirmedAt = new Date();
         const savedReservation = await manager.save(Reservation, reservation);
 
+        const donation = await manager.findOne(Donation, {
+          where: { id: reservation.donationId },
+          select: ['id', 'userId'],
+        });
+
+        if (!donation) {
+          throwAppError('DONATION_NOT_FOUND', { id: reservation.donationId });
+        }
+
         await this.reservationQueue.remove(`reservation-${reservationId}`);
 
         this.logger.log(
           `Reservation ${reservationId} confirmed by beneficiary ${beneficiaryId}`,
         );
 
-        return savedReservation;
+        return {
+          reservation: savedReservation,
+          donorId: donation.userId,
+          donationId: donation.id,
+        };
       },
     );
+
+    await this.notificationsService.sendNotification(
+      'Reservation confirmed',
+      'The beneficiary confirmed your donation reservation.',
+      result.donorId,
+      NOTIFICATION_TYPE.RESERVATION_ALERT,
+      {
+        reservationId,
+        donationId: result.donationId,
+        beneficiaryId,
+        status: ReservationStatusValues.CONFIRMED,
+      },
+    );
+
+    return result.reservation;
   }
 }

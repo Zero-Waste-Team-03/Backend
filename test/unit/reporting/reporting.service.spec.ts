@@ -10,6 +10,7 @@ import { Donation } from 'src/core/donation/entities/donation.entity';
 import { Message } from 'src/core/chat/entities/message.entity';
 import { User } from 'src/core/user/entities/user.entity';
 import { ConflictException } from '@nestjs/common';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
 
 describe('ReportingService', () => {
   let service: ReportingService;
@@ -33,6 +34,11 @@ describe('ReportingService', () => {
 
   const userRepository = {
     findOne: jest.fn(),
+    find: jest.fn(),
+  };
+
+  const notificationsService = {
+    sendNotification: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +51,7 @@ describe('ReportingService', () => {
         { provide: getRepositoryToken(Donation), useValue: donationRepository },
         { provide: getRepositoryToken(Message), useValue: messageRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
+        { provide: NotificationsService, useValue: notificationsService },
       ],
     }).compile();
 
@@ -56,6 +63,10 @@ describe('ReportingService', () => {
     reportRepository.findOne.mockResolvedValue(null);
     reportRepository.create.mockImplementation((value) => value);
     reportRepository.save.mockImplementation(async (value) => value);
+    userRepository.find.mockResolvedValue([
+      { id: 'admin-1' },
+      { id: 'admin-2' },
+    ]);
 
     const result = await service.createReport(
       {
@@ -70,6 +81,7 @@ describe('ReportingService', () => {
     expect(result.targetType).toBe(ReportTargetTypeValues.DONATION);
     expect(result.status).toBe(ReportStatusValues.OPEN);
     expect(reportRepository.save).toHaveBeenCalled();
+    expect(notificationsService.sendNotification).toHaveBeenCalledTimes(2);
   });
 
   it('rejects duplicate open report for same target and reporter', async () => {
@@ -86,5 +98,37 @@ describe('ReportingService', () => {
         'fbb8477d-585a-47fc-b7ac-a4287f99de8d',
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('notifies reporter when report is reviewed', async () => {
+    const report = {
+      id: 'report-1',
+      reporterId: 'reporter-1',
+      status: ReportStatusValues.OPEN,
+      targetType: ReportTargetTypeValues.DONATION,
+      targetId: 'donation-1',
+    } as Report;
+
+    reportRepository.findOne.mockResolvedValue(report);
+    reportRepository.save.mockImplementation(async (value) => value);
+
+    await service.reviewReport(
+      'report-1',
+      ReportStatusValues.RESOLVED,
+      'admin-1',
+    );
+
+    expect(notificationsService.sendNotification).toHaveBeenCalledWith(
+      'Report reviewed',
+      'Your report has been reviewed by our moderation team.',
+      'reporter-1',
+      expect.any(String),
+      expect.objectContaining({
+        reportId: 'report-1',
+        status: ReportStatusValues.RESOLVED,
+        targetType: ReportTargetTypeValues.DONATION,
+        targetId: 'donation-1',
+      }),
+    );
   });
 });

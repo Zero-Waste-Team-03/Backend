@@ -19,6 +19,7 @@ import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as hashUtils from 'src/common/utils/authentication/hash.utils';
 import { EntityNotFoundError } from 'typeorm';
 import { Report } from 'src/core/reporting/entities/report.entity';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -46,6 +47,9 @@ describe('UserService', () => {
   };
   let reportRepository: {
     createQueryBuilder: jest.Mock;
+  };
+  let notificationsService: {
+    sendNotification: jest.Mock;
   };
 
   type MockQueryBuilder = {
@@ -100,6 +104,10 @@ describe('UserService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    notificationsService = {
+      sendNotification: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -124,6 +132,10 @@ describe('UserService', () => {
         {
           provide: AttachmentService,
           useValue: attachmentService,
+        },
+        {
+          provide: NotificationsService,
+          useValue: notificationsService,
         },
       ],
     }).compile();
@@ -314,6 +326,7 @@ describe('UserService', () => {
       expect(result).toBe(user);
       expect(result.status).toBe(UserStatusValues.SUSPENDED);
       expect(userRepository.save).not.toHaveBeenCalled();
+      expect(notificationsService.sendNotification).not.toHaveBeenCalled();
     });
 
     it('should update status to suspended and persist user', async () => {
@@ -325,6 +338,16 @@ describe('UserService', () => {
 
       expect(result.status).toBe(UserStatusValues.SUSPENDED);
       expect(userRepository.save).toHaveBeenCalledWith(user);
+      expect(notificationsService.sendNotification).toHaveBeenCalledWith(
+        'Account suspended',
+        'Your account has been suspended. Contact support for more details.',
+        'u1',
+        expect.any(String),
+        expect.objectContaining({
+          userId: 'u1',
+          status: UserStatusValues.SUSPENDED,
+        }),
+      );
     });
   });
 
@@ -347,6 +370,7 @@ describe('UserService', () => {
       expect(result).toBe(user);
       expect(result.status).toBe(UserStatusValues.ACTIVE);
       expect(userRepository.save).not.toHaveBeenCalled();
+      expect(notificationsService.sendNotification).not.toHaveBeenCalled();
     });
 
     it('should update status to active and persist user', async () => {
@@ -361,6 +385,16 @@ describe('UserService', () => {
 
       expect(result.status).toBe(UserStatusValues.ACTIVE);
       expect(userRepository.save).toHaveBeenCalledWith(user);
+      expect(notificationsService.sendNotification).toHaveBeenCalledWith(
+        'Account reactivated',
+        'Your account has been reactivated. You can now use the platform normally.',
+        'u1',
+        expect.any(String),
+        expect.objectContaining({
+          userId: 'u1',
+          status: UserStatusValues.ACTIVE,
+        }),
+      );
     });
   });
 

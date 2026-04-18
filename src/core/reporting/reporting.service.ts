@@ -24,6 +24,9 @@ import {
   ReportStatsStatusFilterValues,
 } from './graphql/inputs/report-stats.input';
 import { ReportStatsType } from './graphql/types/report-stats.type';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
+import { UserRoleValues } from '../user/entities/user.entity';
 
 type DangerousDonationRow = {
   donationId: string;
@@ -47,6 +50,7 @@ export class ReportingService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createReport(
@@ -80,7 +84,31 @@ export class ReportingService {
       status: ReportStatusValues.OPEN,
     });
 
-    return this.reportRepository.save(report);
+    const savedReport = await this.reportRepository.save(report);
+
+    const adminUsers = await this.userRepository.find({
+      where: { role: UserRoleValues.ADMINISTRATOR },
+      select: ['id'],
+    });
+
+    await Promise.allSettled(
+      adminUsers.map((adminUser) =>
+        this.notificationsService.sendNotification(
+          'New report submitted',
+          'A new report was submitted and needs moderation review.',
+          adminUser.id,
+          NOTIFICATION_TYPE.REPORT_ALERT,
+          {
+            reportId: savedReport.id,
+            targetType: savedReport.targetType,
+            targetId: savedReport.targetId,
+            reason: savedReport.reason,
+          },
+        ),
+      ),
+    );
+
+    return savedReport;
   }
 
   async getMyReports(reporterId: string): Promise<Report[]> {
@@ -145,7 +173,22 @@ export class ReportingService {
     report.reviewedById = reviewerId;
     report.reviewedAt = new Date();
 
-    return this.reportRepository.save(report);
+    const savedReport = await this.reportRepository.save(report);
+
+    await this.notificationsService.sendNotification(
+      'Report reviewed',
+      'Your report has been reviewed by our moderation team.',
+      report.reporterId,
+      NOTIFICATION_TYPE.REPORT_ALERT,
+      {
+        reportId: savedReport.id,
+        status: savedReport.status,
+        targetType: savedReport.targetType,
+        targetId: savedReport.targetId,
+      },
+    );
+
+    return savedReport;
   }
 
   async getReportCountsForMonth(startInclusive: Date, endExclusive: Date) {
