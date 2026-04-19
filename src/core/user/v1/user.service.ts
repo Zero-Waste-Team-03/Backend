@@ -32,6 +32,8 @@ import * as crypto from 'crypto';
 import { throwAppError } from 'src/common/errors';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import { Report } from 'src/core/reporting/entities/report.entity';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
 
 export interface OAuthUserPayload {
   email: string;
@@ -55,6 +57,7 @@ export class UserService {
     @InjectQueue(QUEUE_NAME.MAIL)
     private readonly mailQueue: Queue,
     private readonly attachmentService: AttachmentService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getPaginatedUsers(
@@ -117,6 +120,16 @@ export class UserService {
     }
     user.status = UserStatusValues.SUSPENDED;
     await this.userRepository.save(user);
+    await this.notificationsService.sendNotification(
+      'Account suspended',
+      'Your account has been suspended. Contact support for more details.',
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      {
+        userId: user.id,
+        status: UserStatusValues.SUSPENDED,
+      },
+    );
     return user;
   }
 
@@ -132,6 +145,16 @@ export class UserService {
     }
     user.status = UserStatusValues.ACTIVE;
     await this.userRepository.save(user);
+    await this.notificationsService.sendNotification(
+      'Account reactivated',
+      'Your account has been reactivated. You can now use the platform normally.',
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      {
+        userId: user.id,
+        status: UserStatusValues.ACTIVE,
+      },
+    );
     return user;
   }
 
