@@ -6,9 +6,7 @@ import { Reservation } from './entities/reservation.entity';
 import { Donation } from '../donation/entities/donation.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Reservation, Donation]),
-  ],
+  imports: [TypeOrmModule.forFeature([Reservation, Donation])],
   providers: [ReservationResolver, ReservationService],
   exports: [ReservationService],
 })

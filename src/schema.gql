@@ -528,8 +528,13 @@ type Mutation {
   """
   changePassword(changePasswordInput: ChangePasswordInput!): MessageResponse!
 
-  """Confirm a pending reservation within the deadline"""
-  confirmReservation(id: ID!): Reservation!
+  """Confirm reservation (deprecated: reservations are auto-confirmed)"""
+  confirmReservation(id: ID!): Reservation! @deprecated(reason: "Reservations are confirmed automatically on creation.")
+
+  """
+  Confirm reservation completion by reservation id (both donor and beneficiary must confirm)
+  """
+  confirmReservationCompleted(reservationId: ID!): Reservation!
 
   """Create a badge (Administrator only)"""
   createBadge(input: CreateBadgeInput!): Badge!
@@ -594,7 +599,12 @@ type Mutation {
   registerFcmToken(fcmToken: String!): MessageResponse!
 
   """Create a new reservation for a donation"""
-  reserveDonation(donationId: ID!): Reservation!
+  reserveDonation(
+    donationId: ID!
+
+    """Number of units to reserve (defaults to 1)"""
+    quantity: Int = 1
+  ): Reservation!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
@@ -629,6 +639,17 @@ type Mutation {
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
 }
 
+enum NOTIFICATION_TYPE {
+  ACCOUNT_STATUS_ALERT
+  CHAT_MESSAGE
+  MESSAGE
+  NEW_ACHIEVEMENT
+  NEW_POST
+  REPORT_ALERT
+  RESERVATION_ALERT
+  TEST
+}
+
 type Notification {
   body: String!
   createdAt: DateTime!
@@ -637,7 +658,7 @@ type Notification {
   meta: JSON
   receiverId: String!
   title: String!
-  type: String!
+  type: NOTIFICATION_TYPE!
   updatedAt: DateTime!
 }
 
@@ -672,6 +693,15 @@ type PaginatedMessages {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   items: [ChatMessage!]!
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedNotifications {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [Notification!]
   limit: Int!
   page: Int!
   totalCount: Int!
@@ -771,6 +801,9 @@ type Query {
   """Get a single donation listing by id"""
   donation(id: ID!): Donation!
 
+  """Get all reservations for a donation if current user is donation owner"""
+  donationReservations(donationId: ID!, pagination: PaginationInput): PaginatedReservations!
+
   """
   Get statistics for donations (total active, flagged, pending approvals)
   """
@@ -788,6 +821,7 @@ type Query {
   Get donations within a radius from a center point for map visualization
   """
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
+  getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
 
   """
   Get liked donations for the authenticated user with the same standard filters and pagination
@@ -805,6 +839,11 @@ type Query {
   """Get badges earned by current user"""
   myBadges: [Badge!]!
 
+  """
+  Get donation listings created by the authenticated user with optional filters and pagination
+  """
+  myDonations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
+
   """Get reports created by current user"""
   myReports: [Report!]!
 
@@ -812,8 +851,7 @@ type Query {
   myReservation(id: ID!): Reservation!
 
   """Get reservations where the current user is donor or beneficiary"""
-  myReservations(pagination: PaginationInput): PaginatedReservations!
-  notifications(pagination: PaginationQueryInput): [Notification!]!
+  myReservations(filter: ReservationsFilterInput, pagination: PaginationInput): PaginatedReservations!
 }
 
 input RegisterInput {
@@ -924,6 +962,7 @@ type Reservation {
   donation: Donation
   donationId: ID!
   id: ID!
+  quantity: Int!
   status: ReservationStatus!
   updatedAt: DateTime!
 }
@@ -934,6 +973,10 @@ enum ReservationStatus {
   COMPLETED
   CONFIRMED
   PENDING
+}
+
+input ReservationsFilterInput {
+  status: ReservationStatus
 }
 
 input ResetPasswordInput {

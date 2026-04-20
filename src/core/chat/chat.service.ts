@@ -1,7 +1,7 @@
-import { Injectable} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
-import { FindOptionsWhere,  Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { Reservation } from '../reservation/entities/reservation.entity';
@@ -114,7 +114,7 @@ export class ChatService {
         'donation."userId" AS "donorId"',
       ])
       .orderBy('conversation.createdAt', 'DESC')
-      
+
       .getRawMany<{
         id: string;
         reservationId: string;
@@ -124,8 +124,6 @@ export class ChatService {
         beneficiaryId: string;
         donorId: string;
       }>();
-
-    
 
     return rows.map((row) => ({
       id: row.id,
@@ -370,6 +368,15 @@ export class ChatService {
         const donorId = donation.userId;
         const beneficiaryId = reservation.beneficiaryId;
 
+        if (
+          reservation.status !== ReservationStatusValues.CONFIRMED &&
+          reservation.status !== ReservationStatusValues.COMPLETED
+        ) {
+          throwAppError('RESERVATION_STATUS_INVALID', {
+            status: reservation.status,
+          });
+        }
+
         const marker = this.getCompletionMarker(dto.userId);
         const existingMarker = await manager.findOne(Message, {
           where: {
@@ -410,12 +417,23 @@ export class ChatService {
           lockedConversation.status = ConversationStatusValues.ARCHIVED;
           lockedConversation.lastMessage = 'Transaction completed';
 
-          reservation.status = ReservationStatusValues.COMPLETED;
-          await manager.save(Reservation, reservation);
+          if (reservation.status !== ReservationStatusValues.COMPLETED) {
+            reservation.status = ReservationStatusValues.COMPLETED;
+            await manager.save(Reservation, reservation);
 
-          await manager.update(Donation, reservation.donationId, {
-            status: DonationStatusValues.COMPLETED,
-          });
+            donation.quantity = Math.max(
+              donation.quantity - reservation.quantity,
+              0,
+            );
+
+            if (donation.quantity <= 0) {
+              donation.status = DonationStatusValues.COMPLETED;
+            } else if (donation.status !== DonationStatusValues.COMPLETED) {
+              donation.status = DonationStatusValues.PUBLISHED;
+            }
+
+            await manager.save(Donation, donation);
+          }
 
           await manager
             .createQueryBuilder()
