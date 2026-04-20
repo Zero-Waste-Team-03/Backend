@@ -105,6 +105,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -135,6 +136,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.PENDING,
     });
@@ -158,6 +160,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -236,6 +239,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.PENDING,
     });
@@ -258,6 +262,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -294,6 +299,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -338,6 +344,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       donationId: 'don-1',
+      quantity: 2,
       beneficiaryId: 'beneficiary-1',
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
@@ -355,6 +362,7 @@ describe('ChatService', () => {
         .mockResolvedValueOnce({
           id: 'res-1',
           donationId: 'don-1',
+          quantity: 2,
           beneficiaryId: 'beneficiary-1',
           donation: { userId: 'donor-1' },
           status: ReservationStatusValues.CONFIRMED,
@@ -362,6 +370,8 @@ describe('ChatService', () => {
         .mockResolvedValueOnce({
           id: 'don-1',
           userId: 'donor-1',
+          quantity: 2,
+          status: DonationStatusValues.PUBLISHED,
         })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: 'done-donor' })
@@ -369,6 +379,7 @@ describe('ChatService', () => {
       create: jest.fn().mockImplementation((_: any, payload: any) => payload),
       save: jest
         .fn()
+        .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce({ id: 'conv-1', status: 'Archived' }),
@@ -390,9 +401,14 @@ describe('ChatService', () => {
       userId: 'donor-1',
     });
 
-    expect(manager.update).toHaveBeenCalledWith(Donation, 'don-1', {
-      status: DonationStatusValues.COMPLETED,
-    });
+    expect(manager.save).toHaveBeenCalledWith(
+      Donation,
+      expect.objectContaining({
+        id: 'don-1',
+        quantity: 0,
+        status: DonationStatusValues.COMPLETED,
+      }),
+    );
     expect(result.status).toBe('Archived');
   });
 

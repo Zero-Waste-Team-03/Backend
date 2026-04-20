@@ -195,6 +195,28 @@ export const ERROR_CODES = {
     message: 'Reservation cannot be processed in its current status.',
     args: { status: 'string' } as const,
   },
+  RESERVATION_QUANTITY_INVALID: {
+    code: 'reservation.quantity_invalid',
+    httpStatus: 400,
+    message: 'Reservation quantity must be a positive integer.',
+    args: { quantity: 'number' } as const,
+  },
+  RESERVATION_ALREADY_ACTIVE: {
+    code: 'reservation.already_active',
+    httpStatus: 409,
+    message: 'You already have an active reservation for this donation.',
+    args: { donationId: 'string', beneficiaryId: 'string' } as const,
+  },
+  DONATION_CAPACITY_EXCEEDED: {
+    code: 'donation.capacity_exceeded',
+    httpStatus: 400,
+    message: 'Requested reservation quantity exceeds donation capacity.',
+    args: {
+      id: 'string',
+      requestedQuantity: 'number',
+      remainingQuantity: 'number',
+    } as const,
+  },
   CHAT_CONVERSATION_NOT_FOUND: {
     code: 'chat.conversation_not_found',
     httpStatus: 404,

@@ -50,11 +50,7 @@ describe('ReservationResolver', () => {
       const filter = { status: ReservationStatusValues.PENDING };
       const pagination = { page: 1, limit: 10 };
 
-      const result = await resolver .myReservations(
-        'u1',
-        pagination,
-        filter,
-      );
+      const result = await resolver.myReservations('u1', pagination, filter);
 
       expect(service.findMyReservations).toHaveBeenCalledWith(
         'u1',
@@ -62,6 +58,27 @@ describe('ReservationResolver', () => {
         pagination,
       );
       expect(result).toEqual(paginated);
+    });
+  });
+
+  describe('reserveDonation', () => {
+    it('passes quantity=1 when omitted', async () => {
+      mockReservationService.reserveDonation.mockResolvedValue({ id: 'r1' });
+
+      await resolver.reserveDonation(
+        { donationId: 'd1', quantity: undefined },
+        'u1',
+      );
+
+      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 1);
+    });
+
+    it('passes provided quantity to service', async () => {
+      mockReservationService.reserveDonation.mockResolvedValue({ id: 'r2' });
+
+      await resolver.reserveDonation({ donationId: 'd1', quantity: 3 }, 'u1');
+
+      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 3);
     });
   });
 });

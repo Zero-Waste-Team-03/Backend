@@ -21,6 +21,7 @@ import { User } from '../user/entities/user.entity';
 import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { ReservationsFilterInput } from './graphql/inputs/reservations-filter.input';
+import { ReserveDonationInput } from './graphql/inputs/reserve-donation.input';
 
 @Resolver(() => ReservationType)
 export class ReservationResolver {
@@ -34,9 +35,13 @@ export class ReservationResolver {
   async myReservations(
     @USER('id') userId: string,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
-    @Args('filter',{nullable:true}) filter?: ReservationsFilterInput,
+    @Args('filter', { nullable: true }) filter?: ReservationsFilterInput,
   ): Promise<PaginatedReservations> {
-    return this.reservationService.findMyReservations(userId,filter, pagination);
+    return this.reservationService.findMyReservations(
+      userId,
+      filter,
+      pagination,
+    );
   }
 
   @UseGuards(AccessTokenGuard)
@@ -56,19 +61,21 @@ export class ReservationResolver {
     description: 'Create a new reservation for a donation',
   })
   async reserveDonation(
-    @Args('donationId', { type: () => ID }) donationId: string,
+    @Args() input: ReserveDonationInput,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
-    //TODO: fix this type
     return this.reservationService.reserveDonation(
-      donationId,
+      input.donationId,
       beneficiaryId,
+      input.quantity ?? 1,
     ) as any;
   }
 
   @UseGuards(AccessTokenGuard)
   @Mutation(() => ReservationType, {
-    description: 'Confirm a pending reservation within the deadline',
+    description:
+      'Confirm reservation (deprecated: reservations are auto-confirmed)',
+    deprecationReason: 'Reservations are confirmed automatically on creation.',
   })
   async confirmReservation(
     @Args('id', { type: () => ID }) id: string,
