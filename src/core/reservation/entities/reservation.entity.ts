@@ -28,10 +28,14 @@ export type ReservationStatus =
 @Index('IDX_reservations_donation_id', ['donationId'])
 @Index('IDX_reservations_beneficiary_id', ['beneficiaryId'])
 @Index('IDX_reservations_status', ['status'])
-@Index('UQ_one_active_reservation_per_donation', ['donationId'], {
-  unique: true,
-  where: "\"status\" IN ('Pending', 'Confirmed')",
-})
+@Index(
+  'UQ_one_active_reservation_per_donation_beneficiary',
+  ['donationId', 'beneficiaryId'],
+  {
+    unique: true,
+    where: "\"status\" IN ('Pending', 'Confirmed')",
+  },
+)
 export class Reservation {
   @PrimaryColumn('uuid')
   id: string;
@@ -56,6 +60,9 @@ export class Reservation {
     default: ReservationStatusValues.PENDING,
   })
   status: ReservationStatus;
+
+  @Column({ type: 'int', default: 1 })
+  quantity: number;
 
   @Column({ type: 'timestamp', nullable: true })
   confirmedAt?: Date | null;

@@ -13,11 +13,16 @@ export class ReservationProcessor extends WorkerHost {
   }
 
   async process(job: Job<{ reservationId: string }>): Promise<void> {
-    this.logger.log(`Processing reservation expiration job ${job.id} for reservation ${job.data.reservationId}`);
+    this.logger.log(
+      `Processing reservation expiration job ${job.id} for reservation ${job.data.reservationId}`,
+    );
     try {
       await this.reservationService.expireReservation(job.data.reservationId);
     } catch (error) {
-      this.logger.error(`Failed to execute cancellation for reservation ${job.data.reservationId}`, error);
+      this.logger.error(
+        `Failed to execute cancellation for reservation ${job.data.reservationId}`,
+        error,
+      );
       throw error;
     }
   }

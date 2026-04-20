@@ -48,7 +48,7 @@ function resolveDonationStatus(
     status === ReservationStatusValues.PENDING ||
     status === ReservationStatusValues.CONFIRMED
   ) {
-    return DonationStatusValues.RESERVED;
+    return DonationStatusValues.PUBLISHED;
   }
 
   if (status === ReservationStatusValues.COMPLETED) {

@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { getQueueToken } from '@nestjs/bullmq';
 import { ReservationService } from 'src/core/reservation/reservation.service';
 import {
   Reservation,
   ReservationStatusValues,
 } from 'src/core/reservation/entities/reservation.entity';
 import { Donation } from 'src/core/donation/entities/donation.entity';
-import { QUEUE_NAME } from 'src/common/constants/queues';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { DonationStatusValues } from 'src/core/donation/entities/donation.entity';
 
 describe('ReservationService', () => {
   let service: ReservationService;
@@ -20,9 +20,8 @@ describe('ReservationService', () => {
   let donationRepository: {
     findOne: jest.Mock;
   };
-  let reservationQueue: {
-    add: jest.Mock;
-    remove: jest.Mock;
+  let notificationsService: {
+    sendNotification: jest.Mock;
   };
 
   type MockQueryBuilder = {
@@ -63,9 +62,8 @@ describe('ReservationService', () => {
       findOne: jest.fn(),
     };
 
-    reservationQueue = {
-      add: jest.fn(),
-      remove: jest.fn(),
+    notificationsService = {
+      sendNotification: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -80,8 +78,8 @@ describe('ReservationService', () => {
           useValue: donationRepository,
         },
         {
-          provide: getQueueToken(QUEUE_NAME.RESERVATION),
-          useValue: reservationQueue,
+          provide: NotificationsService,
+          useValue: notificationsService,
         },
       ],
     }).compile();
@@ -166,6 +164,132 @@ describe('ReservationService', () => {
           status: ReservationStatusValues.PENDING,
         }),
       );
+    });
+  });
+
+  describe('findDonationReservations', () => {
+    it('returns paginated reservations for donation owner', async () => {
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.findDonationReservations('d1', 'owner-1', {
+        page: 1,
+        limit: 10,
+      });
+
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'reservation.donationId = :donationId',
+        { donationId: 'd1' },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(
+        1,
+        'donation.userId = :ownerId',
+        { ownerId: 'owner-1' },
+      );
+    });
+  });
+
+  describe('reserveDonation', () => {
+    it('creates auto-confirmed reservation with quantity and notifies donor', async () => {
+      const donation = {
+        id: 'd1',
+        userId: 'donor-1',
+        quantity: 5,
+        status: DonationStatusValues.PUBLISHED,
+      } as Donation;
+      const savedReservation = {
+        id: 'r1',
+        donationId: 'd1',
+        beneficiaryId: 'beneficiary-1',
+        quantity: 2,
+        status: ReservationStatusValues.CONFIRMED,
+      } as Reservation;
+
+      const sumQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ total: '0' }),
+      };
+
+      const existingReservationQueryBuilder = {
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
+
+      const manager = {
+        findOne: jest.fn().mockResolvedValueOnce(donation),
+        create: jest.fn().mockReturnValue(savedReservation),
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValueOnce(existingReservationQueryBuilder)
+          .mockReturnValueOnce(sumQueryBuilder),
+        save: jest.fn().mockResolvedValue(savedReservation),
+      };
+
+      reservationRepository.manager.transaction.mockImplementation(async (cb) =>
+        cb(manager),
+      );
+
+      await service.reserveDonation('d1', 'beneficiary-1', 2);
+
+      expect(existingReservationQueryBuilder.getOne).toHaveBeenCalled();
+      expect(manager.create).toHaveBeenCalledWith(
+        Reservation,
+        expect.objectContaining({
+          donationId: 'd1',
+          beneficiaryId: 'beneficiary-1',
+          quantity: 2,
+          status: ReservationStatusValues.CONFIRMED,
+        }),
+      );
+
+      expect(notificationsService.sendNotification).toHaveBeenCalledWith(
+        'Donation reserved',
+        'A beneficiary has reserved your donation.',
+        'donor-1',
+        expect.any(String),
+        expect.objectContaining({
+          reservationId: 'r1',
+          donationId: 'd1',
+          beneficiaryId: 'beneficiary-1',
+          quantity: 2,
+          status: ReservationStatusValues.CONFIRMED,
+        }),
+      );
+    });
+  });
+
+  describe('confirmReservation', () => {
+    it('returns confirmed reservation without sending notification', async () => {
+      const reservation = {
+        id: 'r1',
+        donationId: 'd1',
+        beneficiaryId: 'beneficiary-1',
+        status: ReservationStatusValues.CONFIRMED,
+      } as Reservation;
+
+      const manager = {
+        findOne: jest.fn().mockResolvedValueOnce(reservation),
+      };
+
+      reservationRepository.manager.transaction.mockImplementation(async (cb) =>
+        cb(manager),
+      );
+
+      const result = await service.confirmReservation('r1', 'beneficiary-1');
+
+      expect(result).toEqual(reservation);
+      expect(notificationsService.sendNotification).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('expireReservation', () => {
+    it('is disabled and does not notify anyone', async () => {
+      await service.expireReservation('r1');
+
+      expect(notificationsService.sendNotification).not.toHaveBeenCalled();
     });
   });
 });
