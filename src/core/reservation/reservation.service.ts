@@ -84,6 +84,35 @@ export class ReservationService {
     return reservation;
   }
 
+  async findDonationReservations(
+    donationId: string,
+    ownerId: string,
+    pagination?: PaginationInput,
+  ): Promise<PaginatedReservations> {
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.reservationRepository
+      .createQueryBuilder('reservation')
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .where('reservation.donationId = :donationId', { donationId })
+      .andWhere('donation.userId = :ownerId', { ownerId })
+      .orderBy('reservation.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [items, totalCount] = await queryBuilder.getManyAndCount();
+
+    return {
+      items: items as any,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
+  }
+
   public async expireReservation(reservationId: string) {
     // TODO: Reintroduce reservation expiration after product requirements are finalized.
     this.logger.log(

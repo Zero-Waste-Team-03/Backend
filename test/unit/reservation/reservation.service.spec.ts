@@ -167,6 +167,27 @@ describe('ReservationService', () => {
     });
   });
 
+  describe('findDonationReservations', () => {
+    it('returns paginated reservations for donation owner', async () => {
+      queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.findDonationReservations('d1', 'owner-1', {
+        page: 1,
+        limit: 10,
+      });
+
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'reservation.donationId = :donationId',
+        { donationId: 'd1' },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(
+        1,
+        'donation.userId = :ownerId',
+        { ownerId: 'owner-1' },
+      );
+    });
+  });
+
   describe('reserveDonation', () => {
     it('creates auto-confirmed reservation with quantity and notifies donor', async () => {
       const donation = {

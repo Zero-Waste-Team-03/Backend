@@ -57,6 +57,23 @@ export class ReservationResolver {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Query(() => PaginatedReservations, {
+    description:
+      'Get all reservations for a donation if current user is donation owner',
+  })
+  async donationReservations(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') userId: string,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedReservations> {
+    return this.reservationService.findDonationReservations(
+      donationId,
+      userId,
+      pagination,
+    );
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Mutation(() => ReservationType, {
     description: 'Create a new reservation for a donation',
   })

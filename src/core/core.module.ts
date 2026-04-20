@@ -10,6 +10,7 @@ import { ChatModule } from './chat/chat.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { StatsModule } from './stats/stats.module';
+import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StatsModule } from './stats/stats.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ReservationCompletionModule,
     ChatModule,
     GamificationModule,
     ReportingModule,
@@ -33,6 +35,7 @@ import { StatsModule } from './stats/stats.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ReservationCompletionModule,
     ChatModule,
     GamificationModule,
     ReportingModule,

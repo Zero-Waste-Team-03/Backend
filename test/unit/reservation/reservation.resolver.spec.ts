@@ -9,6 +9,7 @@ describe('ReservationResolver', () => {
 
   const mockReservationService = {
     findMyReservations: jest.fn(),
+    findDonationReservations: jest.fn(),
     findMyReservationById: jest.fn(),
     reserveDonation: jest.fn(),
     confirmReservation: jest.fn(),
@@ -79,6 +80,37 @@ describe('ReservationResolver', () => {
       await resolver.reserveDonation({ donationId: 'd1', quantity: 3 }, 'u1');
 
       expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 3);
+    });
+  });
+
+  describe('donationReservations', () => {
+    it('passes donationId, userId and pagination to service', async () => {
+      const paginated = {
+        items: [],
+        totalCount: 0,
+        page: 1,
+        limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      };
+
+      mockReservationService.findDonationReservations.mockResolvedValue(
+        paginated,
+      );
+
+      const pagination = { page: 1, limit: 10 };
+      const result = await resolver.donationReservations(
+        'd1',
+        'u1',
+        pagination,
+      );
+
+      expect(service.findDonationReservations).toHaveBeenCalledWith(
+        'd1',
+        'u1',
+        pagination,
+      );
+      expect(result).toEqual(paginated);
     });
   });
 });
