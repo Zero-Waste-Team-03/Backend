@@ -85,8 +85,8 @@ export class ReservationResolver {
     return this.reservationService.reserveDonation(
       input.donationId,
       beneficiaryId,
-      input.quantity ?? 1,
-    ) as any;
+      1,
+    ) as any; 
   }
 
   @UseGuards(AccessTokenGuard)
