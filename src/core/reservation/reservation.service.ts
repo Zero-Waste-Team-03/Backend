@@ -125,6 +125,8 @@ export class ReservationService {
     beneficiaryId: string,
     quantity = 1,
   ): Promise<Reservation> {
+      
+      console.log({donationId})
     if (!Number.isInteger(quantity) || quantity < 1) {
       throwAppError('RESERVATION_QUANTITY_INVALID', { quantity });
     }
@@ -192,7 +194,8 @@ export class ReservationService {
           });
         }
 
-        const reservation = manager.create(Reservation, {
+        console.log("Creating reservation with quantity", {quantity, remainingQuantity})
+        const reservation = manager.getRepository(Reservation).create({
           donationId,
           beneficiaryId,
           quantity,
@@ -200,7 +203,8 @@ export class ReservationService {
           confirmedAt: new Date(),
         });
 
-        const savedReservation = await manager.save(Reservation, reservation);
+        const savedReservation = await manager.getRepository(Reservation).save(reservation);
+
 
         // TODO: Re-enable delayed expiration scheduling if product requirements require it.
 

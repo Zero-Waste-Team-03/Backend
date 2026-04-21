@@ -81,6 +81,7 @@ export class ReservationResolver {
     @Args() input: ReserveDonationInput,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
+
     return this.reservationService.reserveDonation(
       input.donationId,
       beneficiaryId,
