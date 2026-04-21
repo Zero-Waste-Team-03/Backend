@@ -126,7 +126,6 @@ export class ReservationService {
     quantity = 1,
   ): Promise<Reservation> {
       
-      console.log({donationId})
     if (!Number.isInteger(quantity) || quantity < 1) {
       throwAppError('RESERVATION_QUANTITY_INVALID', { quantity });
     }
