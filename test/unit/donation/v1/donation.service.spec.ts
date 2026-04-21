@@ -578,6 +578,7 @@ describe('DonationService', () => {
       const qb = {
         innerJoin: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -661,6 +662,7 @@ describe('DonationService', () => {
       const qb = {
         innerJoin: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
