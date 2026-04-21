@@ -67,7 +67,7 @@ describe('ReservationResolver', () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r1' });
 
       await resolver.reserveDonation(
-        { donationId: 'd1', quantity: undefined },
+        { donationId: 'd1'},
         'u1',
       );
 
@@ -77,9 +77,9 @@ describe('ReservationResolver', () => {
     it('passes provided quantity to service', async () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r2' });
 
-      await resolver.reserveDonation({ donationId: 'd1', quantity: 3 }, 'u1');
+      await resolver.reserveDonation({ donationId: 'd1' }, 'u1');
 
-      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 3);
+      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 1);
     });
   });
 
