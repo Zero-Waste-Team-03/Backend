@@ -740,10 +740,9 @@ export class DonationService {
         'donation_like.donationId = donation.id AND donation_like.userId = :userId',
         { userId },
       )
-      .orderBy('donation_like.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
-
+  .addSelect('donation_like.createdAt', 'donation_like_createdat') 
+      .orderBy('donation_like_createdat', 'DESC').skip(skip).take(limit);
+      
     if (filter?.categoryId) {
       query.andWhere('donation.categoryId = :categoryId', {
         categoryId: filter.categoryId,

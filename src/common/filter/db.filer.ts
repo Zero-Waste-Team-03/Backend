@@ -227,9 +227,9 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     const method = request?.method ?? 'UNKNOWN';
     const url = request?.url ?? request?.originalUrl ?? 'UNKNOWN';
 
+      console.log(`Database Error: ${method} ${url} - ${exception.message} ${exception.stack}`);
     if (statusCode >= 500) {
-      this.logger.error({
-        message: 'Database error',
+      this.logger.error("Database Error",{
         method,
         url,
         statusCode,
@@ -238,8 +238,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
         context: 'DatabaseExceptionFilter',
       });
     } else {
-      this.logger.warn({
-        message: 'Database warning',
+
+      this.logger.warn("Database Warning",{
         method,
         url,
         statusCode,
