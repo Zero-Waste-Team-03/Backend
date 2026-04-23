@@ -599,12 +599,7 @@ type Mutation {
   registerFcmToken(fcmToken: String!): MessageResponse!
 
   """Create a new reservation for a donation"""
-  reserveDonation(
-    donationId: ID!
-
-    """Number of units to reserve (defaults to 1)"""
-    quantity: Int = 1
-  ): Reservation!
+  reserveDonation(donationId: ID!): Reservation!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
