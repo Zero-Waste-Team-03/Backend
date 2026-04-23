@@ -1,4 +1,4 @@
-import { ArgsType, Field, ID, Int } from '@nestjs/graphql';
+import { ArgsType, Field, ID} from '@nestjs/graphql';
 import { IsUUID } from 'class-validator';
 
 @ArgsType()
