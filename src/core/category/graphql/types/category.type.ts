@@ -15,6 +15,8 @@ export class CategoryType {
 
   @Field(() => CategorySensitivityValues)
   sensitivity: string;
+  @Field(() => Number, { description:"The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0."})
+  reputationGain: number;
 
   @Field(() => Date)
   createdAt: Date;
