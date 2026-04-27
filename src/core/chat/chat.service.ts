@@ -358,6 +358,7 @@ export class ChatService {
 
         const donation = await manager.findOne(Donation, {
           where: { id: reservation.donationId },
+          relations:{category:true},
           lock: { mode: 'pessimistic_write' },
         });
 
@@ -438,7 +439,8 @@ export class ChatService {
           await manager
             .createQueryBuilder()
             .update(User)
-            .set({ reputationScore: () => '"reputationScore" + 5' })
+            .set({ reputationScore: () => '"reputationScore" + :reputationGain' })
+            .setParameter('reputationGain', donation.category.reputationGain)
             .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
             .execute();
 
