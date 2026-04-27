@@ -114,6 +114,11 @@ type Category {
   createdAt: DateTime!
   id: ID!
   name: String!
+
+  """
+  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  """
+  reputationGain: Float!
   sensitivity: CategorySensitivity!
   updatedAt: DateTime!
 }
@@ -197,6 +202,11 @@ input CreateBadgeInput {
 
 input CreateCategoryInput {
   name: String!
+
+  """
+  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  """
+  reputationGain: Float
   sensitivity: CategorySensitivity
 }
 
@@ -1040,6 +1050,11 @@ input UpdateBadgeInput {
 
 input UpdateCategoryInput {
   name: String
+
+  """
+  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  """
+  reputationGain: Float
   sensitivity: CategorySensitivity
 }
 

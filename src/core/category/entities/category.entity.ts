@@ -33,8 +33,8 @@ export class Category {
   sensitivity: CategorySensitivity;
 
   @Column({
-    type:'number',
-    default: 0,
+    type:'int',
+    default: 10,
   })
   reputationGain: number;
   @CreateDateColumn()
