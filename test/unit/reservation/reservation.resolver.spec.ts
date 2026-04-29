@@ -77,9 +77,9 @@ describe('ReservationResolver', () => {
     it('passes provided quantity to service', async () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r2' });
 
-      await resolver.reserveDonation({ donationId: 'd1' }, 'u1');
+      await resolver.reserveDonation({ donationId: 'd1',quantity:2 }, 'u1');
 
-      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 1);
+      expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 2);
     });
   });
 
