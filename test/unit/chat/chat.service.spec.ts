@@ -372,6 +372,7 @@ describe('ChatService', () => {
           userId: 'donor-1',
           quantity: 2,
           status: DonationStatusValues.PUBLISHED,
+          category: { reputationGain: 10 },
         })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: 'done-donor' })
@@ -387,6 +388,7 @@ describe('ChatService', () => {
       createQueryBuilder: jest.fn().mockReturnValue({
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         execute: jest.fn().mockResolvedValue(undefined),
       }),
@@ -408,6 +410,10 @@ describe('ChatService', () => {
         quantity: 0,
         status: DonationStatusValues.COMPLETED,
       }),
+    );
+    expect(manager.createQueryBuilder().setParameter).toHaveBeenCalledWith(
+      'reputationGain',
+      10,
     );
     expect(result.status).toBe('Archived');
   });

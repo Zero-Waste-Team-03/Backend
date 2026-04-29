@@ -114,6 +114,11 @@ type Category {
   createdAt: DateTime!
   id: ID!
   name: String!
+
+  """
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
+  """
+  reputationGain: Int!
   sensitivity: CategorySensitivity!
   updatedAt: DateTime!
 }
@@ -197,6 +202,11 @@ input CreateBadgeInput {
 
 input CreateCategoryInput {
   name: String!
+
+  """
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
+  """
+  reputationGain: Int
   sensitivity: CategorySensitivity
 }
 
@@ -599,12 +609,7 @@ type Mutation {
   registerFcmToken(fcmToken: String!): MessageResponse!
 
   """Create a new reservation for a donation"""
-  reserveDonation(
-    donationId: ID!
-
-    """Number of units to reserve (defaults to 1)"""
-    quantity: Int = 1
-  ): Reservation!
+  reserveDonation(donationId: ID!): Reservation!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
@@ -1045,6 +1050,11 @@ input UpdateBadgeInput {
 
 input UpdateCategoryInput {
   name: String
+
+  """
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
+  """
+  reputationGain: Int
   sensitivity: CategorySensitivity
 }
 
