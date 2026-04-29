@@ -67,7 +67,7 @@ describe('ReservationResolver', () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r1' });
 
       await resolver.reserveDonation(
-        { donationId: 'd1'},
+        { donationId: 'd1', quantity:1},
         'u1',
       );
 
