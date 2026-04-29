@@ -15,7 +15,6 @@ import { DangerousDonationsArgs } from './graphql/inputs/dangerous-donations.arg
 import { PaginatedDangerousDonations } from './graphql/types/paginated-dangerous-donations.type';
 import { ReportStatsInput } from './graphql/inputs/report-stats.input';
 import { ReportStatsType } from './graphql/types/report-stats.type';
-import { Report } from './entities/report.entity';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 
