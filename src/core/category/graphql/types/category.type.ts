@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { CategorySensitivityValues } from '../../entities/category.entity';
 
 registerEnumType(CategorySensitivityValues, {
@@ -15,6 +15,11 @@ export class CategoryType {
 
   @Field(() => CategorySensitivityValues)
   sensitivity: string;
+  @Field(() => Int, {
+    description:
+      'The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.',
+  })
+  reputationGain: number;
 
   @Field(() => Date)
   createdAt: Date;

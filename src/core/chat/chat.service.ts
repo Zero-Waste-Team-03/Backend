@@ -322,6 +322,9 @@ export class ChatService {
     );
     return conversation.status;
   }
+  private getReputationIncrease(donation: Donation): number {
+    return donation.category.reputationGain;
+  }
 
   async markTransactionCompleted(
     dto: MarkTransactionCompletedDto,
@@ -358,6 +361,7 @@ export class ChatService {
 
         const donation = await manager.findOne(Donation, {
           where: { id: reservation.donationId },
+          relations:{category:true},
           lock: { mode: 'pessimistic_write' },
         });
 
@@ -434,11 +438,13 @@ export class ChatService {
 
             await manager.save(Donation, donation);
           }
+          const reputationGain = this.getReputationIncrease(donation);
 
           await manager
             .createQueryBuilder()
             .update(User)
-            .set({ reputationScore: () => '"reputationScore" + 5' })
+            .set({ reputationScore: () => '"reputationScore" + :reputationGain' })
+            .setParameter('reputationGain', reputationGain)
             .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
             .execute();
 
