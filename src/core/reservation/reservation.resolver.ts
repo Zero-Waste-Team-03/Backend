@@ -85,7 +85,7 @@ export class ReservationResolver {
     return this.reservationService.reserveDonation(
       input.donationId,
       beneficiaryId,
-      1,
+      input.quantity,
     ) as any; 
   }
 
