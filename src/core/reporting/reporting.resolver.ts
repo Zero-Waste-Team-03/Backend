@@ -1,10 +1,10 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { Roles } from '../authentication/decorators/roles.decorator';
-import { UserRoleValues } from '../user/entities/user.entity';
+import { User, UserRoleValues } from '../user/entities/user.entity';
 import { ReportingService } from './reporting.service';
 import { CreateReportInput } from './graphql/inputs/create-report.input';
 import { ReportType } from './graphql/types/report.type';
@@ -15,6 +15,9 @@ import { DangerousDonationsArgs } from './graphql/inputs/dangerous-donations.arg
 import { PaginatedDangerousDonations } from './graphql/types/paginated-dangerous-donations.type';
 import { ReportStatsInput } from './graphql/inputs/report-stats.input';
 import { ReportStatsType } from './graphql/types/report-stats.type';
+import { Report } from './entities/report.entity';
+import { UserType } from '../authentication/graphql/types/user.type';
+import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ReportType)
@@ -86,5 +89,12 @@ export class ReportingResolver {
     @Args('input') input: ReportStatsInput,
   ): Promise<ReportStatsType> {
     return this.reportingService.getReportStats(input);
+  }
+  @ResolveField(()=>UserType)
+  async reporter(@Parent() report:ReportType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+): Promise<User | null> {
+  if (report.reporterId) return null
+    return loaders.userLoader.load(report.reporterId);
   }
 }
