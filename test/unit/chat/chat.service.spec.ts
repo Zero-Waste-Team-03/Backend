@@ -411,6 +411,10 @@ describe('ChatService', () => {
         status: DonationStatusValues.COMPLETED,
       }),
     );
+    expect(manager.createQueryBuilder().setParameter).toHaveBeenCalledWith(
+      'reputationGain',
+      10,
+    );
     expect(result.status).toBe('Archived');
   });
 

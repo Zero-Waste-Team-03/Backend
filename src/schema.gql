@@ -116,9 +116,9 @@ type Category {
   name: String!
 
   """
-  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
   """
-  reputationGain: Float!
+  reputationGain: Int!
   sensitivity: CategorySensitivity!
   updatedAt: DateTime!
 }
@@ -204,9 +204,9 @@ input CreateCategoryInput {
   name: String!
 
   """
-  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
   """
-  reputationGain: Float
+  reputationGain: Int
   sensitivity: CategorySensitivity
 }
 
@@ -1052,9 +1052,9 @@ input UpdateCategoryInput {
   name: String
 
   """
-  The amount of reputation points a user gains when they complete a donation  in this category. Defaults to 0.
+  The amount of reputation points a user gains when they complete a donation in this category. Defaults to 10.
   """
-  reputationGain: Float
+  reputationGain: Int
   sensitivity: CategorySensitivity
 }
 
