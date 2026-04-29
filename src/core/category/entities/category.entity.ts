@@ -32,6 +32,11 @@ export class Category {
   })
   sensitivity: CategorySensitivity;
 
+  @Column({
+    type:'int',
+    default: 10,
+  })
+  reputationGain: number;
   @CreateDateColumn()
   createdAt: Date;
 
