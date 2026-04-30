@@ -28,6 +28,14 @@ export class UserSettingsDto {
   isSystemReports?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Whether push notifications are enabled',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPushNotificationsEnabled?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Application theme preference',
     enum: AppearanceTheme,
     example: AppearanceTheme.SYSTEM,

@@ -7,11 +7,12 @@ import { Notification } from './entities/notification.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SmartNotificationSubscriberService } from './pubsub/smart-notification-subscriber.service';
 import { SmartBehaviorPublisherService } from './pubsub/smart-behavior-publisher.service';
+import { UserSettings } from '../user/entities/user-settings.entity';
 
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Token, Notification]),
+    TypeOrmModule.forFeature([Token, Notification, UserSettings]),
     ScheduleModule.forRoot(),
   ],
   controllers: [],
