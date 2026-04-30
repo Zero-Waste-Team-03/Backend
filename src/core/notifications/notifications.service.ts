@@ -170,14 +170,16 @@ export class NotificationsService {
   async registerToken(
     fcmToken: string,
     userId: string,
+    deviceId: string,
   ): Promise<{ message: string }> {
     try {
       await this.tokenRepo.upsert(
         {
           fcmToken,
           userId,
+          deviceId,
         },
-        ['fcmToken'],
+        ['userId', 'deviceId'],
       );
 
       this.logger.log({
@@ -230,6 +232,24 @@ export class NotificationsService {
    */
   async revokeAllTokensForUser(userId: string): Promise<void> {
     await this.tokenRepo.delete({ userId });
+  }
+
+  /**
+   * Removes the FCM token registered for a specific user/device pair.
+   * No-op if no such row exists.
+   * @param userId - The ID of the user logging out.
+   * @param deviceId - The device identifier sent by the client.
+   */
+  async revokeTokenForDevice(
+    userId: string,
+    deviceId: string,
+  ): Promise<void> {
+    await this.tokenRepo.delete({ userId, deviceId });
+    this.logger.log({
+      message: 'FCM token revoked for device',
+      userId,
+      context: 'Notifications',
+    });
   }
 
   /**
