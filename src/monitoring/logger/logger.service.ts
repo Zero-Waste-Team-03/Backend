@@ -43,20 +43,8 @@ export class LoggerServiceBuilder {
           winston.format.colorize(),
           winston.format.simple(),
           winston.format.timestamp(),
-          winston.format.printf(
-            ({
-              timestamp,
-              level,
-              message,
-            }: {
-              timestamp: string;
-              level: string;
-              message: string;
-            }) => {
-              return `${timestamp} ${level}: ${message}`;
-            },
-          ),
-        ),
+          winston.format.json(),
+          winston.format.errors({ stack: true })),
         level: process.env.LOG_LEVEL || 'info',
       }),
     ];
