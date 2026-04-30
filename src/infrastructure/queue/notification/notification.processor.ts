@@ -11,6 +11,9 @@ import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { FirebaseService } from 'src/infrastructure/firebase/firebase.service';
 import { NotificationType } from 'src/core/notifications/enums/notification-type.enum';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 
 class SendNotificationJob {
   title: string;
@@ -51,6 +54,8 @@ export class NotificationProcessor extends WorkerHost {
   constructor(
     private readonly notificationsService: NotificationsService,
     private readonly firebaseService: FirebaseService,
+    @InjectRepository(UserSettings)
+    private readonly userSettingsRepository: Repository<UserSettings>,
   ) {
     super();
   }
@@ -144,6 +149,17 @@ export class NotificationProcessor extends WorkerHost {
       context: 'NotificationProcessor',
     });
 
+    const isPushEnabled = await this.isPushNotificationsEnabled(data.userId);
+    if (!isPushEnabled) {
+      this.logger.log({
+        message: 'Skipping FCM send: push notifications disabled',
+        userId: data.userId,
+        type: data.type,
+        context: 'NotificationProcessor',
+      });
+      return;
+    }
+
     const tokensWithLangs =
       await this.notificationsService.getActiveTokensForUser(data.userId);
 
@@ -233,6 +249,19 @@ export class NotificationProcessor extends WorkerHost {
       error.message?.includes('ECONNRESET') ||
       error.message?.includes('ETIMEDOUT')
     );
+  }
+
+  /**
+   * Check whether a user has push notifications enabled.
+   * Defaults to true when settings are missing.
+   * @param userId - User identifier to resolve settings for.
+   */
+  private async isPushNotificationsEnabled(userId: string): Promise<boolean> {
+    const settings = await this.userSettingsRepository.findOne({
+      where: { userId },
+      select: { isPushNotificationsEnabled: true },
+    });
+    return settings?.isPushNotificationsEnabled ?? true;
   }
 
   @OnWorkerEvent('completed')

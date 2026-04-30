@@ -30,6 +30,9 @@ export class UserSettings {
   @Column({ type: 'boolean', default: false })
   isSystemReports: boolean;
 
+  @Column({ type: 'boolean', default: true })
+  isPushNotificationsEnabled: boolean;
+
   @Column({
     type: 'enum',
     enum: AppearanceTheme,
