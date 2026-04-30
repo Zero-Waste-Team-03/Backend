@@ -1,6 +1,7 @@
 import { NotificationProcessor } from 'src/infrastructure/queue/notification/notification.processor';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { FirebaseService } from 'src/infrastructure/firebase/firebase.service';
+import { UserService } from 'src/core/user/v1/user.service';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
 
@@ -17,23 +18,23 @@ describe('NotificationProcessor', () => {
     })),
   } as unknown as FirebaseService;
 
-  const userSettingsRepository = {
-    findOne: jest.fn(),
-  };
+  const userService = {
+    getUserSettings: jest.fn(),
+  } as unknown as UserService;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('skips FCM send when push notifications are disabled', async () => {
-    userSettingsRepository.findOne.mockResolvedValue({
+    (userService.getUserSettings as jest.Mock).mockResolvedValue({
       isPushNotificationsEnabled: false,
     });
 
     const processor = new NotificationProcessor(
       notificationsService,
       firebaseService,
-      userSettingsRepository as any,
+      userService,
     );
 
     await processor.process({
@@ -56,7 +57,7 @@ describe('NotificationProcessor', () => {
     (firebaseService.getFcm as jest.Mock).mockReturnValue({
       send,
     });
-    userSettingsRepository.findOne.mockResolvedValue({
+    (userService.getUserSettings as jest.Mock).mockResolvedValue({
       isPushNotificationsEnabled: true,
     });
     (notificationsService.getActiveTokensForUser as jest.Mock).mockResolvedValue([
@@ -66,7 +67,7 @@ describe('NotificationProcessor', () => {
     const processor = new NotificationProcessor(
       notificationsService,
       firebaseService,
-      userSettingsRepository as any,
+      userService,
     );
 
     await processor.process({

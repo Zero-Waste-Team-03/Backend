@@ -11,9 +11,7 @@ import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { FirebaseService } from 'src/infrastructure/firebase/firebase.service';
 import { NotificationType } from 'src/core/notifications/enums/notification-type.enum';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserSettings } from 'src/core/user/entities/user-settings.entity';
+import { UserService } from 'src/core/user/v1/user.service';
 
 class SendNotificationJob {
   title: string;
@@ -54,8 +52,7 @@ export class NotificationProcessor extends WorkerHost {
   constructor(
     private readonly notificationsService: NotificationsService,
     private readonly firebaseService: FirebaseService,
-    @InjectRepository(UserSettings)
-    private readonly userSettingsRepository: Repository<UserSettings>,
+    private readonly userService: UserService,
   ) {
     super();
   }
@@ -257,10 +254,7 @@ export class NotificationProcessor extends WorkerHost {
    * @param userId - User identifier to resolve settings for.
    */
   private async isPushNotificationsEnabled(userId: string): Promise<boolean> {
-    const settings = await this.userSettingsRepository.findOne({
-      where: { userId },
-      select: { isPushNotificationsEnabled: true },
-    });
+    const settings = await this.userService.getUserSettings(userId);
     return settings?.isPushNotificationsEnabled ?? true;
   }
 

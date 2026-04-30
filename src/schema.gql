@@ -609,7 +609,7 @@ type Mutation {
   registerFcmToken(fcmToken: String!): MessageResponse!
 
   """Create a new reservation for a donation"""
-  reserveDonation(donationId: ID!): Reservation!
+  reserveDonation(donationId: ID!, quantity: Int = 1): Reservation!
 
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
@@ -900,6 +900,7 @@ type Report {
   description: String
   id: ID!
   reason: String!
+  reporter: User!
   reporterId: ID!
   reviewedAt: DateTime
   reviewedById: ID
@@ -1205,6 +1206,7 @@ type UserSettings {
   appearance: AppearanceTheme!
   id: String!
   isNewDonationsAlertsEnabled: Boolean!
+  isPushNotificationsEnabled: Boolean!
   isSystemReports: Boolean!
   isUrgentAlertsEnabled: Boolean!
   userId: String!
@@ -1213,6 +1215,7 @@ type UserSettings {
 input UserSettingsInput {
   appearance: AppearanceTheme
   isNewDonationsAlertsEnabled: Boolean
+  isPushNotificationsEnabled: Boolean
   isSystemReports: Boolean
   isUrgentAlertsEnabled: Boolean
 }
