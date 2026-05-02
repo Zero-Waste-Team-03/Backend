@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DonationResolver } from 'src/core/donation/donation.resolver';
 import { DonationService } from 'src/core/donation/v1/donation.service';
 import { DonationUrgencyValues } from 'src/core/donation/entities/donation.entity';
+import { UsersDonationsStats } from 'src/core/donation/graphql/types/donations-stats.type';
 
 describe('DonationResolver', () => {
   let resolver: DonationResolver;
@@ -9,6 +10,7 @@ describe('DonationResolver', () => {
 
   const mockDonationService = {
     getStatistics: jest.fn(),
+    getUsersDonationsStats:jest.fn(),
     findAll: jest.fn(),
     findLikedDonations: jest.fn(),
     getDonationById: jest.fn(),
@@ -44,6 +46,19 @@ describe('DonationResolver', () => {
   });
 
   describe('donationStatistics', () => {
+
+    it ("Should return current user's donation statistics", async () => {
+      const stats:UsersDonationsStats={
+        likedDonations: 5,
+        totalDonations: 20,
+      }
+      mockDonationService.getUsersDonationsStats.mockResolvedValue(stats);
+      const result= await resolver.myDonationsStats('u1');
+      
+      expect(service.getUsersDonationsStats).toHaveBeenCalledWith('u1');
+      expect(result).toEqual(stats);
+      })
+    
     it('should return donation statistics', async () => {
       const stats = {
         totalActiveDonations: 10,

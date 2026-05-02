@@ -35,6 +35,7 @@ import {
 import { User } from 'src/core/user/entities/user.entity';
 import { DonationsHeatmapInput } from '../graphql/inputs/donations-heatmap.input';
 import { DonationsHeatmapType } from '../graphql/types/donations-heatmap.type';
+import { UsersDonationsStats } from '../graphql/types/donations-stats.type';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -630,6 +631,8 @@ export class DonationService {
       donorId: userId,
       donationId: savedDonation.id,
       categoryId: savedDonation.categoryId,
+      category: savedDonation.category?.name ?? '',
+      donationTitle:savedDonation.title,
       urgency: savedDonation.urgency,
       safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
     });
@@ -697,6 +700,7 @@ export class DonationService {
     const donation = await this.donationRepository.findOne({
       where: { id: donationId },
       select: ['id', 'userId'],
+      relations:{category:true}
     });
 
     if (!donation) {
@@ -714,11 +718,17 @@ export class DonationService {
       .values({ donationId, userId })
       .orIgnore()
       .execute();
+      await this.smartBehaviorPublisher.publishLikedDonation({
+        donationTitle: donation.title,
+        category: donation.category?.name ?? '',
+        donationId: donation.id,
+      })
 
     return { message: 'Donation liked successfully' };
   }
 
   async unlikeDonation(donationId: string, userId: string) {
+  
     await this.donationLikeRepository.delete({ donationId, userId });
     return { message: 'Donation unliked successfully' };
   }
@@ -948,4 +958,13 @@ export class DonationService {
       };
     });
   }
+  async getUsersDonationsStats(userId:string):Promise<UsersDonationsStats>{
+    const [ totalDonations,likedDonations  ]= await Promise.all( [ this.donationRepository.count({where:{userId}}) ,this.donationLikeRepository.count({
+      where:{userId}
+    })
+    ] );
+    return {
+      totalDonations,
+      likedDonations}
+    }
 }

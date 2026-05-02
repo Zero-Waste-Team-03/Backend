@@ -173,6 +173,8 @@ services:
   redis:
     image: redis:alpine
     restart: always
+    ports:
+      - '6379:6379' ## Expose Redis to test the engine remove this after integratiog with compose internal network
     networks:
       - proxy
     healthcheck:

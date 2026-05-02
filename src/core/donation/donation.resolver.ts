@@ -33,12 +33,19 @@ import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 import { Category } from '../category/entities/category.entity';
+import { UsersDonationsStats } from './graphql/types/donations-stats.type';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
   constructor(private readonly donationService: DonationService) {}
 
+  @Query(()=>UsersDonationsStats,{
+    description:"Get the current user profile stats related to donations,"
+  })
+  async myDonationsStats(@USER('id') userId:string):Promise<UsersDonationsStats>{
+    return this.donationService.getUsersDonationsStats(userId);
+  }
   @Query(() => DonationStatisticsType, {
     description:
       'Get statistics for donations (total active, flagged, pending approvals)',

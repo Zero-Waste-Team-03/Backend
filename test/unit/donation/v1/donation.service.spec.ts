@@ -17,6 +17,7 @@ import { SmartBehaviorPublisherService } from 'src/core/notifications/pubsub/sma
 
 import { In } from 'typeorm';
 import { MarkerColorValues } from 'src/core/donation/graphql/types/donation-map-marker.type';
+import { UsersDonationsStats } from 'src/core/donation/graphql/types/donations-stats.type';
 
 describe('DonationService', () => {
   let service: DonationService;
@@ -47,6 +48,7 @@ describe('DonationService', () => {
 
   const donationLikeRepository = {
     find: jest.fn(),
+    count: jest.fn(),
     createQueryBuilder: jest.fn(),
     delete: jest.fn(),
   };
@@ -476,6 +478,22 @@ describe('DonationService', () => {
     });
   });
   describe('getStatistics', () => {
+    it ('returns Current users donations statistics',async ()=>{
+      const stats:UsersDonationsStats={
+        totalDonations: 20,
+        likedDonations:5
+      }
+      donationRepository.count.mockImplementation((options) =>{
+        if (options.where.userId === 'u1') return 20;
+      })
+      donationLikeRepository.count.mockImplementation((options)=>{
+        if (options.where.userId === 'u1') return 5;
+      })
+      const result= await service.getUsersDonationsStats('u1');
+      expect(result).toEqual(stats);
+      expect(donationRepository.count).toHaveBeenCalledWith({where:{userId:'u1'}});
+      expect(donationLikeRepository.count).toHaveBeenCalledWith({where:{userId:'u1'}});
+    })
     it('returns correct counts for active, flagged and pending donations', async () => {
       donationRepository.count.mockImplementation((options) => {
         if (options.where.status === DonationStatusValues.PUBLISHED) return 10;
