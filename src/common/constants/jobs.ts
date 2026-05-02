@@ -44,3 +44,9 @@ export const CHAT_JOBS = {
 export const GAMIFICATION_JOBS = {
   EVALUATE_COMPLETION_ACHIEVEMENTS: 'evaluate-completion-achievements',
 } as const;
+
+export const BEHAVIOR_EVENT_JOBS = {
+  PUBLISH_LIKED_DONATION: 'publish-liked-donation',
+  PUBLISH_DONATION_PUBLISHED: 'publish-donation-published',
+  PUBLISH_BENEFICIARY_SEARCH: 'publish-beneficiary-search',
+} as const;
