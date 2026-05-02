@@ -36,7 +36,6 @@ import { User } from 'src/core/user/entities/user.entity';
 import { DonationsHeatmapInput } from '../graphql/inputs/donations-heatmap.input';
 import { DonationsHeatmapType } from '../graphql/types/donations-heatmap.type';
 import { UsersDonationsStats } from '../graphql/types/donations-stats.type';
-import { randomUUID } from 'crypto';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];

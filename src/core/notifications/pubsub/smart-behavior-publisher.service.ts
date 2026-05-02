@@ -11,7 +11,6 @@ import {
   DonationPublishedEvent,
 } from '../events/behavior-event.model';
 import { randomUUID } from 'crypto';
-import { Donation } from 'src/core/donation/entities/donation.entity';
 
 type BeneficiarySearchPayload = {
   userId: string;
