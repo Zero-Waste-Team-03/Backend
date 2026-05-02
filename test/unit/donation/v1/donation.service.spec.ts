@@ -64,6 +64,7 @@ describe('DonationService', () => {
   const smartBehaviorPublisher = {
     safePublishBeneficiarySearchPerformed: jest.fn(),
     safePublishDonationPublished: jest.fn(),
+    publishLikedDonation: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -175,6 +176,8 @@ describe('DonationService', () => {
         donorId: 'u1',
         donationId: createdEntity.id,
         categoryId: createdEntity.categoryId,
+        donationTitle: createdEntity.title,
+        category: '',
         urgency: createdEntity.urgency,
         safetyChecklistCompleted: createdEntity.safetyChecklistCompleted,
       });
@@ -625,6 +628,8 @@ describe('DonationService', () => {
       donationRepository.findOne.mockResolvedValue({
         id: 'd1',
         userId: 'u-owner',
+        title: 'Bread packs',
+        category: { name: 'Food' },
       });
       donationLikeRepository.createQueryBuilder.mockReturnValue(insertBuilder);
 
@@ -634,10 +639,16 @@ describe('DonationService', () => {
       expect(donationRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'd1' },
         select: ['id', 'userId'],
+        relations: { category: true },
       });
       expect(insertBuilder.values).toHaveBeenCalledWith({
         donationId: 'd1',
         userId: 'u-viewer',
+      });
+      expect(smartBehaviorPublisher.publishLikedDonation).toHaveBeenCalledWith({
+        donationId: 'd1',
+        donationTitle: 'Bread packs',
+        category: 'Food',
       });
     });
 
