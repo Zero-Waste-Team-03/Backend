@@ -35,6 +35,7 @@ import {
 import { User } from 'src/core/user/entities/user.entity';
 import { DonationsHeatmapInput } from '../graphql/inputs/donations-heatmap.input';
 import { DonationsHeatmapType } from '../graphql/types/donations-heatmap.type';
+import { UsersDonationsStats } from '../graphql/types/donations-stats.type';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
@@ -948,4 +949,13 @@ export class DonationService {
       };
     });
   }
+  async getUsersDonationsStats(userId:string):Promise<UsersDonationsStats>{
+    const [ totalDonations,likedDonations  ]= await Promise.all( [ this.donationRepository.count({where:{userId}}) ,this.donationLikeRepository.count({
+      where:{userId}
+    })
+    ] );
+    return {
+      totalDonations,
+      likedDonations}
+    }
 }
