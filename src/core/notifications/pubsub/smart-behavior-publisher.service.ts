@@ -11,10 +11,12 @@ import {
   DonationPublishedEvent,
 } from '../events/behavior-event.model';
 import { randomUUID } from 'crypto';
+import { Donation } from 'src/core/donation/entities/donation.entity';
 
 type BeneficiarySearchPayload = {
   userId: string;
   categoryId?: string;
+  category?: string;
   urgency?: string;
   distanceBucket?: SearchDistanceBucket;
   origin?: SearchViewOrigin;
@@ -23,10 +25,17 @@ type BeneficiarySearchPayload = {
 type DonationPublishedPayload = {
   donorId: string;
   donationId: string;
+  donationTitle:string;
   categoryId: string;
+  category:string;
   urgency: string;
   safetyChecklistCompleted: boolean;
 };
+type LikedDonationPayload={
+  donationId:string;
+  donationTitle:string;
+  category:string;
+}
 
 @Injectable()
 export class SmartBehaviorPublisherService {
@@ -34,6 +43,23 @@ export class SmartBehaviorPublisherService {
 
   constructor(private readonly redisService: RedisService) {}
 
+  async publishLikedDonation(
+    payload: LikedDonationPayload,
+  ): Promise<void> {
+    const event = {
+      eventId: randomUUID(),
+      timestamp: new Date().toISOString(),
+      eventName: BEHAVIOR_EVENT_NAME.LIKED_DONATION,
+      donationId: payload.donationId,
+      donationTitle: payload.donationTitle,
+      category: payload.category,
+    };
+
+    await this.redisService.publish(
+      REDIS_PUBSUB_CHANNELS.SMART_BEHAVIOR_EVENTS,
+      JSON.stringify(event),
+    );
+  }
   async publishBeneficiarySearchPerformed(
     payload: BeneficiarySearchPayload,
   ): Promise<void> {
@@ -42,7 +68,7 @@ export class SmartBehaviorPublisherService {
       timestamp: new Date().toISOString(),
       eventName: BEHAVIOR_EVENT_NAME.BENEFICIARY_SEARCH_PERFORMED,
       userId: payload.userId,
-      categoryId: payload.categoryId,
+      category: payload.category,
       urgency: payload.urgency,
       distanceBucket: payload.distanceBucket,
       origin: payload.origin,
@@ -63,7 +89,8 @@ export class SmartBehaviorPublisherService {
       eventName: BEHAVIOR_EVENT_NAME.DONATION_PUBLISHED,
       donorId: payload.donorId,
       donationId: payload.donationId,
-      categoryId: payload.categoryId,
+      donationTitle:payload.donationTitle,
+      category: payload.category,
       urgency: payload.urgency,
       safetyChecklistCompleted: payload.safetyChecklistCompleted,
     };
