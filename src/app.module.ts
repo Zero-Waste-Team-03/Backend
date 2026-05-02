@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
+import {  Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigType } from '@nestjs/config';
