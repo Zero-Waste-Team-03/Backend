@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -16,6 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 
 @Entity('tokens')
+@Index('UQ_tokens_userId_deviceId', ['userId', 'deviceId'], { unique: true })
 export class Token {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty({
@@ -28,8 +30,15 @@ export class Token {
     description: 'The FCM or device token.',
     example: 'bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...',
   })
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   fcmToken: string;
+
+  @ApiProperty({
+    description: 'The device identifier sent by the client.',
+    example: 'device-7e23a9b0f1a2',
+  })
+  @Column({ type: 'varchar' })
+  deviceId: string;
 
   @ApiProperty({
     description: 'The ID of the user associated with the token.',

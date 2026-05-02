@@ -3,6 +3,7 @@ import { User } from 'src/core/user/entities/user.entity';
 import { AuthenticationResolver } from 'src/core/authentication/authentication.resolver';
 import { ResetPasswordInput } from 'src/core/authentication/graphql/inputs/reset-password.input';
 import { AuthenticationService } from 'src/core/authentication/v1/authentication.service';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
 
 describe('AuthenticationResolver', () => {
   let resolver: AuthenticationResolver;
@@ -13,6 +14,9 @@ describe('AuthenticationResolver', () => {
     resetPassword: jest.Mock;
     logoutFromAllDevices: jest.Mock;
   };
+  let notificationsService: {
+    revokeTokenForDevice: jest.Mock;
+  };
 
   beforeEach(async () => {
     service = {
@@ -22,6 +26,9 @@ describe('AuthenticationResolver', () => {
       resetPassword: jest.fn(),
       logoutFromAllDevices: jest.fn(),
     };
+    notificationsService = {
+      revokeTokenForDevice: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -29,6 +36,10 @@ describe('AuthenticationResolver', () => {
         {
           provide: AuthenticationService,
           useValue: service,
+        },
+        {
+          provide: NotificationsService,
+          useValue: notificationsService,
         },
       ],
     }).compile();
@@ -108,6 +119,20 @@ describe('AuthenticationResolver', () => {
       resetPasswordInput.password,
     );
     expect(result).toEqual(expectedResponse);
+  });
+
+  it('logout revokes the FCM token for the current device', async () => {
+    notificationsService.revokeTokenForDevice.mockResolvedValue(undefined);
+
+    const result = await resolver.logout('user-uuid', 'device-1');
+
+    expect(notificationsService.revokeTokenForDevice).toHaveBeenCalledWith(
+      'user-uuid',
+      'device-1',
+    );
+    expect(result).toEqual({
+      message: 'Logged out from device successfully.',
+    });
   });
 
   it('logoutFromAllDevices forwards user and returns message', async () => {

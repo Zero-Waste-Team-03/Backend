@@ -9,6 +9,7 @@ import { App } from 'supertest/types';
 import { AuthenticationResolver } from 'src/core/authentication/authentication.resolver';
 import { AuthenticationService } from 'src/core/authentication/v1/authentication.service';
 import { AccessTokenGuard } from 'src/core/authentication/guards/access-token.guard';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { ConfigModule } from '@nestjs/config';
 import authConfig from 'src/config/auth.config';
 import cloudinaryConfig from 'src/config/cloud.config';
@@ -27,6 +28,9 @@ describe('Authentication GraphQL (e2e)', () => {
     registerUser: jest.fn(),
     sendVerificationCode: jest.fn(),
     changePassword: jest.fn(),
+  };
+  const notificationsService = {
+    revokeTokenForDevice: jest.fn(),
   };
   const accessTokenGuard: CanActivate = {
     canActivate(context: ExecutionContext): boolean {
@@ -72,6 +76,7 @@ describe('Authentication GraphQL (e2e)', () => {
         TestQueryResolver,
         AuthenticationResolver,
         { provide: AuthenticationService, useValue: authService },
+        { provide: NotificationsService, useValue: notificationsService },
         {
           provide: authConfig.KEY,
           useValue: {
