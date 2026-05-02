@@ -1,6 +1,7 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards, Logger } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { DeviceId } from 'src/common/decorators/device-id.decorator';
 import { NotificationTypeGraphQL } from './graphql/types/notification.type';
 import { SendNotificationInput } from './graphql/inputs/send-notification.input';
 import { PaginationQueryInput } from './graphql/inputs/pagination-query.input';
@@ -9,6 +10,7 @@ import { SendNotificationResponseType } from './graphql/types/responses.type';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
+import { RequireDeviceIdGuard } from 'src/common/guards/require-device-id.guard';
 import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
 
 @Resolver(() => NotificationTypeGraphQL)
@@ -48,13 +50,18 @@ export class NotificationsResolver {
     );
   }
 
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RequireDeviceIdGuard)
   @Mutation(() => MessageResponseType)
   async registerFcmToken(
     @Args('fcmToken') input: string,
+    @DeviceId() deviceId: string,
     @USER('id') userId: string,
   ) {
-    const result = await this.notificationsService.registerToken(input, userId);
+    const result = await this.notificationsService.registerToken(
+      input,
+      userId,
+      deviceId,
+    );
     return { message: result.message };
   }
 

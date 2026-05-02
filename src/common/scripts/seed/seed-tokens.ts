@@ -21,8 +21,10 @@ import { User } from 'src/core/user/entities/user.entity';
 // ---------------------------------------------------------------------------
 
 type SeedToken = {
-  /** Firebase Cloud Messaging token (must be unique) */
+  /** Firebase Cloud Messaging token */
   fcmToken: string;
+  /** Stable per-device identifier (unique per user) */
+  deviceId: string;
   /** email of the owning user (must already be seeded) */
   userEmail: string;
 };
@@ -34,18 +36,22 @@ type SeedToken = {
 const BASE_TOKENS: SeedToken[] = [
   {
     fcmToken: 'seed_fcm_admin_device_01:APA91bHPRgkFLo...AdminToken',
+    deviceId: 'seed-device-admin-01',
     userEmail: 'admin@gaspzero.local',
   },
   {
     fcmToken: 'seed_fcm_admin_device_02:APA91bHPRgkFLo...AdminToken2',
+    deviceId: 'seed-device-admin-02',
     userEmail: 'admin@gaspzero.local',
   },
   {
     fcmToken: 'seed_fcm_user_device_01:bk3RNwTe3H0...UserToken',
+    deviceId: 'seed-device-user-01',
     userEmail: 'user@gaspzero.local',
   },
   {
     fcmToken: 'seed_fcm_org_device_01:c9RNwTe3H0...OrgToken',
+    deviceId: 'seed-device-org-01',
     userEmail: 'organization@gaspzero.local',
   },
 ];
@@ -62,6 +68,7 @@ function generateRandomTokens(count: number): SeedToken[] {
 
   return Array.from({ length: count }, (_, i) => ({
     fcmToken: `seed_fcm_generated_${i + 1}:APA91bGenerated${i + 1}RandomToken`,
+    deviceId: `seed-device-generated-${i + 1}`,
     userEmail: emails[i % emails.length],
   }));
 }
@@ -77,8 +84,8 @@ const TOKENS_TO_SEED: SeedToken[] = [
 
 /**
  * Upserts a single FCM token record.
- * Matched by the `fcmToken` unique column — updates `userId` if the token
- * already exists (e.g. device re-registered by a different user).
+ * Matched by the `(userId, deviceId)` unique pair — refreshes `fcmToken`
+ * if the same device re-registers.
  */
 async function upsertToken(seed: SeedToken): Promise<void> {
   const tokenRepo = dataSource.getRepository(Token);
@@ -94,17 +101,18 @@ async function upsertToken(seed: SeedToken): Promise<void> {
   }
 
   const existing = await tokenRepo.findOne({
-    where: { fcmToken: seed.fcmToken },
+    where: { userId: user.id, deviceId: seed.deviceId },
   });
 
   if (existing) {
-    tokenRepo.merge(existing, { userId: user.id });
+    tokenRepo.merge(existing, { fcmToken: seed.fcmToken });
     await tokenRepo.save(existing);
     return;
   }
 
   const token = tokenRepo.create({
     fcmToken: seed.fcmToken,
+    deviceId: seed.deviceId,
     userId: user.id,
   });
 

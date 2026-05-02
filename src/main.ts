@@ -6,6 +6,7 @@ import helmet from 'helmet';
 // import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { ResponseFormatterInterceptor } from './common/interceptors/response-formatter.interceptor';
+import { DeviceIdInterceptor } from './common/interceptors/device-id.interceptor';
 import { AppClusterService } from './infrastructure/clusters/app.clusterize';
 import { ExpressAdapter } from '@bull-board/express';
 import { RedisOptions } from 'ioredis';
@@ -95,7 +96,10 @@ async function bootstrap() {
   // const { doubleCsrfProtection } = doubleCsrf(opts);
   //  app.use(doubleCsrfProtection);
   //
-  app.useGlobalInterceptors(new ResponseFormatterInterceptor());
+  app.useGlobalInterceptors(
+    new DeviceIdInterceptor(),
+    new ResponseFormatterInterceptor(),
+  );
   // //PIPES
   app.useGlobalPipes(
     new ValidationPipe({

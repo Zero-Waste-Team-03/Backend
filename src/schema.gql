@@ -584,6 +584,11 @@ type Mutation {
   """Login user and issue access and refresh tokens"""
   login(loginInput: LoginInput!): AuthResponse!
 
+  """
+  Logout the current device by deleting its registered FCM token. Requires the x-device-id header.
+  """
+  logout: MessageResponse!
+
   """Logout from all devices by invalidating all active sessions"""
   logoutFromAllDevices: MessageResponse!
   markNotificationsAsRead(input: UpdateReadNotificationsInput!): MessageResponse!

@@ -85,6 +85,11 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'No active notification tokens found for this user.',
   },
+  NOTIFICATION_DEVICE_ID_REQUIRED: {
+    code: 'notification.device_id_required',
+    httpStatus: 400,
+    message: 'The x-device-id header is required to register a device token.',
+  },
 
   // ── Donation ────────────────────────────────────────────────────────
   DONATION_NOT_FOUND: {
