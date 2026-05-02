@@ -2,6 +2,7 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Logger,
   NestInterceptor,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
@@ -14,7 +15,10 @@ import { ExtendedRequest } from 'src/core/authentication/types/extended-req.type
  */
 @Injectable()
 export class DeviceIdInterceptor implements NestInterceptor {
+
+  logger=new Logger(DeviceIdInterceptor.name)
   intercept(context: ExecutionContext, next: CallHandler<any>): Observable<any> {
+    console.log('DeviceIdInterceptor invoked');
     const gqlContext = GqlExecutionContext.create(context);
     const isGraphQL = gqlContext.getType() === 'graphql';
 
@@ -23,6 +27,7 @@ export class DeviceIdInterceptor implements NestInterceptor {
       : context.switchToHttp().getRequest<ExtendedRequest>();
 
     const headerValue = request?.headers?.['x-device-id'];
+    this.logger.log(headerValue)
     if (typeof headerValue === 'string') {
       request.deviceId = headerValue;
     } else if (Array.isArray(headerValue) && headerValue.length > 0) {
