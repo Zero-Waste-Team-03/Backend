@@ -854,6 +854,9 @@ type Query {
   """
   myDonations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
 
+  """Get the current user profile stats related to donations,"""
+  myDonationsStats: UsersDonationsStats!
+
   """Get reports created by current user"""
   myReports: [Report!]!
 
@@ -1243,4 +1246,9 @@ type UserStats {
 
   """Percentage increase of total users since last month"""
   totalUsersIncrease: Float!
+}
+
+type UsersDonationsStats {
+  likedDonations: Float!
+  totalDonations: Float!
 }

@@ -173,6 +173,7 @@ export class NotificationsService {
     deviceId: string,
   ): Promise<{ message: string }> {
     try {
+      console.log('Registering FCM token:', { fcmToken, userId, deviceId });
       await this.tokenRepo.upsert(
         {
           fcmToken,
