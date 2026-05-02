@@ -6,4 +6,5 @@ export const QUEUE_NAME = {
   RESERVATION: 'reservation',
   CHAT: 'chat',
   GAMIFICATION: 'gamification',
+  BEHAVIOR_EVENTS: 'behavior-events',
 } as const;

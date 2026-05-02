@@ -700,7 +700,6 @@ export class DonationService {
     const donation = await this.donationRepository.findOne({
       where: { id: donationId },
       select: ['id', 'userId'],
-      relations:{category:true}
     });
 
     if (!donation) {
@@ -718,11 +717,11 @@ export class DonationService {
       .values({ donationId, userId })
       .orIgnore()
       .execute();
-      await this.smartBehaviorPublisher.publishLikedDonation({
-        donationTitle: donation.title,
-        category: donation.category?.name ?? '',
-        donationId: donation.id,
-      })
+
+    await this.smartBehaviorPublisher.publishLikedDonation({
+      donationId: donation.id,
+      likerUserId: userId,
+    });
 
     return { message: 'Donation liked successfully' };
   }
