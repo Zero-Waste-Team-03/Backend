@@ -113,6 +113,7 @@ export class ChatService {
         'conversation."createdAt" AS "createdAt"',
         'reservation."beneficiaryId" AS "beneficiaryId"',
         'donation."userId" AS "donorId"',
+        'donation.title AS "donationTitle"',
       ])
       .orderBy('conversation.createdAt', 'DESC')
 
@@ -124,6 +125,7 @@ export class ChatService {
         createdAt: Date;
         beneficiaryId: string;
         donorId: string;
+        donationTitle: string | null;
       }>();
 
     return rows.map((row) => ({
@@ -134,6 +136,7 @@ export class ChatService {
       createdAt: row.createdAt,
       counterpartUserId:
         row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
+      donationTitle: row.donationTitle,
       counterpart: {
         displayName: '',
         avatarUrl: null,
