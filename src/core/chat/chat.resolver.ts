@@ -123,8 +123,12 @@ export class ChatResolver {
       avatarUrl = attachment?.url || null;
     }
 
+    const baseName = user?.displayName || 'User';
+    const title = conversation.donationTitle?.trim();
+    const displayName = title ? `${baseName} (${title})` : baseName;
+
     return {
-      displayName: user?.displayName || 'User',
+      displayName,
       avatarUrl,
     };
   }
