@@ -31,6 +31,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
+import { throwGatewayAppError } from 'src/common/errors/throw-app-error';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -147,7 +148,7 @@ export class ChatService {
     );
 
     if (conversation.status !== ConversationStatusValues.ACTIVE) {
-      throwAppError('RESERVATION_STATUS_INVALID', {
+      throwGatewayAppError('RESERVATION_STATUS_INVALID', {
         status: conversation.status,
       });
     }
@@ -261,14 +262,14 @@ export class ChatService {
     });
 
     if (!message) {
-      throwAppError('CHAT_MESSAGE_NOT_FOUND', { id: dto.messageId });
+      throwGatewayAppError('CHAT_MESSAGE_NOT_FOUND', { id: dto.messageId });
     }
 
     if (
       message.senderId === dto.approverId ||
       !this.isSensitive(message.content)
     ) {
-      throwAppError('CHAT_INVALID_APPROVAL', { id: dto.messageId });
+      throwGatewayAppError('CHAT_INVALID_APPROVAL', { id: dto.messageId });
     }
 
     const marker = `${SENSITIVE_APPROVED_PREFIX}:${message.id}:${dto.approverId}`;
@@ -291,7 +292,7 @@ export class ChatService {
     });
 
     if (!conversation) {
-      throwAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
+      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
     }
 
     const reservation = await this.requireAuthorizedReservation(
@@ -342,7 +343,7 @@ export class ChatService {
         });
 
         if (!lockedConversation) {
-          throwAppError('CHAT_CONVERSATION_NOT_FOUND', {
+          throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', {
             id: dto.conversationId,
           });
         }
@@ -353,7 +354,7 @@ export class ChatService {
         });
 
         if (!reservation) {
-          throwAppError('RESERVATION_NOT_FOUND', {
+          throwGatewayAppError('RESERVATION_NOT_FOUND', {
             id: lockedConversation.reservationId,
             status: ReservationStatusValues.PENDING,
           });
@@ -376,7 +377,7 @@ export class ChatService {
           reservation.status !== ReservationStatusValues.CONFIRMED &&
           reservation.status !== ReservationStatusValues.COMPLETED
         ) {
-          throwAppError('RESERVATION_STATUS_INVALID', {
+          throwGatewayAppError('RESERVATION_STATUS_INVALID', {
             status: reservation.status,
           });
         }
@@ -476,7 +477,7 @@ export class ChatService {
     });
 
     if (!reservation) {
-      throwAppError('RESERVATION_NOT_FOUND', {
+      throwGatewayAppError('RESERVATION_NOT_FOUND', {
         id: reservationId,
         status: ReservationStatusValues.PENDING,
       });
@@ -486,7 +487,7 @@ export class ChatService {
     const isBeneficiary = reservation.beneficiaryId === requesterId;
 
     if (!isDonor && !isBeneficiary) {
-      throwAppError('RESERVATION_OWNERSHIP_INVALID');
+      throwGatewayAppError('RESERVATION_OWNERSHIP_INVALID');
     }
 
     return reservation;
