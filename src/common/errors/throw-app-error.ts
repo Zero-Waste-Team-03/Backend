@@ -9,8 +9,12 @@ import {
 } from '@nestjs/common';
 import { ERROR_CODES, type ErrorCodeKey } from './error-codes';
 import type { ErrorArgsMap } from './error-args';
+import { WsException } from '@nestjs/websockets';
 
 type CodeOf<K extends ErrorCodeKey> = (typeof ERROR_CODES)[K]['code'];
+interface AppErrorOptions{
+  isGatewayError?: boolean;
+}
 
 /**
  * Type-safe application error thrower.
@@ -25,10 +29,11 @@ type CodeOf<K extends ErrorCodeKey> = (typeof ERROR_CODES)[K]['code'];
  */
 export function createAppError<K extends ErrorCodeKey>(
   key: K,
+  options?:AppErrorOptions,
   ...rest: CodeOf<K> extends keyof ErrorArgsMap
     ? [args: ErrorArgsMap[CodeOf<K>]]
     : []
-): HttpException {
+): HttpException|WsException {
   const entry = ERROR_CODES[key];
   const args = rest[0] as Record<string, unknown> | undefined;
   const payload = {
@@ -36,6 +41,9 @@ export function createAppError<K extends ErrorCodeKey>(
     errCode: entry.code,
     ...(args ? { args } : {}),
   };
+  if (options?.isGatewayError){
+     return new WsException(payload);
+  }
 
   const ExceptionClass = statusToException(entry.httpStatus);
   return new ExceptionClass(payload);
@@ -46,8 +54,17 @@ export function throwAppError<K extends ErrorCodeKey>(
   ...rest: CodeOf<K> extends keyof ErrorArgsMap
     ? [args: ErrorArgsMap[CodeOf<K>]]
     : []
-): never {
-  throw createAppError(key, ...rest);
+  ): never {
+  throw createAppError(key,{isGatewayError:false}, ...rest);
+}
+export function throwGatewayAppError<K extends ErrorCodeKey>(
+  key: K,
+  ...rest: CodeOf<K> extends keyof ErrorArgsMap
+    ? [args: ErrorArgsMap[CodeOf<K>]]
+    : []
+):never{
+
+  throw createAppError(key,{isGatewayError:true}, ...rest);
 }
 
 function statusToException(
