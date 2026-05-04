@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Reservation,
-  ReservationStatus,
   ReservationStatusValues,
 } from './entities/reservation.entity';
 import {
@@ -15,6 +14,7 @@ import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
+import { ReservationsFilterInput } from './graphql/inputs/reservations-filter.input';
 
 @Injectable()
 export class ReservationService {
@@ -28,7 +28,7 @@ export class ReservationService {
 
   async findMyReservations(
     userId: string,
-    filter: { status?: ReservationStatus } = {},
+    filter:ReservationsFilterInput = {},
     pagination?: PaginationInput,
   ): Promise<PaginatedReservations> {
     const { page = 1, limit = 10 } = pagination || {};
@@ -37,16 +37,23 @@ export class ReservationService {
     const queryBuilder = this.reservationRepository
       .createQueryBuilder('reservation')
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
-      .where('reservation.beneficiaryId = :userId', { userId })
-      .orWhere('donation.userId = :userId', { userId })
       .orderBy('reservation.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
-    if (filter.status) {
+   if (filter.status){
       queryBuilder.andWhere('(reservation.status = :status)', {
         status: filter.status,
-      });
+    });
     }
+    if (filter.roleFilter==="DONOR"){
+queryBuilder.where('reservation.beneficiaryId = :userId', { userId })
+    }
+      else if (filter.roleFilter==="BENEFICIARY"){
+      queryBuilder.orWhere('donation.userId = :userId', { userId })
+      }
+      else{
+queryBuilder.where('reservation.beneficiaryId = :userId', { userId }).orWhere('donation.userId = :userId', { userId })
+      }
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 

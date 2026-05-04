@@ -92,6 +92,7 @@ export class WsConnectionsManagerGateway
   }
   async validateToken(token: string): Promise<AccessTokenPayload | null> {
     try {
+      //TODO: remove this ignore expiration after tests are done
       const payload =
         await this.jwtService.verifyAsync<AccessTokenPayload>(token,{ignoreExpiration:true});
       return payload;
