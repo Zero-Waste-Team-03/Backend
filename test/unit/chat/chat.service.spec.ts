@@ -7,11 +7,6 @@ import {
   Reservation,
   ReservationStatusValues,
 } from 'src/core/reservation/entities/reservation.entity';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import { ChatStateMachineService } from 'src/core/chat/chat-state-machine.service';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -22,6 +17,7 @@ import {
   Donation,
   DonationStatusValues,
 } from 'src/core/donation/entities/donation.entity';
+import { WsException } from '@nestjs/websockets';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -143,7 +139,7 @@ describe('ChatService', () => {
 
     await expect(
       service.getMessages('conv-1', 'random-user', { page: 1, limit: 10 }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('sends message for conversation member', async () => {
@@ -227,7 +223,7 @@ describe('ChatService', () => {
         senderId: 'donor-1',
         content: 'hello',
       }),
-    ).rejects.toBeInstanceOf(NotFoundException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('blocks sending when conversation state is not active', async () => {
@@ -250,7 +246,7 @@ describe('ChatService', () => {
         senderId: 'donor-1',
         content: 'hello',
       }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('masks sensitive message until recipient approves', async () => {

@@ -3,7 +3,7 @@ import DataLoader from 'dataloader';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Attachment, UploadStatusValues } from '../attachment/entities/attachment.entity';
-import { createAppError, throwAppError } from '../../errors';
+import {  throwAppError } from '../../errors';
 
 @Injectable()
 export class AttachmentDataLoader {
