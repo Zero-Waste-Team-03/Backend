@@ -3,7 +3,7 @@ import DataLoader from 'dataloader';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Attachment, UploadStatusValues } from '../attachment/entities/attachment.entity';
-import { createAppError } from '../../errors';
+import { createAppError, throwAppError } from '../../errors';
 
 @Injectable()
 export class AttachmentDataLoader {
@@ -23,7 +23,7 @@ export class AttachmentDataLoader {
         return attachmentIds.map((id) => {
           const attachment = attachmentMap.get(id);
           if (attachment && attachment.uploadStatus === UploadStatusValues.FAILED) {
-            return createAppError('UPLOAD_FAILED_ATTACHMENT', { id });
+            throwAppError('UPLOAD_FAILED_ATTACHMENT', { id });
           }
           return attachment || null;
         });
