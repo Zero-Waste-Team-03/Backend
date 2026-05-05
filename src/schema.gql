@@ -981,6 +981,11 @@ type Reservation {
   updatedAt: DateTime!
 }
 
+enum ReservationRoleFilter {
+  BENEFICIARY
+  DONOR
+}
+
 """The possible statuses of a reservation"""
 enum ReservationStatus {
   CANCELLED
@@ -990,6 +995,7 @@ enum ReservationStatus {
 }
 
 input ReservationsFilterInput {
+  roleFilter: ReservationRoleFilter
   status: ReservationStatus
 }
 

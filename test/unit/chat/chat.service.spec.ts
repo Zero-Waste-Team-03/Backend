@@ -417,6 +417,7 @@ describe('ChatService', () => {
   it('returns active conversations with counterpart ids', async () => {
     const queryBuilder = {
       innerJoin: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
