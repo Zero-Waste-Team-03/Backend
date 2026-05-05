@@ -186,6 +186,7 @@ enum ConversationStatus {
   LOCKED
 }
 
+
 input CoordinateInput {
   latitude: Float!
   longitude: Float!
@@ -591,6 +592,7 @@ type Mutation {
 
   """Logout from all devices by invalidating all active sessions"""
   logoutFromAllDevices: MessageResponse!
+  markAllNotificationsAsRead: MessageResponse!
   markNotificationsAsRead(input: UpdateReadNotificationsInput!): MessageResponse!
 
   """Mark transaction as completed from chat context"""
