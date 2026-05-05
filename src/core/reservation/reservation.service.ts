@@ -45,10 +45,10 @@ export class ReservationService {
         status: filter.status,
     });
     }
-    if (filter.roleFilter==="DONOR"){
+    if (filter.roleFilter==="BENEFICIARY"){
 queryBuilder.where('reservation.beneficiaryId = :userId', { userId })
     }
-      else if (filter.roleFilter==="BENEFICIARY"){
+      else if (filter.roleFilter==="DONOR"){
       queryBuilder.orWhere('donation.userId = :userId', { userId })
       }
       else{
