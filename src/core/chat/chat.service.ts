@@ -29,6 +29,7 @@ import {
   DonationStatusValues,
 } from '../donation/entities/donation.entity';
 import { User } from '../user/entities/user.entity';
+import { Category } from '../category/entities/category.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
 import { throwGatewayAppError } from 'src/common/errors/throw-app-error';
@@ -370,12 +371,19 @@ export class ChatService {
 
         const donation = await manager.findOne(Donation, {
           where: { id: reservation.donationId },
-          relations:{category:true},
           lock: { mode: 'pessimistic_write' },
         });
 
         if (!donation) {
           throwAppError('DONATION_NOT_FOUND', { id: reservation.donationId });
+        }
+
+        const category = await manager.findOne(Category, {
+          where: { id: donation.categoryId },
+        });
+
+        if (category) {
+          donation.category = category;
         }
 
         const donorId = donation.userId;
