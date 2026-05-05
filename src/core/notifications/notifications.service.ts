@@ -107,6 +107,15 @@ export class NotificationsService {
       .update()
       .set({ isRead: true })
       .whereInIds(ids)
+      .andWhere('receiverId = :userId', { userId })
+      .execute();
+  }
+
+  async updateAllRead(userId: string) {
+    await this.notificationRepo
+      .createQueryBuilder()
+      .update()
+      .set({ isRead: true })
       .where('receiverId = :userId', { userId })
       .execute();
   }

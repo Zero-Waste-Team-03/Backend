@@ -66,6 +66,12 @@ export class NotificationsResolver {
     await this.notificationsService.updateRead(input.ids, userId);
     return { message: 'Notifications marked as read' };
   }
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => MessageResponseType)
+  async markAllNotificationsAsRead(@USER('id') userId: string) {
+    await this.notificationsService.updateAllRead(userId);
+    return { message: 'Notifications marked as read' };
+  }
 
   @UseGuards(AccessTokenGuard)
   @Mutation(() => MessageResponseType)

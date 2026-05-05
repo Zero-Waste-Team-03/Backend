@@ -22,6 +22,11 @@ enum AppearanceTheme {
   SYSTEM
 }
 
+input ApproveSensitiveMessageInput {
+  conversationId: ID!
+  messageId: ID!
+}
+
 type Attachment {
   """Date the attachment was created"""
   createdAt: DateTime!
@@ -90,6 +95,49 @@ input ChangePasswordInput {
 
   """New password to set for the user"""
   newPassword: String!
+}
+
+type ChatCounterpartPreview {
+  avatarUrl: String
+  displayName: String!
+}
+
+type ChatMessage {
+  content: String!
+  conversationId: ID!
+  createdAt: DateTime!
+  id: ID!
+  isModerated: Boolean!
+  senderId: ID!
+}
+
+type Conversation {
+  createdAt: DateTime!
+  id: ID!
+  lastMessage: String
+  reservationId: ID!
+  status: ConversationStatus!
+}
+
+input ConversationMessagesInput {
+  conversationId: ID!
+  pagination: PaginationInput
+}
+
+type ConversationPreview {
+  counterpart: ChatCounterpartPreview!
+  createdAt: DateTime!
+  id: ID!
+  lastMessage: String
+  reservationId: ID!
+  status: ConversationStatus!
+}
+
+"""The lifecycle status of a conversation"""
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  LOCKED
 }
 
 input CreateCategoryInput {
@@ -207,6 +255,11 @@ type Donation {
   userId: String!
 }
 
+input DonationBehaviorContextInput {
+  distanceBucket: String
+  origin: String
+}
+
 type DonationMapMarker {
   categoryId: String!
 
@@ -316,6 +369,10 @@ input LoginInput {
   password: String!
 }
 
+input MarkTransactionCompletedInput {
+  conversationId: ID!
+}
+
 """Color of the map marker"""
 enum MarkerColorValues {
   GREEN
@@ -338,6 +395,9 @@ type Mutation {
   Create a new user, organization, or administrator account. A temporary password will be generated and sent via email.
   """
   adminCreateAccount(input: AdminCreateAccountInput!): User!
+
+  """Approve a sensitive message to reveal it to the approver"""
+  approveSensitiveMessage(input: ApproveSensitiveMessageInput!): ChatMessage!
 
   """
   Changes the user password by providing the current password and the new password, this is different from resetPassword mutation which is used when the user forgets their password and cannot provide the current password
@@ -368,12 +428,19 @@ type Mutation {
   """Send password reset email to user"""
   forgotPassword(email: String!): MessageResponse!
 
+  """Create or get conversation by reservation id"""
+  getOrCreateConversation(reservationId: ID!): Conversation!
+
   """Login user and issue access and refresh tokens"""
   login(loginInput: LoginInput!): AuthResponse!
 
   """Logout from all devices by invalidating all active sessions"""
   logoutFromAllDevices: MessageResponse!
+  markAllNotificationsAsRead: MessageResponse!
   markNotificationsAsRead(input: UpdateReadNotificationsInput!): MessageResponse!
+
+  """Mark transaction as completed from chat context"""
+  markTransactionCompleted(input: MarkTransactionCompletedInput!): Conversation!
 
   """
   Refresh access and refresh tokens using a valid refresh token, the refresh token should be sent in the Authorization header as a Bearer token
@@ -398,6 +465,9 @@ type Mutation {
   """Delete user account permanently"""
   resetPassword(resetPasswordInput: ResetPasswordInput!): MessageResponse!
   sendFcmNotification(input: SendNotificationInput!): SendNotificationResponse!
+
+  """Send message in an existing conversation"""
+  sendMessage(input: SendMessageInput!): ChatMessage!
 
   """Send verification email for registration flow"""
   sendVerification(email: String!): MessageResponse!
@@ -444,6 +514,15 @@ type PaginatedDonations {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   items: [Donation!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedMessages {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [ChatMessage!]!
   limit: Int!
   page: Int!
   totalCount: Int!
@@ -496,6 +575,9 @@ type Query {
   """Retrieve a single category by its ID."""
   category(id: ID!): Category!
 
+  """Get paginated messages of a conversation"""
+  conversationMessages(input: ConversationMessagesInput!): PaginatedMessages!
+
   """Get current authenticated user profile"""
   currentUser: User!
 
@@ -508,12 +590,17 @@ type Query {
   donationStatistics: DonationStatistics!
 
   """Get all donation listings with optional filters and donor access"""
-  donations(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
+  donations(behaviorContext: DonationBehaviorContextInput, filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
 
   """
   Get donations within a radius from a center point for map visualization
   """
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
+
+  """
+  Get active conversations with minimal counterpart preview (name and image only)
+  """
+  myActiveConversations: [ConversationPreview!]!
   notifications(pagination: PaginationQueryInput): [Notification!]!
 }
 
@@ -579,6 +666,11 @@ input ResetPasswordInput {
 
   """Password reset token from email"""
   token: String!
+}
+
+input SendMessageInput {
+  content: String!
+  conversationId: ID!
 }
 
 input SendNotificationInput {
