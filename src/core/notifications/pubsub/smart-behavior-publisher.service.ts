@@ -123,8 +123,7 @@ export class SmartBehaviorPublisherService {
     try {
       await this.publishBeneficiarySearchPerformed(payload);
     } catch {
-      this.logger.warn({
-        message: 'Failed to enqueue beneficiary behavior event',
+      this.logger.warn('Failed to enqueue beneficiary behavior event', {
         userId: payload.userId,
         context: 'SmartBehaviorPublisher',
       });
@@ -137,8 +136,7 @@ export class SmartBehaviorPublisherService {
     try {
       await this.publishDonationPublished(payload);
     } catch {
-      this.logger.warn({
-        message: 'Failed to enqueue donation behavior event',
+      this.logger.warn('Failed to enqueue donation behavior event', {
         donorId: payload.donorId,
         donationId: payload.donationId,
         context: 'SmartBehaviorPublisher',

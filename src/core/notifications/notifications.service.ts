@@ -38,8 +38,7 @@ export class NotificationsService {
    */
   @Cron(CronExpression.EVERY_WEEK)
   async handleCron() {
-    this.logger.log({
-      message: 'Running cron job to delete old notifications',
+    this.logger.log('Running cron job to delete old notifications', {
       daysOld: OLD_NOTIFICATION_DELETE_DAYS,
       context: 'Notifications',
     });
@@ -51,8 +50,7 @@ export class NotificationsService {
       .where('createdAt < :oneWeekAgo', { oneWeekAgo })
       .andWhere('isRead = :isRead', { isRead: true })
       .execute();
-    this.logger.log({
-      message: 'Old notifications deleted',
+    this.logger.log('Old notifications deleted', {
       context: 'Notifications',
     });
   }
@@ -199,8 +197,7 @@ export class NotificationsService {
         ['userId', 'deviceId'],
       );
 
-      this.logger.log({
-        message: 'FCM token registered/updated',
+      this.logger.log('FCM token registered/updated', {
         userId,
         context: 'Notifications',
       });
@@ -262,8 +259,7 @@ export class NotificationsService {
     deviceId: string,
   ): Promise<void> {
     await this.tokenRepo.delete({ userId, deviceId });
-    this.logger.log({
-      message: 'FCM token revoked for device',
+    this.logger.log('FCM token revoked for device', {
       userId,
       context: 'Notifications',
     });
@@ -279,8 +275,7 @@ export class NotificationsService {
    */
   async deleteToken(fcmToken: string): Promise<{ message: string }> {
     await this.revokeToken(fcmToken);
-    this.logger.log({
-      message: 'Logged out from device',
+    this.logger.log('Logged out from device', {
       context: 'Notifications',
     });
     return { message: 'Logged out from device successfully' };
@@ -320,8 +315,7 @@ export class NotificationsService {
         removeOnComplete: true,
       },
     );
-    this.logger.log({
-      message: 'Notification job added to queue',
+    this.logger.log('Notification job added to queue', {
       userId,
       title,
       type,
@@ -356,8 +350,7 @@ export class NotificationsService {
       },
     );
 
-    this.logger.log({
-      message: 'Notification (without saving) job added to queue',
+    this.logger.log('Notification (without saving) job added to queue', {
       userId,
       title,
       type,

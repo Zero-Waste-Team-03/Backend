@@ -52,8 +52,7 @@ export class GamificationProcessor extends WorkerHost {
       );
     }
 
-    this.logger.log({
-      message: 'Gamification completion job processed',
+    this.logger.log('Gamification completion job processed', {
       jobId: job.id,
       donorId,
       beneficiaryId,

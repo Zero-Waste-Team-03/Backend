@@ -63,8 +63,7 @@ export class NotificationProcessor extends WorkerHost {
     this.logger.log(`Processing job ${job.id} of type ${job.name}`);
     switch (job.name) {
       case NOTIFICATION_JOBS.SEND_NOTIFICATION:
-        this.logger.log({
-          message: 'Processing notification job',
+        this.logger.log('Processing notification job', {
           jobId: job.id,
           context: 'NotificationProcessor',
         });
@@ -75,8 +74,7 @@ export class NotificationProcessor extends WorkerHost {
         };
 
       case NOTIFICATION_JOBS.SEND_WITHOUT_SAVING:
-        this.logger.log({
-          message: 'Processing send-without-saving notification job',
+        this.logger.log('Processing send-without-saving notification job', {
           jobId: job.id,
           context: 'NotificationProcessor',
         });
@@ -116,8 +114,7 @@ export class NotificationProcessor extends WorkerHost {
   async sendNotificationToOneDevice(
     message: NotificationMessage,
   ): Promise<string> {
-    this.logger.log({
-      message: 'Sending notification to token',
+    this.logger.log('Sending notification to token', {
       tokenPrefix: message.token.substring(0, 20),
       context: 'NotificationProcessor',
     });
@@ -125,21 +122,17 @@ export class NotificationProcessor extends WorkerHost {
     try {
       return await this.firebaseService.getFcm().send(message);
     } catch (error) {
-      this.logger.error({
-        message: 'Failed to send notification to device',
+      this.logger.error('Failed to send notification to device', {
         tokenPrefix: message.token.substring(0, 20),
-        error: JSON.stringify(error),
+        error,
         context: 'NotificationProcessor',
-
-
       });
       throw error;
     }
   }
 
   async handleSendingNotification(data: SendNotificationJob): Promise<void> {
-    this.logger.log({
-      message: 'Handling sending notification',
+    this.logger.log('Handling sending notification', {
       userId: data.userId,
       title: data.title,
       type: data.type,
@@ -148,8 +141,7 @@ export class NotificationProcessor extends WorkerHost {
 
     const isPushEnabled = await this.isPushNotificationsEnabled(data.userId);
     if (!isPushEnabled) {
-      this.logger.log({
-        message: 'Skipping FCM send: push notifications disabled',
+      this.logger.log('Skipping FCM send: push notifications disabled', {
         userId: data.userId,
         type: data.type,
         context: 'NotificationProcessor',
@@ -282,8 +274,7 @@ export class NotificationProcessor extends WorkerHost {
         type,
         translationArgs || {},
       );
-      this.logger.log({
-        message: 'Notification saved to DB',
+      this.logger.log('Notification saved to DB', {
         jobId: job.id,
         context: 'NotificationProcessor',
       });
@@ -313,8 +304,7 @@ export class NotificationProcessor extends WorkerHost {
       }
     }
 
-    this.logger.error({
-      message: 'Job failed',
+    this.logger.error('Job failed', {
       jobId: job.id,
       reason: error.message,
       context: 'NotificationProcessor',

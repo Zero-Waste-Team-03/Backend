@@ -51,8 +51,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
         );
         return;
       default:
-        this.logger.warn({
-          message: 'Unknown behavior-events job',
+        this.logger.warn('Unknown behavior-events job', {
           jobName: job.name,
           context: 'BehaviorEventsProcessor',
         });
@@ -68,8 +67,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
     });
 
     if (!donation) {
-      this.logger.warn({
-        message: 'Liked donation hydration: donation not found',
+      this.logger.warn('Liked donation hydration: donation not found', {
         donationId: job.donationId,
         eventId: job.eventId,
         context: 'BehaviorEventsProcessor',
@@ -103,8 +101,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
     });
 
     if (!donation) {
-      this.logger.warn({
-        message: 'Donation published hydration: donation not found',
+      this.logger.warn('Donation published hydration: donation not found', {
         donationId: job.donationId,
         eventId: job.eventId,
         context: 'BehaviorEventsProcessor',
@@ -164,8 +161,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: Job, err: Error): void {
-    this.logger.warn({
-      message: 'Behavior-events job failed',
+    this.logger.warn('Behavior-events job failed', {
       jobName: job?.name,
       jobId: job?.id,
       reason: err?.message,

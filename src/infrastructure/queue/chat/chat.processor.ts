@@ -20,8 +20,7 @@ export class ChatProcessor extends WorkerHost {
       return;
     }
 
-    this.logger.log({
-      message: 'No-op chat moderation job processed',
+    this.logger.log('No-op chat moderation job processed', {
       jobId: job.id,
       conversationId: job.data.conversationId,
       messageId: job.data.messageId,
