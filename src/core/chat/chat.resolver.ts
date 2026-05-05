@@ -115,13 +115,7 @@ export class ChatResolver {
   ): Promise<ChatCounterpartPreviewType> {
     const user = await loaders.userLoader.load(conversation.counterpartUserId);
 
-    let avatarUrl: string | null = null;
-    if (user?.avatarAttachmentId) {
-      const attachment = await loaders.attachmentLoader.load(
-        user.avatarAttachmentId,
-      );
-      avatarUrl = attachment?.url || null;
-    }
+    const avatarUrl = conversation.donationImageUrl || null;
 
     const baseName = user?.displayName || 'User';
     const title = conversation.donationTitle?.trim();

@@ -98,6 +98,8 @@ export class ChatService {
         'reservation.id = conversation.reservationId',
       )
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin('donationPhoto.attachment', 'donationAttachment')
       .where(
         '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
         { requesterId },
@@ -114,6 +116,7 @@ export class ChatService {
         'reservation."beneficiaryId" AS "beneficiaryId"',
         'donation."userId" AS "donorId"',
         'donation.title AS "donationTitle"',
+        'donationAttachment.url AS "donationImageUrl"',
       ])
       .orderBy('conversation.createdAt', 'DESC')
 
@@ -126,6 +129,7 @@ export class ChatService {
         beneficiaryId: string;
         donorId: string;
         donationTitle: string | null;
+        donationImageUrl: string | null;
       }>();
 
     return rows.map((row) => ({
@@ -137,6 +141,7 @@ export class ChatService {
       counterpartUserId:
         row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
       donationTitle: row.donationTitle,
+      donationImageUrl: row.donationImageUrl,
       counterpart: {
         displayName: '',
         avatarUrl: null,
