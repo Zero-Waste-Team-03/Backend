@@ -15,6 +15,7 @@ import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { isError } from 'lodash';
 import { throwAppError } from 'src/common/errors';
 import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
+import { NotificationStats } from './graphql/types/notification-stats.type';
 
 const OLD_NOTIFICATION_DELETE_DAYS = 7;
 
@@ -56,6 +57,12 @@ export class NotificationsService {
     });
   }
 
+  async getUsersNotificationStats(userId: string):Promise<NotificationStats> {
+    const unreadCount = await this.notificationRepo.count({
+      where: { receiverId: userId, isRead: false },
+    });
+    return { unreadCount };
+  }
   /**
    * Creates a new notification record in the database.
    * @param dto - The data transfer object containing notification details.
