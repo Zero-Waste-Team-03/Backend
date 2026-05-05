@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import type { Notification } from 'src/core/notifications/entities/notification.entity';
 import type { Token } from 'src/core/notifications/entities/token.entity';
@@ -16,8 +17,25 @@ describe('NotificationsService', () => {
   const buildService = () =>
     new NotificationsService(notificationRepo, tokenRepo, notificationQueue);
 
+  let consoleLogSpy: jest.SpyInstance;
+  let loggerLogSpy: jest.SpyInstance;
+  let loggerErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    loggerLogSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => {});
+    loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    loggerLogSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 
   describe('registerToken', () => {
