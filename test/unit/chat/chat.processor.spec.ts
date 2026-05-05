@@ -29,10 +29,8 @@ describe('ChatProcessor', () => {
     ).resolves.toBeUndefined();
 
     expect(logSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: 'No-op chat moderation job processed',
-        jobId: '1',
-      }),
+      'No-op chat moderation job processed',
+      expect.objectContaining({ jobId: '1' }),
     );
   });
 });
