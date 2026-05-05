@@ -213,7 +213,7 @@ export class ChatService {
     const where: FindOptionsWhere<Message> = { conversationId };
     const [items, totalCount] = await this.messageRepository.findAndCount({
       where,
-      order: { createdAt: 'ASC' },
+      order: {createdAt: 'DESC' },
       skip,
       take: limit,
     });
