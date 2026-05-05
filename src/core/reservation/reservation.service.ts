@@ -49,12 +49,16 @@ export class ReservationService {
 queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId })
     }
       else if (filter.roleFilter==="DONOR"){
-      queryBuilder.orWhere('donation.userId = :userId', { userId })
+      queryBuilder.andWhere('donation.userId = :userId', { userId })
       }
       else{
-queryBuilder.where('reservation.beneficiaryId = :userId', { userId }).orWhere('donation.userId = :userId', { userId })
+queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere('donation.userId = :userId', { userId })
       }
    
+      this.logger.log(`Finding reservation for ${userId}`,{
+        filter,
+        query: queryBuilder.getSql(),
+      })
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 
