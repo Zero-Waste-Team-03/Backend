@@ -11,7 +11,9 @@ describe('NotificationsService', () => {
     delete: jest.fn(),
   } as unknown as Repository<Token>;
 
-  const notificationRepo = {} as unknown as Repository<Notification>;
+  const notificationRepo = {
+    count: jest.fn(),
+  } as unknown as Repository<Notification>;
   const notificationQueue = {} as unknown as Queue;
 
   const buildService = () =>
@@ -37,6 +39,18 @@ describe('NotificationsService', () => {
     loggerLogSpy.mockRestore();
     loggerErrorSpy.mockRestore();
   });
+  describe("get User notification stats",()=>{
+    it("returns the count of unread notifications for a user",async()=>{
+      (notificationRepo.count as jest.Mock).mockResolvedValueOnce(5);
+
+      const stats = await buildService().getUsersNotificationStats("user-1");
+
+      expect(notificationRepo.count).toHaveBeenCalledWith({
+        where: { receiverId: 'user-1', isRead: false },
+      });
+      expect(stats).toEqual({ unreadCount: 5 });
+    });
+      })
 
   describe('registerToken', () => {
     it('upserts on (userId, deviceId) with the latest fcmToken', async () => {
