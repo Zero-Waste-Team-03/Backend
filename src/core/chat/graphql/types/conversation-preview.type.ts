@@ -28,4 +28,6 @@ export class ConversationPreviewType {
   counterpartUserId: string;
 
   donationTitle?: string | null;
+
+  donationImageUrl?: string | null;
 }
