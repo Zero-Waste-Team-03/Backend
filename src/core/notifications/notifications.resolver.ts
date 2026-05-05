@@ -19,6 +19,14 @@ export class NotificationsResolver {
   private readonly logger = new Logger(NotificationsResolver.name);
 
   constructor(private readonly notificationsService: NotificationsService) {}
+  @UseGuards(AccessTokenGuard)
+  @Query(() => [NotificationTypeGraphQL],{nullable:true})
+  async getUrgentNotification(
+    @USER('id') userId: string,
+  ){
+    this.logger.log("Fetching urgent notifications for user", { userId });
+    return null;
+  }
 
   @UseGuards(AccessTokenGuard)
   @Query(() => PaginatedNotifications)

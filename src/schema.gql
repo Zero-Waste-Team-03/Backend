@@ -837,6 +837,7 @@ type Query {
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
   getNotificationStats: NotificationStats!
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
+  getUrgentNotification: [Notification!]
 
   """
   Get liked donations for the authenticated user with the same standard filters and pagination
