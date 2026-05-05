@@ -366,10 +366,12 @@ describe('ChatService', () => {
         .mockResolvedValueOnce({
           id: 'don-1',
           userId: 'donor-1',
+          categoryId: 'cat-1',
           quantity: 2,
           status: DonationStatusValues.PUBLISHED,
           category: { reputationGain: 10 },
         })
+        .mockResolvedValueOnce({ id: 'cat-1', reputationGain: 10 })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: 'done-donor' })
         .mockResolvedValueOnce({ id: 'done-beneficiary' }),
