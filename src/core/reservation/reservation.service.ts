@@ -40,13 +40,13 @@ export class ReservationService {
       .orderBy('reservation.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
-   if (filter.status){
+  if (filter.status){
       queryBuilder.andWhere('(reservation.status = :status)', {
         status: filter.status,
     });
     }
     if (filter.roleFilter==="BENEFICIARY"){
-queryBuilder.where('reservation.beneficiaryId = :userId', { userId })
+queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId })
     }
       else if (filter.roleFilter==="DONOR"){
       queryBuilder.orWhere('donation.userId = :userId', { userId })
@@ -54,6 +54,7 @@ queryBuilder.where('reservation.beneficiaryId = :userId', { userId })
       else{
 queryBuilder.where('reservation.beneficiaryId = :userId', { userId }).orWhere('donation.userId = :userId', { userId })
       }
+   
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 
