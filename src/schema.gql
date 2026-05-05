@@ -672,6 +672,10 @@ type Notification {
   updatedAt: DateTime!
 }
 
+type NotificationStats {
+  unreadCount: Int!
+}
+
 type PaginatedCategories {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -831,6 +835,7 @@ type Query {
   Get donations within a radius from a center point for map visualization
   """
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
+  getNotificationStats: NotificationStats!
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
 
   """
