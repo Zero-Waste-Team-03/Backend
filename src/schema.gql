@@ -186,7 +186,6 @@ enum ConversationStatus {
   LOCKED
 }
 
-
 input CoordinateInput {
   latitude: Float!
   longitude: Float!
