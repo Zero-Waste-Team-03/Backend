@@ -31,8 +31,7 @@ export class SmartNotificationSubscriberService
       },
     );
 
-    this.logger.log({
-      message: 'Subscribed to smart notification command channel',
+    this.logger.log('Subscribed to smart notification command channel', {
       channel: REDIS_PUBSUB_CHANNELS.SMART_NOTIFICATION_COMMAND,
       context: 'SmartNotificationSubscriber',
     });
@@ -86,8 +85,7 @@ export class SmartNotificationSubscriberService
       }
     } catch (error) {
       const messageHash = createHash('sha256').update(message).digest('hex');
-      this.logger.warn({
-        message: 'Failed to process smart notification pubsub message',
+      this.logger.warn('Failed to process smart notification pubsub message', {
         eventId,
         userId,
         payloadHash: messageHash,

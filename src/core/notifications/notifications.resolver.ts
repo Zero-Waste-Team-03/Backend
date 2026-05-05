@@ -54,8 +54,7 @@ export class NotificationsResolver {
     @Args('input') input: SendNotificationInput,
     @USER('id') userId: string,
   ) {
-    this.logger.log({
-      message: 'Sending FCM notification from resolver',
+    this.logger.log('Sending FCM notification from resolver', {
       userId,
     });
     return this.notificationsService.sendNotification(
