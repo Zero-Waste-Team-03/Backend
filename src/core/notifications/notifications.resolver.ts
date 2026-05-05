@@ -12,6 +12,7 @@ import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { RequireDeviceIdGuard } from 'src/common/guards/require-device-id.guard';
 import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
+import { NotificationStats } from './graphql/types/notification-stats.type';
 
 @Resolver(() => NotificationTypeGraphQL)
 export class NotificationsResolver {
@@ -31,6 +32,14 @@ export class NotificationsResolver {
     );
   }
 
+  @UseGuards(AccessTokenGuard)
+  @Query(()=>NotificationStats)
+  
+  async getNotificationStats(
+    @USER('id') userId: string,
+  ){
+    return this.notificationsService.getUsersNotificationStats(userId);
+  }
   @UseGuards(AccessTokenGuard)
   @Mutation(() => SendNotificationResponseType)
   async sendFcmNotification(
