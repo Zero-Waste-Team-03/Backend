@@ -14,6 +14,11 @@ import { NotificationProcessor } from './notification/notification.processor';
 import { ReservationProcessor } from './reservation/reservation.processor';
 import { ReservationModule } from 'src/core/reservation/reservation.module';
 import { ChatProcessor } from './chat/chat.processor';
+import { GamificationProcessor } from './gamification/gamification.processor';
+import { GamificationModule } from 'src/core/gamification/gamification.module';
+import { BehaviorEventsProcessor } from './behavior-events/behavior-events.processor';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Donation } from 'src/core/donation/entities/donation.entity';
 
 @Global()
 @Module({
@@ -46,6 +51,8 @@ import { ChatProcessor } from './chat/chat.processor';
     AttachmentModule,
     NotificationsModule,
     ReservationModule,
+    GamificationModule,
+    TypeOrmModule.forFeature([Donation]),
   ],
   providers: [
     MailProcessor,
@@ -53,6 +60,8 @@ import { ChatProcessor } from './chat/chat.processor';
     NotificationProcessor,
     ReservationProcessor,
     ChatProcessor,
+    GamificationProcessor,
+    BehaviorEventsProcessor,
   ],
   exports: [BullModule],
 })

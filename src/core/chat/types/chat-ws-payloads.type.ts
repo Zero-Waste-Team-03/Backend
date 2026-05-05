@@ -1,24 +1,43 @@
-export type JoinConversationPayload = {
-  conversationId: string;
-};
+import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
 
-export type LeaveConversationPayload = {
+export class JoinConversationPayload {
+  @IsUUID()
+  @IsNotEmpty()
   conversationId: string;
-};
+}
 
-export type SendMessagePayload = {
+export class LeaveConversationPayload {
+  @IsUUID()
+  @IsNotEmpty()
   conversationId: string;
+}
+
+export class SendMessagePayload {
+  @IsUUID()
+  @IsNotEmpty()
+  conversationId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
   content: string;
-};
+}
 
-export type ApproveSensitiveMessagePayload = {
+export class ApproveSensitiveMessagePayload {
+  @IsUUID()
+  @IsNotEmpty()
   conversationId: string;
+
+  @IsUUID()
+  @IsNotEmpty()
   messageId: string;
-};
+}
 
-export type MarkTransactionCompletedPayload = {
+export class MarkTransactionCompletedPayload {
+  @IsUUID()
+  @IsNotEmpty()
   conversationId: string;
-};
+}
 
 export type AckSuccess<T = Record<string, unknown>> = {
   ok: true;

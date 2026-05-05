@@ -11,24 +11,19 @@ import { DonationPhoto } from 'src/core/donation/entities/donation-photo.entity'
 import { Location } from 'src/common/locations/entities/location.entity';
 
 type SeedDonation = {
-  title: string;
-  description: string;
-  quantity: number;
-  specification: Record<string, any>;
-  expiryDate: Date;
+  title: Donation['title'];
+  description: Donation['description'];
+  quantity: Donation['quantity'];
+  foodWeightKg: Donation['foodWeightKg'];
+  specification: Donation['specification'];
+  expiryDate: Donation['expiryDate'];
   urgency: Donation['urgency'];
-  safetyChecklistCompleted: boolean;
-  listingExpiresAt?: Date;
+  safetyChecklistCompleted: Donation['safetyChecklistCompleted'];
+  listingExpiresAt?: Donation['listingExpiresAt'];
   status: Donation['status'];
   donorEmail: string;
   categoryName: string;
-  location?: {
-    latitude?: number;
-    longitude?: number;
-    neighborhood?: string;
-    city?: string;
-    country?: string;
-  };
+  location?: Partial<Location>;
   attachmentFileNames?: string[];
   mainAttachmentFileName?: string;
 };
@@ -46,6 +41,7 @@ const DONATIONS_TO_SEED: SeedDonation[] = [
     status: DonationStatusValues.PUBLISHED,
     donorEmail: 'user@gaspzero.local',
     categoryName: 'Bakery',
+    foodWeightKg: 80,
     location: {
       latitude: 36.7529,
       longitude: 3.0422,
@@ -59,6 +55,7 @@ const DONATIONS_TO_SEED: SeedDonation[] = [
     title: 'Cooked rice portions',
     description: 'Prepared meal portions from event catering.',
     quantity: 12,
+    foodWeightKg: 18,
     specification: { requiresColdChain: true, allergens: [] },
     expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 6),
     urgency: DonationUrgencyValues.HIGH,
@@ -76,6 +73,7 @@ const DONATIONS_TO_SEED: SeedDonation[] = [
     title: 'Fruit crate assortment',
     description: 'Mixed fruits close to display deadline but still consumable.',
     quantity: 8,
+    foodWeightKg: 25,
     specification: { items: ['apples', 'bananas', 'oranges'] },
     expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 18),
     urgency: DonationUrgencyValues.MEDIUM,
@@ -171,6 +169,7 @@ async function upsertDonation(seed: SeedDonation): Promise<void> {
     donationRepo.merge(existing, {
       description: seed.description,
       quantity: seed.quantity,
+      foodWeightKg: seed.foodWeightKg,
       specification: seed.specification,
       expiryDate: seed.expiryDate,
       urgency: seed.urgency,
@@ -203,6 +202,7 @@ async function upsertDonation(seed: SeedDonation): Promise<void> {
     title: seed.title,
     description: seed.description,
     quantity: seed.quantity,
+    foodWeightKg: seed.foodWeightKg,
     specification: seed.specification,
     expiryDate: seed.expiryDate,
     urgency: seed.urgency,

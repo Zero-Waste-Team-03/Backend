@@ -1,11 +1,18 @@
+import { Logger } from '@nestjs/common';
 import { ChatProcessor } from 'src/infrastructure/queue/chat/chat.processor';
 import { CHAT_JOBS } from 'src/common/constants/jobs';
 
 describe('ChatProcessor', () => {
   let processor: ChatProcessor;
+  let logSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
     processor = new ChatProcessor();
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
   });
 
   it('processes no-op moderation job', async () => {
@@ -20,5 +27,12 @@ describe('ChatProcessor', () => {
         },
       } as any),
     ).resolves.toBeUndefined();
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'No-op chat moderation job processed',
+        jobId: '1',
+      }),
+    );
   });
 });

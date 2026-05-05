@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Module } from '@nestjs/common';
+import {  Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import mailConfig from './config/mail.config';
 import redisConfig from './config/redis.config';
@@ -28,6 +26,7 @@ import dbConfig from './config/db.config';
 import { HttpExceptionFilter } from './common/filter/httpException.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { ErrorsModule } from './common/errors/errors.module';
+import { DatabaseExceptionFilter } from './common/filter/db.filer';
 
 @Module({
   imports: [
@@ -66,7 +65,7 @@ import { ErrorsModule } from './common/errors/errors.module';
             locationLoader: locationDataLoader.createLoader(),
             attachmentLoader: attachmentDataLoader.createLoader(),
             categoryLoader: categoryDataLoader.createLoader(),
-            donationLoader: donationDataLoader.createLoader(),
+            donationLoader: donationDataLoader.createLoader(req?.user?.id),
           };
           return { req, res, loaders };
         },
@@ -95,6 +94,10 @@ import { ErrorsModule } from './common/errors/errors.module';
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseExceptionFilter,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}

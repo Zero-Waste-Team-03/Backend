@@ -31,6 +31,9 @@ import { MAIL_JOBS } from 'src/common/constants/jobs';
 import * as crypto from 'crypto';
 import { throwAppError } from 'src/common/errors';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
+import { Report } from 'src/core/reporting/entities/report.entity';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
 
 export interface OAuthUserPayload {
   email: string;
@@ -47,11 +50,14 @@ export class UserService {
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(UserSettings)
     private readonly userSettingsRepository: Repository<UserSettings>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
     @Inject(appConfig.KEY)
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     @InjectQueue(QUEUE_NAME.MAIL)
     private readonly mailQueue: Queue,
     private readonly attachmentService: AttachmentService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getPaginatedUsers(
@@ -114,6 +120,16 @@ export class UserService {
     }
     user.status = UserStatusValues.SUSPENDED;
     await this.userRepository.save(user);
+    await this.notificationsService.sendNotification(
+      'Account suspended',
+      'Your account has been suspended. Contact support for more details.',
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      {
+        userId: user.id,
+        status: UserStatusValues.SUSPENDED,
+      },
+    );
     return user;
   }
 
@@ -129,18 +145,35 @@ export class UserService {
     }
     user.status = UserStatusValues.ACTIVE;
     await this.userRepository.save(user);
+    await this.notificationsService.sendNotification(
+      'Account reactivated',
+      'Your account has been reactivated. You can now use the platform normally.',
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      {
+        userId: user.id,
+        status: UserStatusValues.ACTIVE,
+      },
+    );
     return user;
   }
 
   async getUserStats(): Promise<UserStatsResponse> {
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
 
     const [
       totalUsers,
       activeAccounts,
       previousTotalUsers,
       previousActiveAccounts,
+      reportedIssues,
+      previousReportedIssues,
     ] = await Promise.all([
       this.userRepository.count(),
       this.userRepository.count({
@@ -155,6 +188,21 @@ export class UserService {
           createdAt: LessThan(startOfCurrentMonth),
         },
       }),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .getCount(),
+      this.reportRepository
+        .createQueryBuilder('report')
+        .where('report.createdAt >= :startOfPreviousMonth', {
+          startOfPreviousMonth,
+        })
+        .andWhere('report.createdAt < :startOfCurrentMonth', {
+          startOfCurrentMonth,
+        })
+        .getCount(),
     ]);
 
     const calculateIncrease = (current: number, previous: number) => {
@@ -172,8 +220,10 @@ export class UserService {
       previousActiveAccounts,
     );
 
-    const reportedIssues = 0;
-    const reportedIssuesIncrease = 0;
+    const reportedIssuesIncrease = calculateIncrease(
+      reportedIssues,
+      previousReportedIssues,
+    );
 
     return {
       totalUsers,

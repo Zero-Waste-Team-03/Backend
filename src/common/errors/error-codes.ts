@@ -85,6 +85,11 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'No active notification tokens found for this user.',
   },
+  NOTIFICATION_DEVICE_ID_REQUIRED: {
+    code: 'notification.device_id_required',
+    httpStatus: 400,
+    message: 'The x-device-id header is required to register a device token.',
+  },
 
   // ── Donation ────────────────────────────────────────────────────────
   DONATION_NOT_FOUND: {
@@ -119,6 +124,12 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'Donation is not available for reservation.',
     args: { id: 'string', status: 'string' } as const,
+  },
+  DONATION_LIKE_TARGET_INVALID: {
+    code: 'donation.like_target_invalid',
+    httpStatus: 400,
+    message: 'Cannot like your own donation.',
+    args: { id: 'string' } as const,
   },
 
   UPLOAD_FILE_REQUIRED: {
@@ -189,6 +200,28 @@ export const ERROR_CODES = {
     message: 'Reservation cannot be processed in its current status.',
     args: { status: 'string' } as const,
   },
+  RESERVATION_QUANTITY_INVALID: {
+    code: 'reservation.quantity_invalid',
+    httpStatus: 400,
+    message: 'Reservation quantity must be a positive integer.',
+    args: { quantity: 'number' } as const,
+  },
+  RESERVATION_ALREADY_ACTIVE: {
+    code: 'reservation.already_active',
+    httpStatus: 409,
+    message: 'You already have an active reservation for this donation.',
+    args: { donationId: 'string', beneficiaryId: 'string' } as const,
+  },
+  DONATION_CAPACITY_EXCEEDED: {
+    code: 'donation.capacity_exceeded',
+    httpStatus: 400,
+    message: 'Requested reservation quantity exceeds donation capacity.',
+    args: {
+      id: 'string',
+      requestedQuantity: 'number',
+      remainingQuantity: 'number',
+    } as const,
+  },
   CHAT_CONVERSATION_NOT_FOUND: {
     code: 'chat.conversation_not_found',
     httpStatus: 404,
@@ -212,6 +245,37 @@ export const ERROR_CODES = {
     httpStatus: 400,
     message: 'Cannot approve this message.',
     args: { id: 'string' } as const,
+  },
+  BADGE_NOT_FOUND: {
+    code: 'badge.not_found',
+    httpStatus: 404,
+    message: 'Badge not found.',
+    args: { id: 'string' } as const,
+  },
+
+  REPORT_NOT_FOUND: {
+    code: 'report.not_found',
+    httpStatus: 404,
+    message: 'Report not found.',
+    args: { id: 'string' } as const,
+  },
+  REPORT_DUPLICATE_OPEN: {
+    code: 'report.duplicate_open',
+    httpStatus: 409,
+    message: 'You already have an open report for this target.',
+    args: { targetType: 'string', targetId: 'string' } as const,
+  },
+  REPORT_STATUS_INVALID: {
+    code: 'report.status_invalid',
+    httpStatus: 400,
+    message: 'Provided report status is invalid for this action.',
+    args: { status: 'string' } as const,
+  },
+  REPORT_EXPORT_DATASET_INVALID: {
+    code: 'report.export_dataset_invalid',
+    httpStatus: 400,
+    message: 'Invalid export dataset.',
+    args: { dataset: 'string' } as const,
   },
 } as const;
 

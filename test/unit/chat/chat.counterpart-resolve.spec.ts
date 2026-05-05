@@ -36,10 +36,6 @@ describe('ChatResolver counterpart resolve', () => {
         avatarAttachmentId: 'att-1',
       }),
     };
-    const attachmentLoader = {
-      load: jest.fn().mockResolvedValue({ id: 'att-1', url: 'https://img' }),
-    };
-
     const result = await resolver.counterpart(
       {
         id: 'conv-1',
@@ -47,17 +43,16 @@ describe('ChatResolver counterpart resolve', () => {
         status: 'Active',
         createdAt: new Date(),
         counterpartUserId: 'u-2',
+        donationImageUrl: 'https://img',
       } as any,
       {
         loaders: {
           userLoader,
-          attachmentLoader,
         },
       } as any,
     );
 
     expect(userLoader.load).toHaveBeenCalledWith('u-2');
-    expect(attachmentLoader.load).toHaveBeenCalledWith('att-1');
     expect(result).toEqual({
       displayName: 'John',
       avatarUrl: 'https://img',

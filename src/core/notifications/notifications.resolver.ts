@@ -1,6 +1,7 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards, Logger } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { DeviceId } from 'src/common/decorators/device-id.decorator';
 import { NotificationTypeGraphQL } from './graphql/types/notification.type';
 import { SendNotificationInput } from './graphql/inputs/send-notification.input';
 import { PaginationQueryInput } from './graphql/inputs/pagination-query.input';
@@ -9,15 +10,26 @@ import { SendNotificationResponseType } from './graphql/types/responses.type';
 import { MessageResponseType } from '../authentication/graphql/types/message-response.type';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { USER } from '../authentication/decorators/user.decorartor';
+import { RequireDeviceIdGuard } from 'src/common/guards/require-device-id.guard';
+import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
+import { NotificationStats } from './graphql/types/notification-stats.type';
 
 @Resolver(() => NotificationTypeGraphQL)
 export class NotificationsResolver {
   private readonly logger = new Logger(NotificationsResolver.name);
 
   constructor(private readonly notificationsService: NotificationsService) {}
+  @UseGuards(AccessTokenGuard)
+  @Query(() => [NotificationTypeGraphQL],{nullable:true})
+  async getUrgentNotification(
+    @USER('id') userId: string,
+  ){
+    this.logger.log("Fetching urgent notifications for user", { userId });
+    return null;
+  }
 
   @UseGuards(AccessTokenGuard)
-  @Query(() => [NotificationTypeGraphQL], { name: 'notifications' })
+  @Query(() => PaginatedNotifications)
   async getNotifications(
     @Args('pagination', { nullable: true }) pagination: PaginationQueryInput,
     @USER('id') userId: string,
@@ -28,6 +40,14 @@ export class NotificationsResolver {
     );
   }
 
+  @UseGuards(AccessTokenGuard)
+  @Query(()=>NotificationStats)
+  
+  async getNotificationStats(
+    @USER('id') userId: string,
+  ){
+    return this.notificationsService.getUsersNotificationStats(userId);
+  }
   @UseGuards(AccessTokenGuard)
   @Mutation(() => SendNotificationResponseType)
   async sendFcmNotification(
@@ -47,13 +67,18 @@ export class NotificationsResolver {
     );
   }
 
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RequireDeviceIdGuard)
   @Mutation(() => MessageResponseType)
   async registerFcmToken(
     @Args('fcmToken') input: string,
+    @DeviceId() deviceId: string,
     @USER('id') userId: string,
   ) {
-    const result = await this.notificationsService.registerToken(input, userId);
+    const result = await this.notificationsService.registerToken(
+      input,
+      userId,
+      deviceId,
+    );
     return { message: result.message };
   }
 

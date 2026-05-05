@@ -6,6 +6,7 @@ export const REDIS_PUBSUB_CHANNELS = {
 export const BEHAVIOR_EVENT_NAME = {
   BENEFICIARY_SEARCH_PERFORMED: 'BeneficiarySearchPerformed',
   DONATION_PUBLISHED: 'DonationPublished',
+  LIKED_DONATION:'LikedDonation',
 } as const;
 
 export const SEARCH_DISTANCE_BUCKETS = ['500m', '1km', '5km'] as const;

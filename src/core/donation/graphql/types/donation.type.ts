@@ -1,4 +1,11 @@
-import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
+import {
+  Field,
+  Float,
+  ID,
+  Int,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import {
   DonationUrgency,
@@ -40,6 +47,12 @@ export class DonationType {
 
   @Field(() => Int, { description: 'Available quantity' })
   quantity: number;
+
+  @Field(() => Float, {
+    nullable: true,
+    description: 'Approximate food weight in kilograms',
+  })
+  foodWeightKg?: number | null;
 
   @Field(() => GraphQLJSON, {
     nullable: true,
@@ -102,16 +115,22 @@ export class DonationType {
   attachmentIds: string[];
 
   @Field(() => String, {
-    nullable:true,
+    nullable: true,
     description: 'Main attachment id used as cover photo',
   })
   mainAttachmentId?: string;
 
-  @Field(()=>AttachementType,{
-    nullable:true,
-    description: "The Main attachment used as cover photo"
+  @Field(() => AttachementType, {
+    nullable: true,
+    description: 'The Main attachment used as cover photo',
   })
-  mainAttachment?:AttachementType
+  mainAttachment?: AttachementType;
+
+  @Field(() => Boolean, {
+    description: 'Whether the authenticated user liked this donation',
+  })
+  isLikedByMe: boolean;
+
   @Field(() => Date)
   createdAt: Date;
 

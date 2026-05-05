@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Entity,
   PrimaryColumn,
   Column,
@@ -6,7 +7,6 @@ import {
   ManyToOne,
   JoinColumn,
   Relation,
-  BeforeInsert,
 } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { User } from '../../../../core/user/entities/user.entity';
@@ -41,7 +41,7 @@ export class Attachment {
   @JoinColumn({ name: 'uploadedById' })
   uploadedBy: Relation<User>;
 
-  @Column('string')
+  @Column('uuid')
   uploadedById: string;
 
   @Column({
@@ -59,6 +59,8 @@ export class Attachment {
 
   @BeforeInsert()
   generateId() {
-    this.id = uuidv7();
+    if (!this.id) {
+      this.id = uuidv7();
+    }
   }
 }

@@ -9,12 +9,15 @@ import { RolesGuard } from './guards/roles.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleGuard } from './guards/oauth/google.guard';
 import { GoogleStrategy } from './strategies/oauth/google.strategy';
-import { QueueModule } from 'src/infrastructure/queue/queue.module';
 import { UserModule } from '../user/user.module';
 import { AuthenticationController } from './v1/authentication.controller';
 import { AuthenticationService } from './v1/authentication.service';
 import { AuthenticationResolver } from './authentication.resolver';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
+import { ConfigType } from '@nestjs/config';
+import authConfig from 'src/config/auth.config';
+import { BullModule } from '@nestjs/bullmq';
+import { QUEUE_NAME } from 'src/common/constants/queues';
 
 /**
  * Authentication module
@@ -30,11 +33,19 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
  */
 @Module({
   imports: [
-    JwtModule.register({
-      global: true,
+    JwtModule.registerAsync({
+      useFactory: (conf: ConfigType<typeof authConfig>) => ({
+        secret: conf.jwt.accessTokenSecret,
+        signOptions: { expiresIn: conf.jwt.accessTokenExpiresIn },
+        global: true,
+      }),
+      inject: [authConfig.KEY],
     }),
+    BullModule.registerQueue(
+      { name: QUEUE_NAME.MAIL },
+      { name: QUEUE_NAME.UPLOAD },
+    ),
     UserModule,
-    QueueModule,
     AttachmentModule,
   ],
   controllers: [AuthenticationController],
@@ -51,6 +62,6 @@ import { AttachmentModule } from 'src/common/modules/attachment/attachment.modul
     RefreshTokenGuard,
     RolesGuard,
   ],
-  exports: [AccessTokenGuard, RolesGuard],
+  exports: [AccessTokenGuard, RolesGuard, JwtModule],
 })
 export class AuthenticationModule {}

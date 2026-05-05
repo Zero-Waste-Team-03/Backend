@@ -23,7 +23,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
 import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
-import { CHAT_JOBS } from 'src/common/constants/jobs';
+import { CHAT_JOBS, GAMIFICATION_JOBS } from 'src/common/constants/jobs';
 import {
   Donation,
   DonationStatusValues,
@@ -31,6 +31,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
+import { throwGatewayAppError } from 'src/common/errors/throw-app-error';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -52,6 +53,8 @@ export class ChatService {
     private readonly notificationsService: NotificationsService,
     @InjectQueue(QUEUE_NAME.CHAT)
     private readonly chatQueue: Queue,
+    @InjectQueue(QUEUE_NAME.GAMIFICATION)
+    private readonly gamificationQueue: Queue,
   ) {}
 
   async getOrCreateConversation(
@@ -95,6 +98,8 @@ export class ChatService {
         'reservation.id = conversation.reservationId',
       )
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin('donationPhoto.attachment', 'donationAttachment')
       .where(
         '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
         { requesterId },
@@ -104,14 +109,17 @@ export class ChatService {
       })
       .select([
         'conversation.id AS id',
-        'conversation.reservationId AS reservationId',
-        'conversation.lastMessage AS lastMessage',
-        'conversation.status AS status',
-        'conversation.createdAt AS createdAt',
-        'reservation.beneficiaryId AS beneficiaryId',
-        'donation.userId AS donorId',
+        'conversation."reservationId" AS "reservationId"',
+        'conversation."lastMessage" AS "lastMessage"',
+        'conversation.status AS "status"',
+        'conversation."createdAt" AS "createdAt"',
+        'reservation."beneficiaryId" AS "beneficiaryId"',
+        'donation."userId" AS "donorId"',
+        'donation.title AS "donationTitle"',
+        'donationAttachment.url AS "donationImageUrl"',
       ])
       .orderBy('conversation.createdAt', 'DESC')
+
       .getRawMany<{
         id: string;
         reservationId: string;
@@ -120,6 +128,8 @@ export class ChatService {
         createdAt: Date;
         beneficiaryId: string;
         donorId: string;
+        donationTitle: string | null;
+        donationImageUrl: string | null;
       }>();
 
     return rows.map((row) => ({
@@ -130,6 +140,8 @@ export class ChatService {
       createdAt: row.createdAt,
       counterpartUserId:
         row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
+      donationTitle: row.donationTitle,
+      donationImageUrl: row.donationImageUrl,
       counterpart: {
         displayName: '',
         avatarUrl: null,
@@ -144,7 +156,7 @@ export class ChatService {
     );
 
     if (conversation.status !== ConversationStatusValues.ACTIVE) {
-      throwAppError('RESERVATION_STATUS_INVALID', {
+      throwGatewayAppError('RESERVATION_STATUS_INVALID', {
         status: conversation.status,
       });
     }
@@ -206,7 +218,7 @@ export class ChatService {
     const where: FindOptionsWhere<Message> = { conversationId };
     const [items, totalCount] = await this.messageRepository.findAndCount({
       where,
-      order: { createdAt: 'ASC' },
+      order: {createdAt: 'DESC' },
       skip,
       take: limit,
     });
@@ -258,14 +270,14 @@ export class ChatService {
     });
 
     if (!message) {
-      throwAppError('CHAT_MESSAGE_NOT_FOUND', { id: dto.messageId });
+      throwGatewayAppError('CHAT_MESSAGE_NOT_FOUND', { id: dto.messageId });
     }
 
     if (
       message.senderId === dto.approverId ||
       !this.isSensitive(message.content)
     ) {
-      throwAppError('CHAT_INVALID_APPROVAL', { id: dto.messageId });
+      throwGatewayAppError('CHAT_INVALID_APPROVAL', { id: dto.messageId });
     }
 
     const marker = `${SENSITIVE_APPROVED_PREFIX}:${message.id}:${dto.approverId}`;
@@ -288,7 +300,7 @@ export class ChatService {
     });
 
     if (!conversation) {
-      throwAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
+      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
     }
 
     const reservation = await this.requireAuthorizedReservation(
@@ -319,6 +331,9 @@ export class ChatService {
     );
     return conversation.status;
   }
+  private getReputationIncrease(donation: Donation): number {
+    return donation.category.reputationGain;
+  }
 
   async markTransactionCompleted(
     dto: MarkTransactionCompletedDto,
@@ -328,91 +343,136 @@ export class ChatService {
       dto.userId,
     );
 
-    return this.conversationRepository.manager.transaction(async (manager) => {
-      const lockedConversation = await manager.findOne(Conversation, {
-        where: { id: conversation.id },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!lockedConversation) {
-        throwAppError('CHAT_CONVERSATION_NOT_FOUND', {
-          id: dto.conversationId,
+    const updatedConversation =
+      await this.conversationRepository.manager.transaction(async (manager) => {
+        const lockedConversation = await manager.findOne(Conversation, {
+          where: { id: conversation.id },
+          lock: { mode: 'pessimistic_write' },
         });
-      }
 
-      const reservation = await manager.findOne(Reservation, {
-        where: { id: lockedConversation.reservationId },
-        lock: { mode: 'pessimistic_write' },
-        relations: ['donation'],
-      });
+        if (!lockedConversation) {
+          throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', {
+            id: dto.conversationId,
+          });
+        }
 
-      if (!reservation) {
-        throwAppError('RESERVATION_NOT_FOUND', {
-          id: lockedConversation.reservationId,
-          status: ReservationStatusValues.PENDING,
+        const reservation = await manager.findOne(Reservation, {
+          where: { id: lockedConversation.reservationId },
+          lock: { mode: 'pessimistic_write' },
         });
-      }
 
-      const donorId = reservation.donation.userId;
-      const beneficiaryId = reservation.beneficiaryId;
+        if (!reservation) {
+          throwGatewayAppError('RESERVATION_NOT_FOUND', {
+            id: lockedConversation.reservationId,
+            status: ReservationStatusValues.PENDING,
+          });
+        }
 
-      const marker = this.getCompletionMarker(dto.userId);
-      const existingMarker = await manager.findOne(Message, {
-        where: {
-          conversationId: lockedConversation.id,
-          senderId: dto.userId,
-          content: marker,
-        },
-      });
-
-      if (!existingMarker) {
-        const completionMessage = manager.create(Message, {
-          conversationId: lockedConversation.id,
-          senderId: dto.userId,
-          content: marker,
-          isModerated: false,
+        const donation = await manager.findOne(Donation, {
+          where: { id: reservation.donationId },
+          relations:{category:true},
+          lock: { mode: 'pessimistic_write' },
         });
-        await manager.save(Message, completionMessage);
-      }
 
-      const [donorDone, beneficiaryDone] = await Promise.all([
-        manager.findOne(Message, {
+        if (!donation) {
+          throwAppError('DONATION_NOT_FOUND', { id: reservation.donationId });
+        }
+
+        const donorId = donation.userId;
+        const beneficiaryId = reservation.beneficiaryId;
+
+        if (
+          reservation.status !== ReservationStatusValues.CONFIRMED &&
+          reservation.status !== ReservationStatusValues.COMPLETED
+        ) {
+          throwGatewayAppError('RESERVATION_STATUS_INVALID', {
+            status: reservation.status,
+          });
+        }
+
+        const marker = this.getCompletionMarker(dto.userId);
+        const existingMarker = await manager.findOne(Message, {
           where: {
             conversationId: lockedConversation.id,
-            senderId: donorId,
-            content: this.getCompletionMarker(donorId),
+            senderId: dto.userId,
+            content: marker,
           },
-        }),
-        manager.findOne(Message, {
-          where: {
-            conversationId: lockedConversation.id,
-            senderId: beneficiaryId,
-            content: this.getCompletionMarker(beneficiaryId),
-          },
-        }),
-      ]);
-
-      if (donorDone && beneficiaryDone) {
-        lockedConversation.status = ConversationStatusValues.ARCHIVED;
-        lockedConversation.lastMessage = 'Transaction completed';
-
-        reservation.status = ReservationStatusValues.COMPLETED;
-        await manager.save(Reservation, reservation);
-
-        await manager.update(Donation, reservation.donationId, {
-          status: DonationStatusValues.COMPLETED,
         });
 
-        await manager
-          .createQueryBuilder()
-          .update(User)
-          .set({ reputationScore: () => '"reputationScore" + 1' })
-          .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
-          .execute();
-      }
+        if (!existingMarker) {
+          const completionMessage = manager.create(Message, {
+            conversationId: lockedConversation.id,
+            senderId: dto.userId,
+            content: marker,
+            isModerated: false,
+          });
+          await manager.save(Message, completionMessage);
+        }
 
-      return manager.save(Conversation, lockedConversation);
-    });
+        const [donorDone, beneficiaryDone] = await Promise.all([
+          manager.findOne(Message, {
+            where: {
+              conversationId: lockedConversation.id,
+              senderId: donorId,
+              content: this.getCompletionMarker(donorId),
+            },
+          }),
+          manager.findOne(Message, {
+            where: {
+              conversationId: lockedConversation.id,
+              senderId: beneficiaryId,
+              content: this.getCompletionMarker(beneficiaryId),
+            },
+          }),
+        ]);
+
+        if (donorDone && beneficiaryDone) {
+          lockedConversation.status = ConversationStatusValues.ARCHIVED;
+          lockedConversation.lastMessage = 'Transaction completed';
+
+          if (reservation.status !== ReservationStatusValues.COMPLETED) {
+            reservation.status = ReservationStatusValues.COMPLETED;
+            await manager.save(Reservation, reservation);
+
+            donation.quantity = Math.max(
+              donation.quantity - reservation.quantity,
+              0,
+            );
+
+            if (donation.quantity <= 0) {
+              donation.status = DonationStatusValues.COMPLETED;
+            } else if (donation.status !== DonationStatusValues.COMPLETED) {
+              donation.status = DonationStatusValues.PUBLISHED;
+            }
+
+            await manager.save(Donation, donation);
+          }
+          const reputationGain = this.getReputationIncrease(donation);
+
+          await manager
+            .createQueryBuilder()
+            .update(User)
+            .set({ reputationScore: () => '"reputationScore" + :reputationGain' })
+            .setParameter('reputationGain', reputationGain)
+            .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
+            .execute();
+
+          await this.gamificationQueue.add(
+            GAMIFICATION_JOBS.EVALUATE_COMPLETION_ACHIEVEMENTS,
+            {
+              donorId,
+              beneficiaryId,
+            },
+            {
+              removeOnComplete: true,
+            },
+          );
+        }
+
+        return manager.save(Conversation, lockedConversation);
+      });
+
+    return updatedConversation;
   }
 
   private async requireAuthorizedReservation(
@@ -425,7 +485,7 @@ export class ChatService {
     });
 
     if (!reservation) {
-      throwAppError('RESERVATION_NOT_FOUND', {
+      throwGatewayAppError('RESERVATION_NOT_FOUND', {
         id: reservationId,
         status: ReservationStatusValues.PENDING,
       });
@@ -435,7 +495,7 @@ export class ChatService {
     const isBeneficiary = reservation.beneficiaryId === requesterId;
 
     if (!isDonor && !isBeneficiary) {
-      throwAppError('RESERVATION_OWNERSHIP_INVALID');
+      throwGatewayAppError('RESERVATION_OWNERSHIP_INVALID');
     }
 
     return reservation;

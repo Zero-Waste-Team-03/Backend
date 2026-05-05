@@ -1,5 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
-import { IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 
 @InputType('ConversationMessagesInput')
@@ -9,5 +9,6 @@ export class ConversationMessagesInput {
   conversationId: string;
 
   @Field(() => PaginationInput, { nullable: true })
+  @IsOptional()
   pagination?: PaginationInput;
 }

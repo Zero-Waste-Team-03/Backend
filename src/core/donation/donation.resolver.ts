@@ -26,17 +26,26 @@ import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface
 import { User, UserRole } from '../user/entities/user.entity';
 import { PaginatedDonations } from './graphql/types/paginated-donations.type';
 import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
+import { DonationsHeatmapInput } from './graphql/inputs/donations-heatmap.input';
+import { DonationsHeatmapType } from './graphql/types/donations-heatmap.type';
 import { LocationType } from '../authentication/graphql/types/location.type';
 import { CategoryType } from '../category/graphql/types/category.type';
 import { Location } from 'src/common/locations/entities/location.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 import { Category } from '../category/entities/category.entity';
+import { UsersDonationsStats } from './graphql/types/donations-stats.type';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
   constructor(private readonly donationService: DonationService) {}
 
+  @Query(()=>UsersDonationsStats,{
+    description:"Get the current user profile stats related to donations,"
+  })
+  async myDonationsStats(@USER('id') userId:string):Promise<UsersDonationsStats>{
+    return this.donationService.getUsersDonationsStats(userId);
+  }
   @Query(() => DonationStatisticsType, {
     description:
       'Get statistics for donations (total active, flagged, pending approvals)',
@@ -46,12 +55,24 @@ export class DonationResolver {
   }
 
   @Query(() => [DonationMapMarkerType], {
-    description: 'Get donations within a radius from a center point for map visualization',
+    description:
+      'Get donations within a radius from a center point for map visualization',
   })
   async donationsMap(
+    @USER('id') userId: string,
     @Args('input') input: DonationsMapInput,
   ): Promise<DonationMapMarkerType[]> {
-    return this.donationService.getDonationsForMap(input);
+    return this.donationService.getDonationsForMap(input, userId);
+  }
+
+  @Query(() => DonationsHeatmapType, {
+    description:
+      'Get viewport-based donation activity heatmap cells with normalized score',
+  })
+  async donationsHeatmap(
+    @Args('input') input: DonationsHeatmapInput,
+  ): Promise<DonationsHeatmapType> {
+    return this.donationService.getDonationsHeatmap(input);
   }
 
   @Query(() => PaginatedDonations, {
@@ -59,22 +80,43 @@ export class DonationResolver {
       'Get all donation listings with optional filters and donor access',
   })
   async donations(
-    @USER('id') userId:string,
-    @USER('role') role:UserRole,
+    @USER('id') userId: string,
+    @USER('role') role: UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('behaviorContext', { nullable: true })
     behaviorContext?: DonationBehaviorContextInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-
     return this.donationService.findAll(
       userId,
       filter,
       behaviorContext,
       pagination,
-      role=='Administrator',
+      role == 'Administrator',
     );
+  }
+  @Query(() => PaginatedDonations, {
+    description:
+      'Get donation listings created by the authenticated user with optional filters and pagination',
+  })
+  async myDonations(
+    @USER('id') userId: string,
+    @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedDonations> {
+    return this.donationService.getMyDonations(userId, filter, pagination);
+  }
 
+  @Query(() => PaginatedDonations, {
+    description:
+      'Get liked donations for the authenticated user with the same standard filters and pagination',
+  })
+  async likedDonations(
+    @USER('id') userId: string,
+    @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedDonations> {
+    return this.donationService.findLikedDonations(userId, filter, pagination);
   }
 
   @ResolveField(() => UserType)
@@ -103,7 +145,7 @@ export class DonationResolver {
     return loaders.categoryLoader.load(donation.categoryId);
   }
 
-  @ResolveField(()=>AttachementType,{nullable:true})
+  @ResolveField(() => AttachementType, { nullable: true })
   async mainAttachment(
     @Parent() donation: DonationType,
     @Context() { loaders }: { loaders: IDataLoaders },
@@ -112,7 +154,8 @@ export class DonationResolver {
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
   }
   @Mutation(() => DonationType, {
-    description: 'Create a donation listing for the authenticated user',
+    description:
+      'Create a donation listing for the authenticated user, including required foodWeightKg',
   })
   async createDonation(
     @Args('input') input: CreateDonationInput,
@@ -123,7 +166,7 @@ export class DonationResolver {
 
   @Mutation(() => DonationType, {
     description:
-      'Update a donation listing owned by the authenticated user using id and owner condition',
+      'Update a donation listing owned by the authenticated user using id and owner condition (including foodWeightKg)',
   })
   async updateDonation(
     @Args('id', { type: () => ID }) id: string,
@@ -137,8 +180,29 @@ export class DonationResolver {
   })
   async donation(
     @Args('id', { type: () => ID }) id: string,
+    @USER('id') userId: string,
   ): Promise<DonationType> {
-    return await this.donationService.getDonationById(id);
+    return await this.donationService.getDonationById(id, userId);
+  }
+
+  @Mutation(() => MessageResponseType, {
+    description: 'Like a donation for the authenticated user',
+  })
+  async likeDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') userId: string,
+  ): Promise<MessageResponseType> {
+    return this.donationService.likeDonation(donationId, userId);
+  }
+
+  @Mutation(() => MessageResponseType, {
+    description: 'Unlike a donation for the authenticated user',
+  })
+  async unlikeDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') userId: string,
+  ): Promise<MessageResponseType> {
+    return this.donationService.unlikeDonation(donationId, userId);
   }
 
   @Mutation(() => MessageResponseType, {

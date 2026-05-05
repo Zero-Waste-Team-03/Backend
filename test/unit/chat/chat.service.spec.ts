@@ -7,11 +7,6 @@ import {
   Reservation,
   ReservationStatusValues,
 } from 'src/core/reservation/entities/reservation.entity';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import { ChatStateMachineService } from 'src/core/chat/chat-state-machine.service';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -22,6 +17,7 @@ import {
   Donation,
   DonationStatusValues,
 } from 'src/core/donation/entities/donation.entity';
+import { WsException } from '@nestjs/websockets';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -57,6 +53,10 @@ describe('ChatService', () => {
     add: jest.fn(),
   };
 
+  const gamificationQueue = {
+    add: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -82,6 +82,10 @@ describe('ChatService', () => {
           provide: getQueueToken(QUEUE_NAME.CHAT),
           useValue: chatQueue,
         },
+        {
+          provide: getQueueToken(QUEUE_NAME.GAMIFICATION),
+          useValue: gamificationQueue,
+        },
         ChatStateMachineService,
       ],
     }).compile();
@@ -97,6 +101,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -127,13 +132,14 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.PENDING,
     });
 
     await expect(
       service.getMessages('conv-1', 'random-user', { page: 1, limit: 10 }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('sends message for conversation member', async () => {
@@ -150,6 +156,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -216,7 +223,7 @@ describe('ChatService', () => {
         senderId: 'donor-1',
         content: 'hello',
       }),
-    ).rejects.toBeInstanceOf(NotFoundException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('blocks sending when conversation state is not active', async () => {
@@ -228,6 +235,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.PENDING,
     });
@@ -238,7 +246,7 @@ describe('ChatService', () => {
         senderId: 'donor-1',
         content: 'hello',
       }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(WsException);
   });
 
   it('masks sensitive message until recipient approves', async () => {
@@ -250,6 +258,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -286,6 +295,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       beneficiaryId: 'beneficiary-1',
+      quantity: 1,
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
     });
@@ -330,6 +340,7 @@ describe('ChatService', () => {
     reservationRepository.findOne.mockResolvedValue({
       id: 'res-1',
       donationId: 'don-1',
+      quantity: 2,
       beneficiaryId: 'beneficiary-1',
       donation: { userId: 'donor-1' },
       status: ReservationStatusValues.CONFIRMED,
@@ -347,9 +358,17 @@ describe('ChatService', () => {
         .mockResolvedValueOnce({
           id: 'res-1',
           donationId: 'don-1',
+          quantity: 2,
           beneficiaryId: 'beneficiary-1',
           donation: { userId: 'donor-1' },
           status: ReservationStatusValues.CONFIRMED,
+        })
+        .mockResolvedValueOnce({
+          id: 'don-1',
+          userId: 'donor-1',
+          quantity: 2,
+          status: DonationStatusValues.PUBLISHED,
+          category: { reputationGain: 10 },
         })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: 'done-donor' })
@@ -359,11 +378,13 @@ describe('ChatService', () => {
         .fn()
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce({ id: 'conv-1', status: 'Archived' }),
       update: jest.fn().mockResolvedValue(undefined),
       createQueryBuilder: jest.fn().mockReturnValue({
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         execute: jest.fn().mockResolvedValue(undefined),
       }),
@@ -378,15 +399,25 @@ describe('ChatService', () => {
       userId: 'donor-1',
     });
 
-    expect(manager.update).toHaveBeenCalledWith(Donation, 'don-1', {
-      status: DonationStatusValues.COMPLETED,
-    });
+    expect(manager.save).toHaveBeenCalledWith(
+      Donation,
+      expect.objectContaining({
+        id: 'don-1',
+        quantity: 0,
+        status: DonationStatusValues.COMPLETED,
+      }),
+    );
+    expect(manager.createQueryBuilder().setParameter).toHaveBeenCalledWith(
+      'reputationGain',
+      10,
+    );
     expect(result.status).toBe('Archived');
   });
 
   it('returns active conversations with counterpart ids', async () => {
     const queryBuilder = {
       innerJoin: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),

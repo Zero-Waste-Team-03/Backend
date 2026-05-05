@@ -10,16 +10,16 @@ import { ChatGateway } from './chat.gateway';
 import { ChatConversationMemberGuard } from './guards/chat-conversation-member.guard';
 import { ChatConversationWritableGuard } from './guards/chat-conversation-writable.guard';
 import { UserModule } from '../user/user.module';
-import { JwtModule } from '@nestjs/jwt';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Donation } from '../donation/entities/donation.entity';
+import { AuthenticationModule } from '../authentication/authentication.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Conversation, Message, Reservation, Donation]),
     UserModule,
-    JwtModule,
     NotificationsModule,
+    AuthenticationModule,
   ],
   providers: [
     ChatService,

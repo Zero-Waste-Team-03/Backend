@@ -14,6 +14,8 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { isError } from 'lodash';
 import { throwAppError } from 'src/common/errors';
+import { PaginatedNotifications } from './graphql/types/pagination-notifications.type';
+import { NotificationStats } from './graphql/types/notification-stats.type';
 
 const OLD_NOTIFICATION_DELETE_DAYS = 7;
 
@@ -55,6 +57,12 @@ export class NotificationsService {
     });
   }
 
+  async getUsersNotificationStats(userId: string):Promise<NotificationStats> {
+    const unreadCount = await this.notificationRepo.count({
+      where: { receiverId: userId, isRead: false },
+    });
+    return { unreadCount };
+  }
   /**
    * Creates a new notification record in the database.
    * @param dto - The data transfer object containing notification details.
@@ -70,15 +78,22 @@ export class NotificationsService {
    * @param paginationaQuery - The pagination query parameters.
    * @returns A promise that resolves to a list of notifications.
    */
-  async findAll(paginationQuery: PaginationQueryDto, userId: string) {
+  async findAll(paginationQuery: PaginationQueryDto, userId: string):Promise<PaginatedNotifications> {
     const { limit, page } = paginationQuery;
-    const notification = await this.notificationRepo.find({
+    const [items,count]= await this.notificationRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       where: { receiverId: userId },
       order: { createdAt: 'DESC' },
     });
-    return notification;
+    return {
+      page,
+      limit,
+      items,
+      totalCount: count,
+      hasNextPage: page * limit < count,
+      hasPreviousPage: page > 1,
+    };
   }
 
   /**
@@ -171,14 +186,17 @@ export class NotificationsService {
   async registerToken(
     fcmToken: string,
     userId: string,
+    deviceId: string,
   ): Promise<{ message: string }> {
     try {
+      console.log('Registering FCM token:', { fcmToken, userId, deviceId });
       await this.tokenRepo.upsert(
         {
           fcmToken,
           userId,
+          deviceId,
         },
-        ['fcmToken'],
+        ['userId', 'deviceId'],
       );
 
       this.logger.log({
@@ -231,6 +249,24 @@ export class NotificationsService {
    */
   async revokeAllTokensForUser(userId: string): Promise<void> {
     await this.tokenRepo.delete({ userId });
+  }
+
+  /**
+   * Removes the FCM token registered for a specific user/device pair.
+   * No-op if no such row exists.
+   * @param userId - The ID of the user logging out.
+   * @param deviceId - The device identifier sent by the client.
+   */
+  async revokeTokenForDevice(
+    userId: string,
+    deviceId: string,
+  ): Promise<void> {
+    await this.tokenRepo.delete({ userId, deviceId });
+    this.logger.log({
+      message: 'FCM token revoked for device',
+      userId,
+      context: 'Notifications',
+    });
   }
 
   /**

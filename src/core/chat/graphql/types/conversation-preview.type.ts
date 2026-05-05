@@ -26,4 +26,8 @@ export class ConversationPreviewType {
   counterpart: ChatCounterpartPreviewType;
 
   counterpartUserId: string;
+
+  donationTitle?: string | null;
+
+  donationImageUrl?: string | null;
 }

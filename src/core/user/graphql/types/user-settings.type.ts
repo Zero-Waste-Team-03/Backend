@@ -20,6 +20,9 @@ export class UserSettingsType {
   @Field(() => Boolean, { defaultValue: false })
   isSystemReports: boolean;
 
+  @Field(() => Boolean, { defaultValue: true })
+  isPushNotificationsEnabled: boolean;
+
   @Field(() => AppearanceTheme, { defaultValue: AppearanceTheme.SYSTEM })
   appearance: AppearanceTheme;
 

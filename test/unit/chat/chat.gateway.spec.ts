@@ -34,9 +34,6 @@ describe('ChatGateway', () => {
     }).compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
-    (gateway as any).server = {
-      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
-    };
   });
 
   it('should be defined', () => {
@@ -44,54 +41,68 @@ describe('ChatGateway', () => {
   });
 
   it('acknowledges join conversation', async () => {
+    const emit = jest.fn();
     const client = {
       user: { id: 'u-1' },
       join: jest.fn(),
+      to: jest.fn().mockReturnValue({ emit }),
     } as any;
 
-    await gateway.handleJoinConversation(
-      client,
-      { conversationId: 'conv-1' },
-    );
+    await gateway.handleJoinConversation(client, { conversationId: 'conv-1' });
 
     expect(client.join).toHaveBeenCalledWith('conversation_conv-1');
-      });
+    expect(client.to).toHaveBeenCalledWith('conversation_conv-1');
+    expect(emit).toHaveBeenCalledWith('chat:conversation-joined', {
+      conversationId: 'conv-1',
+      userId: 'u-1',
+    });
+  });
 
   it('acknowledges send message', async () => {
+    const emit = jest.fn();
     const client = {
       user: { id: 'u-1' },
+      to: jest.fn().mockReturnValue({ emit }),
     } as any;
     mockChatService.sendMessage.mockResolvedValue({ id: 'msg-1' });
 
-    await gateway.handleSendMessage(
-      client,
-      { conversationId: 'conv-1', content: 'hello' },
-    );
+    await gateway.handleSendMessage(client, {
+      conversationId: 'conv-1',
+      content: 'hello',
+    });
 
     expect(mockChatService.sendMessage).toHaveBeenCalledWith({
       conversationId: 'conv-1',
       senderId: 'u-1',
       content: 'hello',
     });
-      });
+    expect(client.to).toHaveBeenCalledWith('conversation_conv-1');
+    expect(emit).toHaveBeenCalledWith('chat:message-created', { id: 'msg-1' });
+  });
 
   it('acknowledges mark transaction completed', async () => {
+    const emit = jest.fn();
     const client = {
       user: { id: 'u-1' },
+      to: jest.fn().mockReturnValue({ emit }),
     } as any;
     mockChatService.markTransactionCompleted.mockResolvedValue({
       id: 'conv-1',
       status: 'Archived',
     });
 
-    await gateway.handleMarkTransactionCompleted(
-      client,
-      { conversationId: 'conv-1' },
-    );
+    await gateway.handleMarkTransactionCompleted(client, {
+      conversationId: 'conv-1',
+    });
 
     expect(mockChatService.markTransactionCompleted).toHaveBeenCalledWith({
       conversationId: 'conv-1',
       userId: 'u-1',
     });
-      });
+    expect(client.to).toHaveBeenCalledWith('conversation_conv-1');
+    expect(emit).toHaveBeenCalledWith('chat:transaction-completed', {
+      conversationId: 'conv-1',
+      status: 'Archived',
+    });
+  });
 });

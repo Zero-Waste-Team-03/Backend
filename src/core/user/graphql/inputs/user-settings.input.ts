@@ -19,6 +19,11 @@ export class UserSettingsInput {
   @IsBoolean()
   isSystemReports?: boolean;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isPushNotificationsEnabled?: boolean;
+
   @Field(() => AppearanceTheme, { nullable: true })
   @IsOptional()
   @IsEnum(AppearanceTheme)

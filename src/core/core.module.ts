@@ -7,6 +7,10 @@ import { CategoryModule } from './category/category.module';
 import { DonationModule } from './donation/donation.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { ChatModule } from './chat/chat.module';
+import { GamificationModule } from './gamification/gamification.module';
+import { ReportingModule } from './reporting/reporting.module';
+import { StatsModule } from './stats/stats.module';
+import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
 
 @Module({
   imports: [
@@ -17,7 +21,11 @@ import { ChatModule } from './chat/chat.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ReservationCompletionModule,
     ChatModule,
+    GamificationModule,
+    ReportingModule,
+    StatsModule,
   ],
   exports: [
     UserModule,
@@ -27,7 +35,11 @@ import { ChatModule } from './chat/chat.module';
     CategoryModule,
     DonationModule,
     ReservationModule,
+    ReservationCompletionModule,
     ChatModule,
+    GamificationModule,
+    ReportingModule,
+    StatsModule,
   ],
 })
 export class CoreModule {}

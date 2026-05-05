@@ -12,6 +12,9 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import { USER } from './decorators/user.decorartor';
 import { User } from 'src/core/user/entities/user.entity';
 import { ChangePasswordInput } from './graphql/inputs/change-password.input';
+import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { DeviceId } from 'src/common/decorators/device-id.decorator';
+import { RequireDeviceIdGuard } from 'src/common/guards/require-device-id.guard';
 
 /**
  * GraphQL resolver for authentication operations
@@ -27,7 +30,10 @@ import { ChangePasswordInput } from './graphql/inputs/change-password.input';
  */
 @Resolver()
 export class AuthenticationResolver {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Login user with email and password
@@ -209,6 +215,27 @@ export class AuthenticationResolver {
       resetPasswordInput.token,
       resetPasswordInput.password,
     );
+  }
+
+  /**
+   * Logout the current device by removing its FCM token.
+   * Requires the `x-device-id` header. The client is expected to drop
+   * its access/refresh tokens locally.
+   *
+   * @param userId - Authenticated user id
+   * @param deviceId - Stable device identifier from `x-device-id` header
+   */
+  @UseGuards(AccessTokenGuard, RequireDeviceIdGuard)
+  @Mutation(() => MessageResponseType, {
+    description:
+      'Logout the current device by deleting its registered FCM token. Requires the x-device-id header.',
+  })
+  async logout(
+    @USER('id') userId: string,
+    @DeviceId() deviceId: string,
+  ): Promise<MessageResponseType> {
+    await this.notificationsService.revokeTokenForDevice(userId, deviceId);
+    return { message: 'Logged out from device successfully.' };
   }
 
   /**

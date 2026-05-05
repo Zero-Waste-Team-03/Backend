@@ -1,7 +1,10 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { DonationType } from 'src/core/donation/graphql/types/donation.type';
 import { UserType } from 'src/core/authentication/graphql/types/user.type';
-import { ReservationStatus, ReservationStatusValues } from '../../entities/reservation.entity';
+import {
+  ReservationStatus,
+  ReservationStatusValues,
+} from '../../entities/reservation.entity';
 
 registerEnumType(ReservationStatusValues, {
   name: 'ReservationStatus',
@@ -27,6 +30,9 @@ export class ReservationType {
 
   @Field(() => ReservationStatusValues)
   status: ReservationStatus;
+
+  @Field(() => Int)
+  quantity: number;
 
   @Field(() => Date, { nullable: true })
   confirmedAt?: Date | null;
