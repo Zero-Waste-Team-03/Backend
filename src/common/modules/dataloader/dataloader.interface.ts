@@ -16,4 +16,5 @@ export interface IDataLoaders {
   attachmentLoader: DataLoader<string, Attachment | null>;
   categoryLoader: DataLoader<string, Category | null>;
   donationLoader: DataLoader<string, Donation | null>;
+  presenceLoader: DataLoader<string, boolean>;
 }

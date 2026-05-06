@@ -13,6 +13,7 @@ import { UserModule } from '../user/user.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Donation } from '../donation/entities/donation.entity';
 import { AuthenticationModule } from '../authentication/authentication.module';
+import { PresenceModule } from '../presence/presence.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthenticationModule } from '../authentication/authentication.module';
     UserModule,
     NotificationsModule,
     AuthenticationModule,
+    PresenceModule,
   ],
   providers: [
     ChatService,

@@ -146,8 +146,71 @@ export class ChatService {
       counterpart: {
         displayName: '',
         avatarUrl: null,
+        isOnline: false,
       },
     }));
+  }
+
+  async getConversationDetails(
+    conversationId: string,
+    requesterId: string,
+  ): Promise<ConversationPreviewType> {
+    await this.requireConversationMember(conversationId, requesterId);
+
+    const row = await this.conversationRepository
+      .createQueryBuilder('conversation')
+      .innerJoin(
+        Reservation,
+        'reservation',
+        'reservation.id = conversation.reservationId',
+      )
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin('donationPhoto.attachment', 'donationAttachment')
+      .where('conversation.id = :conversationId', { conversationId })
+      .select([
+        'conversation.id AS id',
+        'conversation."reservationId" AS "reservationId"',
+        'conversation."lastMessage" AS "lastMessage"',
+        'conversation.status AS "status"',
+        'conversation."createdAt" AS "createdAt"',
+        'reservation."beneficiaryId" AS "beneficiaryId"',
+        'donation."userId" AS "donorId"',
+        'donation.title AS "donationTitle"',
+        'donationAttachment.url AS "donationImageUrl"',
+      ])
+      .getRawOne<{
+        id: string;
+        reservationId: string;
+        lastMessage: string | null;
+        status: ConversationStatus;
+        createdAt: Date;
+        beneficiaryId: string;
+        donorId: string;
+        donationTitle: string | null;
+        donationImageUrl: string | null;
+      }>();
+
+    if (!row) {
+      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
+    }
+
+    return {
+      id: row.id,
+      reservationId: row.reservationId,
+      lastMessage: row.lastMessage,
+      status: row.status,
+      createdAt: row.createdAt,
+      counterpartUserId:
+        row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
+      donationTitle: row.donationTitle,
+      donationImageUrl: row.donationImageUrl,
+      counterpart: {
+        displayName: '',
+        avatarUrl: null,
+        isOnline: false,
+      },
+    };
   }
 
   async sendMessage(dto: SendMessageDto): Promise<Message> {

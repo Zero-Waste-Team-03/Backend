@@ -10,6 +10,8 @@ import { CategoryDataLoader } from './category.dataloader';
 import { CategoryModule } from '../../../core/category/category.module';
 import { DonationDataLoader } from './donation.dataloader';
 import { DonationModule } from '../../../core/donation/donation.module';
+import { PresenceDataLoader } from './presence.dataloader';
+import { PresenceModule } from '../../../core/presence/presence.module';
 
 /**
  * DataLoader Module
@@ -25,6 +27,7 @@ import { DonationModule } from '../../../core/donation/donation.module';
     UserModule,
     CategoryModule,
     DonationModule,
+    PresenceModule,
     TypeOrmModule.forFeature([Location, Attachment]),
   ],
   providers: [
@@ -33,6 +36,7 @@ import { DonationModule } from '../../../core/donation/donation.module';
     AttachmentDataLoader,
     CategoryDataLoader,
     DonationDataLoader,
+    PresenceDataLoader,
   ],
   exports: [
     UserDataLoader,
@@ -40,6 +44,7 @@ import { DonationModule } from '../../../core/donation/donation.module';
     AttachmentDataLoader,
     CategoryDataLoader,
     DonationDataLoader,
+    PresenceDataLoader,
   ],
 })
 export class DataLoaderModule {}

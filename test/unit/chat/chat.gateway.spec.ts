@@ -3,6 +3,7 @@ import { ChatGateway } from 'src/core/chat/chat.gateway';
 import { ChatService } from 'src/core/chat/chat.service';
 import { UserService } from 'src/core/user/v1/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { PresenceService } from 'src/core/presence/presence.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
@@ -11,6 +12,14 @@ describe('ChatGateway', () => {
     sendMessage: jest.fn(),
     approveSensitiveMessage: jest.fn(),
     markTransactionCompleted: jest.fn(),
+  };
+
+  const userService = { findById: jest.fn() };
+  const jwtService = { verifyAsync: jest.fn() };
+  const presenceService = {
+    markOnline: jest.fn().mockResolvedValue(undefined),
+    markOffline: jest.fn().mockResolvedValue(undefined),
+    heartbeat: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -24,11 +33,15 @@ describe('ChatGateway', () => {
         },
         {
           provide: UserService,
-          useValue: { findById: jest.fn() },
+          useValue: userService,
         },
         {
           provide: JwtService,
-          useValue: { verifyAsync: jest.fn() },
+          useValue: jwtService,
+        },
+        {
+          provide: PresenceService,
+          useValue: presenceService,
         },
       ],
     }).compile();
@@ -78,6 +91,65 @@ describe('ChatGateway', () => {
     });
     expect(client.to).toHaveBeenCalledWith('conversation_conv-1');
     expect(emit).toHaveBeenCalledWith('chat:message-created', { id: 'msg-1' });
+  });
+
+  it('marks user online and starts heartbeat on successful connection', async () => {
+    jest.useFakeTimers();
+    jwtService.verifyAsync.mockResolvedValue({ id: 'u-1' });
+    userService.findById.mockResolvedValue({
+      id: 'u-1',
+      email: 'a@b.c',
+      role: 'user',
+      resetVersion: 0,
+    });
+
+    const client = {
+      id: 'sock-A',
+      handshake: { auth: { token: 'Bearer t' }, headers: {} },
+      data: {} as Record<string, unknown>,
+      join: jest.fn(),
+      disconnect: jest.fn(),
+      rooms: new Set<string>(),
+    } as any;
+
+    await gateway.handleConnection(client);
+
+    expect(presenceService.markOnline).toHaveBeenCalledWith('u-1', 'sock-A');
+    expect(client.data.presenceHeartbeat).toBeDefined();
+
+    presenceService.heartbeat.mockClear();
+    jest.advanceTimersByTime(PresenceService.HEARTBEAT_MS);
+    expect(presenceService.heartbeat).toHaveBeenCalledWith('u-1', 'sock-A');
+
+    clearInterval(client.data.presenceHeartbeat as NodeJS.Timeout);
+    jest.useRealTimers();
+  });
+
+  it('marks user offline on disconnect and clears heartbeat', async () => {
+    const heartbeat = setInterval(() => undefined, 1_000_000);
+    const client = {
+      id: 'sock-A',
+      user: { id: 'u-1' },
+      data: { presenceHeartbeat: heartbeat },
+      rooms: new Set<string>(),
+    } as any;
+
+    await gateway.handleDisconnect(client);
+
+    expect(presenceService.markOffline).toHaveBeenCalledWith('u-1', 'sock-A');
+    expect(client.data.presenceHeartbeat).toBeUndefined();
+  });
+
+  it('skips presence cleanup on unauthenticated disconnect', async () => {
+    const client = {
+      id: 'sock-A',
+      data: {},
+      rooms: new Set<string>(),
+    } as any;
+
+    await gateway.handleDisconnect(client);
+
+    expect(presenceService.markOffline).not.toHaveBeenCalled();
   });
 
   it('acknowledges mark transaction completed', async () => {

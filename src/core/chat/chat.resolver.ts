@@ -64,6 +64,18 @@ export class ChatResolver {
     return this.chatService.getMyActiveConversations(userId);
   }
 
+  @Query(() => ConversationPreviewType, {
+    description:
+      'Get a single conversation by id with counterpart preview (name and image)',
+  })
+  @UseGuards(ChatConversationMemberGuard)
+  async conversationDetails(
+    @Args('conversationId', { type: () => ID }) conversationId: string,
+    @USER('id') userId: string,
+  ): Promise<ConversationPreviewType> {
+    return this.chatService.getConversationDetails(conversationId, userId);
+  }
+
   @Mutation(() => ChatMessageType, {
     description: 'Send message in an existing conversation',
   })
@@ -113,7 +125,10 @@ export class ChatResolver {
     @Parent() conversation: ConversationPreviewType,
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<ChatCounterpartPreviewType> {
-    const user = await loaders.userLoader.load(conversation.counterpartUserId);
+    const [user, isOnline] = await Promise.all([
+      loaders.userLoader.load(conversation.counterpartUserId),
+      loaders.presenceLoader.load(conversation.counterpartUserId),
+    ]);
 
     const avatarUrl = conversation.donationImageUrl || null;
 
@@ -124,6 +139,7 @@ export class ChatResolver {
     return {
       displayName,
       avatarUrl,
+      isOnline,
     };
   }
 }
