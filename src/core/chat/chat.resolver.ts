@@ -64,6 +64,18 @@ export class ChatResolver {
     return this.chatService.getMyActiveConversations(userId);
   }
 
+  @Query(() => ConversationPreviewType, {
+    description:
+      'Get a single conversation by id with counterpart preview (name and image)',
+  })
+  @UseGuards(ChatConversationMemberGuard)
+  async conversationDetails(
+    @Args('conversationId', { type: () => ID }) conversationId: string,
+    @USER('id') userId: string,
+  ): Promise<ConversationPreviewType> {
+    return this.chatService.getConversationDetails(conversationId, userId);
+  }
+
   @Mutation(() => ChatMessageType, {
     description: 'Send message in an existing conversation',
   })
