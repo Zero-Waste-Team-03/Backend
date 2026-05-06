@@ -146,6 +146,7 @@ export class ChatService {
       counterpart: {
         displayName: '',
         avatarUrl: null,
+        isOnline: false,
       },
     }));
   }
@@ -207,6 +208,7 @@ export class ChatService {
       counterpart: {
         displayName: '',
         avatarUrl: null,
+        isOnline: false,
       },
     };
   }

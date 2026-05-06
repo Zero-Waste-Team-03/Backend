@@ -6,6 +6,7 @@ import { AccessTokenPayload } from '../authentication/interfaces/access-token-pa
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/v1/user.service';
 import { AuthenticatedSocket } from './types/authenticated-socket.type';
+import { PresenceService } from '../presence/presence.service';
 
 export class WsConnectionsManagerGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -15,9 +16,22 @@ export class WsConnectionsManagerGateway
   private readonly userService: UserService;
   @Inject(JwtService)
   private readonly jwtService: JwtService;
+  @Inject(PresenceService)
+  private readonly presenceService: PresenceService;
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.logger.log(`Client ${client.id} disconnect`);
+    const heartbeat = client.data?.presenceHeartbeat as
+      | NodeJS.Timeout
+      | undefined;
+    if (heartbeat) {
+      clearInterval(heartbeat);
+      client.data.presenceHeartbeat = undefined;
+    }
+    const userId = (client as AuthenticatedSocket).user?.id;
+    if (userId) {
+      await this.presenceService.markOffline(userId, client.id);
+    }
     client.rooms.clear();
   }
   async handleConnection(client: Socket) {
@@ -50,6 +64,11 @@ export class WsConnectionsManagerGateway
       client as AuthenticatedSocket,
     );
     await client.join(getuserRooms);
+
+    await this.presenceService.markOnline(userPayload.id, client.id);
+    client.data.presenceHeartbeat = setInterval(() => {
+      void this.presenceService.heartbeat(userPayload.id, client.id);
+    }, PresenceService.HEARTBEAT_MS);
   }
   getUserRoomFromSocket(client: AuthenticatedSocket): string {
     const user = client['user'];

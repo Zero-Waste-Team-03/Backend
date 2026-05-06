@@ -125,7 +125,10 @@ export class ChatResolver {
     @Parent() conversation: ConversationPreviewType,
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<ChatCounterpartPreviewType> {
-    const user = await loaders.userLoader.load(conversation.counterpartUserId);
+    const [user, isOnline] = await Promise.all([
+      loaders.userLoader.load(conversation.counterpartUserId),
+      loaders.presenceLoader.load(conversation.counterpartUserId),
+    ]);
 
     const avatarUrl = conversation.donationImageUrl || null;
 
@@ -136,6 +139,7 @@ export class ChatResolver {
     return {
       displayName,
       avatarUrl,
+      isOnline,
     };
   }
 }

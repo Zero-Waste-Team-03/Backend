@@ -11,6 +11,7 @@ import { GamificationModule } from './gamification/gamification.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { StatsModule } from './stats/stats.module';
 import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
+import { PresenceModule } from './presence/presence.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ReservationCompletionModule } from './reservation-completion/reservatio
     GamificationModule,
     ReportingModule,
     StatsModule,
+    PresenceModule,
   ],
   exports: [
     UserModule,
@@ -40,6 +42,7 @@ import { ReservationCompletionModule } from './reservation-completion/reservatio
     GamificationModule,
     ReportingModule,
     StatsModule,
+    PresenceModule,
   ],
 })
 export class CoreModule {}

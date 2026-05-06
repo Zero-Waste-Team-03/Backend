@@ -7,4 +7,7 @@ export class ChatCounterpartPreviewType {
 
   @Field(() => String, { nullable: true })
   avatarUrl?: string | null;
+
+  @Field(() => Boolean)
+  isOnline: boolean;
 }

@@ -26,7 +26,7 @@ describe('ChatResolver counterpart resolve', () => {
     resolver = module.get<ChatResolver>(ChatResolver);
   });
 
-  it('maps counterpart to name and avatar only using dataloaders', async () => {
+  it('maps counterpart to name, avatar and online status using dataloaders', async () => {
     const userLoader = {
       load: jest.fn().mockResolvedValue({
         id: 'u-2',
@@ -35,6 +35,9 @@ describe('ChatResolver counterpart resolve', () => {
         phoneNumber: '123',
         avatarAttachmentId: 'att-1',
       }),
+    };
+    const presenceLoader = {
+      load: jest.fn().mockResolvedValue(true),
     };
     const result = await resolver.counterpart(
       {
@@ -48,16 +51,46 @@ describe('ChatResolver counterpart resolve', () => {
       {
         loaders: {
           userLoader,
+          presenceLoader,
         },
       } as any,
     );
 
     expect(userLoader.load).toHaveBeenCalledWith('u-2');
+    expect(presenceLoader.load).toHaveBeenCalledWith('u-2');
     expect(result).toEqual({
       displayName: 'John',
       avatarUrl: 'https://img',
+      isOnline: true,
     });
     expect((result as any).email).toBeUndefined();
     expect((result as any).phoneNumber).toBeUndefined();
+  });
+
+  it('reports offline counterpart when presence loader returns false', async () => {
+    const userLoader = {
+      load: jest.fn().mockResolvedValue({ id: 'u-2', displayName: 'Jane' }),
+    };
+    const presenceLoader = {
+      load: jest.fn().mockResolvedValue(false),
+    };
+
+    const result = await resolver.counterpart(
+      {
+        id: 'conv-1',
+        counterpartUserId: 'u-2',
+        donationTitle: 'Bread',
+        donationImageUrl: null,
+      } as any,
+      {
+        loaders: { userLoader, presenceLoader },
+      } as any,
+    );
+
+    expect(result).toEqual({
+      displayName: 'Jane (Bread)',
+      avatarUrl: null,
+      isOnline: false,
+    });
   });
 });
