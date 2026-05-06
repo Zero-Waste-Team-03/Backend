@@ -20,6 +20,7 @@ import { ChatService } from 'src/core/chat/chat.service';
 import { ChatConversationMemberGuard } from 'src/core/chat/guards/chat-conversation-member.guard';
 import { ChatConversationWritableGuard } from 'src/core/chat/guards/chat-conversation-writable.guard';
 import { UserService } from 'src/core/user/v1/user.service';
+import { PresenceService } from 'src/core/presence/presence.service';
 
 @ObjectType('ChatMessageE2e')
 class ChatMessageE2eType {
@@ -105,6 +106,12 @@ describe('ChatGateway (e2e)', () => {
     verifyAsync: jest.fn(),
   };
 
+  const mockPresenceService = {
+    markOnline: jest.fn().mockResolvedValue(undefined),
+    markOffline: jest.fn().mockResolvedValue(undefined),
+    heartbeat: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
@@ -130,6 +137,10 @@ describe('ChatGateway (e2e)', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: PresenceService,
+          useValue: mockPresenceService,
         },
       ],
     }).compile();
