@@ -108,6 +108,13 @@ export class ChatService {
       .andWhere('conversation.status = :status', {
         status: ConversationStatusValues.ACTIVE,
       })
+      .addSelect((qb) =>
+        qb
+          .select('MAX(message."createdAt")')
+          .from(Message, 'message')
+          .where('message."conversationId" = conversation.id'),
+        'lastMessageAt',
+      )
       .select([
         'conversation.id AS id',
         'conversation."reservationId" AS "reservationId"',
@@ -119,7 +126,8 @@ export class ChatService {
         'donation.title AS "donationTitle"',
         'donationAttachment.url AS "donationImageUrl"',
       ])
-      .orderBy('conversation.createdAt', 'DESC')
+      .orderBy('"lastMessageAt"', 'DESC', 'NULLS LAST')
+      .addOrderBy('conversation."createdAt"', 'DESC')
 
       .getRawMany<{
         id: string;

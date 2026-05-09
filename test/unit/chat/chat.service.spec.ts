@@ -416,14 +416,16 @@ describe('ChatService', () => {
     expect(result.status).toBe('Archived');
   });
 
-  it('returns active conversations with counterpart ids', async () => {
+  it('returns active conversations with counterpart ids ordered by last message', async () => {
     const queryBuilder = {
       innerJoin: jest.fn().mockReturnThis(),
       leftJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       getRawMany: jest.fn().mockResolvedValue([
         {
           id: 'conv-1',
@@ -440,6 +442,15 @@ describe('ChatService', () => {
 
     const result = await service.getMyActiveConversations('beneficiary-1');
 
+    expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+      '"lastMessageAt"',
+      'DESC',
+      'NULLS LAST',
+    );
+    expect(queryBuilder.addOrderBy).toHaveBeenCalledWith(
+      'conversation."createdAt"',
+      'DESC',
+    );
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual(
       expect.objectContaining({
