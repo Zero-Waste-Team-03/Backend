@@ -108,6 +108,13 @@ export class ChatService {
       .andWhere('conversation.status = :status', {
         status: ConversationStatusValues.ACTIVE,
       })
+      .addSelect((qb) =>
+        qb
+          .select('MAX(message."createdAt")')
+          .from(Message, 'message')
+          .where('message."conversationId" = conversation.id'),
+        'lastMessageAt',
+      )
       .select([
         'conversation.id AS id',
         'conversation."reservationId" AS "reservationId"',
@@ -119,7 +126,8 @@ export class ChatService {
         'donation.title AS "donationTitle"',
         'donationAttachment.url AS "donationImageUrl"',
       ])
-      .orderBy('conversation.createdAt', 'DESC')
+      .orderBy('"lastMessageAt"', 'DESC', 'NULLS LAST')
+      .addOrderBy('conversation."createdAt"', 'DESC')
 
       .getRawMany<{
         id: string;
@@ -149,6 +157,123 @@ export class ChatService {
         isOnline: false,
       },
     }));
+  }
+
+  async getMyArchivedConversations(
+    requesterId: string,
+    pagination?: PaginationInput,
+  ): Promise<{
+    items: ConversationPreviewType[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const baseQuery = () =>
+      this.conversationRepository
+        .createQueryBuilder('conversation')
+        .innerJoin(
+          Reservation,
+          'reservation',
+          'reservation.id = conversation.reservationId',
+        )
+        .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+        .where(
+          '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
+          { requesterId },
+        )
+        .andWhere('conversation.status = :status', {
+          status: ConversationStatusValues.ARCHIVED,
+        });
+
+    const totalCount = await baseQuery().getCount();
+
+    const rows = await baseQuery()
+      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin('donationPhoto.attachment', 'donationAttachment')
+      .addSelect((qb) =>
+        qb
+          .select('MAX(message."createdAt")')
+          .from(Message, 'message')
+          .where('message."conversationId" = conversation.id'),
+        'lastMessageAt',
+      )
+      .select([
+        'conversation.id AS id',
+        'conversation."reservationId" AS "reservationId"',
+        'conversation."lastMessage" AS "lastMessage"',
+        'conversation.status AS "status"',
+        'conversation."createdAt" AS "createdAt"',
+        'reservation."beneficiaryId" AS "beneficiaryId"',
+        'donation."userId" AS "donorId"',
+        'donation.title AS "donationTitle"',
+        'donationAttachment.url AS "donationImageUrl"',
+      ])
+      .orderBy('"lastMessageAt"', 'DESC', 'NULLS LAST')
+      .addOrderBy('conversation."createdAt"', 'DESC')
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<{
+        id: string;
+        reservationId: string;
+        lastMessage: string | null;
+        status: ConversationStatus;
+        createdAt: Date;
+        beneficiaryId: string;
+        donorId: string;
+        donationTitle: string | null;
+        donationImageUrl: string | null;
+      }>();
+
+    const items = rows.map((row) => ({
+      id: row.id,
+      reservationId: row.reservationId,
+      lastMessage: row.lastMessage,
+      status: row.status,
+      createdAt: row.createdAt,
+      counterpartUserId:
+        row.beneficiaryId === requesterId ? row.donorId : row.beneficiaryId,
+      donationTitle: row.donationTitle,
+      donationImageUrl: row.donationImageUrl,
+      counterpart: {
+        displayName: '',
+        avatarUrl: null,
+        isOnline: false,
+      },
+    }));
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasNextPage: totalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  async getMyArchivedConversationsCount(requesterId: string): Promise<number> {
+    return this.conversationRepository
+      .createQueryBuilder('conversation')
+      .innerJoin(
+        Reservation,
+        'reservation',
+        'reservation.id = conversation.reservationId',
+      )
+      .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
+      .where(
+        '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
+        { requesterId },
+      )
+      .andWhere('conversation.status = :status', {
+        status: ConversationStatusValues.ARCHIVED,
+      })
+      .getCount();
   }
 
   async getConversationDetails(
