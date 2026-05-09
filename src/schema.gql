@@ -146,6 +146,7 @@ input ChangePasswordInput {
 type ChatCounterpartPreview {
   avatarUrl: String
   displayName: String!
+  isOnline: Boolean!
 }
 
 type ChatMessage {
@@ -686,6 +687,15 @@ type PaginatedCategories {
   totalCount: Int!
 }
 
+type PaginatedConversationPreviews {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [ConversationPreview!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
 type PaginatedDangerousDonations {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -807,6 +817,11 @@ type Query {
   """Retrieve a single category by its ID."""
   category(id: ID!): Category!
 
+  """
+  Get a single conversation by id with counterpart preview (name and image)
+  """
+  conversationDetails(conversationId: ID!): ConversationPreview!
+
   """Get paginated messages of a conversation"""
   conversationMessages(input: ConversationMessagesInput!): PaginatedMessages!
 
@@ -852,6 +867,14 @@ type Query {
   Get active conversations with minimal counterpart preview (name and image only)
   """
   myActiveConversations: [ConversationPreview!]!
+
+  """
+  Get paginated archived conversations for the current user, ordered by most recent message
+  """
+  myArchivedConversations(pagination: PaginationInput): PaginatedConversationPreviews!
+
+  """Get total count of archived conversations for the current user"""
+  myArchivedConversationsCount: Int!
 
   """Get badges earned by current user"""
   myBadges: [Badge!]!
