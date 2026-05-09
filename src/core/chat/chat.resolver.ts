@@ -2,6 +2,7 @@ import {
   Args,
   Context,
   ID,
+  Int,
   Mutation,
   Parent,
   Query,
@@ -23,6 +24,8 @@ import { ChatConversationWritableGuard } from './guards/chat-conversation-writab
 import { MarkTransactionCompletedInput } from './graphql/inputs/mark-transaction-completed.input';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
 import { ChatCounterpartPreviewType } from './graphql/types/chat-counterpart-preview.type';
+import { PaginatedConversationPreviews } from './graphql/types/paginated-conversation-previews.type';
+import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 
 @UseGuards(AccessTokenGuard)
@@ -62,6 +65,26 @@ export class ChatResolver {
     @USER('id') userId: string,
   ): Promise<ConversationPreviewType[]> {
     return this.chatService.getMyActiveConversations(userId);
+  }
+
+  @Query(() => PaginatedConversationPreviews, {
+    description:
+      'Get paginated archived conversations for the current user, ordered by most recent message',
+  })
+  async myArchivedConversations(
+    @USER('id') userId: string,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedConversationPreviews> {
+    return this.chatService.getMyArchivedConversations(userId, pagination);
+  }
+
+  @Query(() => Int, {
+    description: 'Get total count of archived conversations for the current user',
+  })
+  async myArchivedConversationsCount(
+    @USER('id') userId: string,
+  ): Promise<number> {
+    return this.chatService.getMyArchivedConversationsCount(userId);
   }
 
   @Query(() => ConversationPreviewType, {

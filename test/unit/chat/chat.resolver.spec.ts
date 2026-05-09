@@ -10,6 +10,8 @@ describe('ChatResolver', () => {
     getOrCreateConversation: jest.fn(),
     getMessages: jest.fn(),
     getMyActiveConversations: jest.fn(),
+    getMyArchivedConversations: jest.fn(),
+    getMyArchivedConversationsCount: jest.fn(),
     getConversationDetails: jest.fn(),
     sendMessage: jest.fn(),
     approveSensitiveMessage: jest.fn(),
@@ -136,5 +138,35 @@ describe('ChatResolver', () => {
 
     expect(service.getMyActiveConversations).toHaveBeenCalledWith('u-1');
     expect(result).toHaveLength(1);
+  });
+
+  it('returns paginated archived conversations and forwards pagination', async () => {
+    const paginated = {
+      items: [],
+      totalCount: 0,
+      page: 2,
+      limit: 5,
+      hasNextPage: false,
+      hasPreviousPage: true,
+    };
+    mockChatService.getMyArchivedConversations.mockResolvedValue(paginated);
+
+    const pagination = { page: 2, limit: 5 };
+    const result = await resolver.myArchivedConversations('u-1', pagination);
+
+    expect(service.getMyArchivedConversations).toHaveBeenCalledWith(
+      'u-1',
+      pagination,
+    );
+    expect(result).toBe(paginated);
+  });
+
+  it('returns archived conversations count', async () => {
+    mockChatService.getMyArchivedConversationsCount.mockResolvedValue(4);
+
+    const result = await resolver.myArchivedConversationsCount('u-1');
+
+    expect(service.getMyArchivedConversationsCount).toHaveBeenCalledWith('u-1');
+    expect(result).toBe(4);
   });
 });

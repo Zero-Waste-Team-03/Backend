@@ -448,4 +448,92 @@ describe('ChatService', () => {
       }),
     );
   });
+
+  it('returns paginated archived conversations scoped to the user', async () => {
+    const archivedRow = {
+      id: 'conv-arch-1',
+      reservationId: 'res-arch-1',
+      lastMessage: 'bye',
+      status: 'Archived',
+      createdAt: new Date('2030-01-01T00:00:00.000Z'),
+      beneficiaryId: 'beneficiary-1',
+      donorId: 'donor-1',
+      donationTitle: 'Bread',
+      donationImageUrl: null,
+    };
+
+    const countQb = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getCount: jest.fn().mockResolvedValue(3),
+    };
+
+    const listQb = {
+      innerJoin: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      offset: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([archivedRow]),
+    };
+
+    conversationRepository.createQueryBuilder
+      .mockReturnValueOnce(countQb)
+      .mockReturnValueOnce(listQb);
+
+    const result = await service.getMyArchivedConversations('beneficiary-1', {
+      page: 1,
+      limit: 2,
+    });
+
+    expect(countQb.andWhere).toHaveBeenCalledWith(
+      'conversation.status = :status',
+      { status: 'Archived' },
+    );
+    expect(listQb.orderBy).toHaveBeenCalledWith(
+      '"lastMessageAt"',
+      'DESC',
+      'NULLS LAST',
+    );
+    expect(listQb.offset).toHaveBeenCalledWith(0);
+    expect(listQb.limit).toHaveBeenCalledWith(2);
+    expect(result).toEqual({
+      items: [
+        expect.objectContaining({
+          id: 'conv-arch-1',
+          counterpartUserId: 'donor-1',
+          status: 'Archived',
+        }),
+      ],
+      totalCount: 3,
+      page: 1,
+      limit: 2,
+      hasNextPage: true,
+      hasPreviousPage: false,
+    });
+  });
+
+  it('returns archived conversations count for the user', async () => {
+    const countQb = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getCount: jest.fn().mockResolvedValue(7),
+    };
+    conversationRepository.createQueryBuilder.mockReturnValue(countQb);
+
+    const result = await service.getMyArchivedConversationsCount('donor-1');
+
+    expect(countQb.andWhere).toHaveBeenCalledWith(
+      'conversation.status = :status',
+      { status: 'Archived' },
+    );
+    expect(result).toBe(7);
+  });
 });
