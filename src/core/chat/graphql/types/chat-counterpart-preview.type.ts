@@ -3,6 +3,9 @@ import { Field, ObjectType } from '@nestjs/graphql';
 @ObjectType('ChatCounterpartPreview')
 export class ChatCounterpartPreviewType {
   @Field(() => String)
+  userId: string;
+
+  @Field(() => String)
   displayName: string;
 
   @Field(() => String, { nullable: true })

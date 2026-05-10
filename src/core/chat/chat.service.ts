@@ -152,6 +152,7 @@ export class ChatService {
       donationTitle: row.donationTitle,
       donationImageUrl: row.donationImageUrl,
       counterpart: {
+        userId: '',
         displayName: '',
         avatarUrl: null,
         isOnline: false,
@@ -241,6 +242,7 @@ export class ChatService {
       donationTitle: row.donationTitle,
       donationImageUrl: row.donationImageUrl,
       counterpart: {
+        userId: '',
         displayName: '',
         avatarUrl: null,
         isOnline: false,
@@ -331,6 +333,7 @@ export class ChatService {
       donationTitle: row.donationTitle,
       donationImageUrl: row.donationImageUrl,
       counterpart: {
+        userId: '',
         displayName: '',
         avatarUrl: null,
         isOnline: false,
