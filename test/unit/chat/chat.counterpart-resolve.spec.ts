@@ -59,6 +59,7 @@ describe('ChatResolver counterpart resolve', () => {
     expect(userLoader.load).toHaveBeenCalledWith('u-2');
     expect(presenceLoader.load).toHaveBeenCalledWith('u-2');
     expect(result).toEqual({
+      userId: 'u-2',
       displayName: 'John',
       avatarUrl: 'https://img',
       isOnline: true,
@@ -88,6 +89,7 @@ describe('ChatResolver counterpart resolve', () => {
     );
 
     expect(result).toEqual({
+      userId: 'u-2',
       displayName: 'Jane (Bread)',
       avatarUrl: null,
       isOnline: false,
