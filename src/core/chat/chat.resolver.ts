@@ -160,6 +160,7 @@ export class ChatResolver {
     const displayName = title ? `${baseName} (${title})` : baseName;
 
     return {
+      userId: conversation.counterpartUserId,
       displayName,
       avatarUrl,
       isOnline,
