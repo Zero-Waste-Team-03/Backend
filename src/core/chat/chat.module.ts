@@ -12,12 +12,19 @@ import { ChatConversationWritableGuard } from './guards/chat-conversation-writab
 import { UserModule } from '../user/user.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Donation } from '../donation/entities/donation.entity';
+import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PresenceModule } from '../presence/presence.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Conversation, Message, Reservation, Donation]),
+    TypeOrmModule.forFeature([
+      Conversation,
+      Message,
+      Reservation,
+      Donation,
+      Attachment,
+    ]),
     UserModule,
     NotificationsModule,
     AuthenticationModule,

@@ -19,6 +19,7 @@ class SendNotificationJob {
   userId: string;
   type: NotificationType;
   translationArgs?: Record<string, any>;
+  idempotencyKey?: string;
 }
 
 class NotificationMessage {
@@ -27,8 +28,16 @@ class NotificationMessage {
     body: string;
   };
   token: string;
-  data?: {
-    type: NotificationType;
+  data?: Record<string, string>;
+  android?: {
+    notification?: {
+      imageUrl?: string;
+    };
+  };
+  apns?: {
+    fcmOptions?: {
+      imageUrl?: string;
+    };
   };
 }
 
@@ -48,6 +57,7 @@ export class InvalidTokenError extends Error {
 @Processor(QUEUE_NAME.NOTIFICATION)
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
+  private readonly bodyMaxLength = 120;
 
   constructor(
     private readonly notificationsService: NotificationsService,
@@ -136,6 +146,7 @@ export class NotificationProcessor extends WorkerHost {
       userId: data.userId,
       title: data.title,
       type: data.type,
+      idempotencyKey: data.idempotencyKey,
       context: 'NotificationProcessor',
     });
 
@@ -157,16 +168,33 @@ export class NotificationProcessor extends WorkerHost {
       return;
     }
 
+    const meta = data.translationArgs ?? {};
+    const dataPayload = this.buildDataPayload(
+      data.type,
+      data.idempotencyKey,
+      meta,
+    );
+    const title = data.title;
+    const body = this.buildNotificationBody(data.body);
+    const imageUrl = this.resolveImageUrl(meta);
+
+    const baseMessage: Omit<NotificationMessage, 'token'> = {
+      notification: {
+        title,
+        body,
+      },
+      data: dataPayload,
+    };
+
+    if (imageUrl) {
+      baseMessage.android = { notification: { imageUrl } };
+      baseMessage.apns = { fcmOptions: { imageUrl } };
+    }
+
     const messages: NotificationMessage[] = tokensWithLangs.map(
       (tokenWithLang) => ({
-        notification: {
-          title: data.title,
-          body: data.body,
-        },
+        ...baseMessage,
         token: tokenWithLang.token,
-        data: {
-          type: data.type,
-        },
       }),
     );
 
@@ -211,6 +239,66 @@ export class NotificationProcessor extends WorkerHost {
       invalidTokens: invalidTokens.length,
       context: 'NotificationProcessor',
     });
+  }
+
+  private buildNotificationBody(body: string): string {
+    if (body.length <= this.bodyMaxLength) {
+      return body;
+    }
+    return `${body.slice(0, Math.max(0, this.bodyMaxLength - 3))}...`;
+  }
+
+  private resolveImageUrl(meta: Record<string, any>): string | undefined {
+    if (typeof meta.imageUrl === 'string' && meta.imageUrl) {
+      return meta.imageUrl;
+    }
+    if (typeof meta.donationImageUrl === 'string' && meta.donationImageUrl) {
+      return meta.donationImageUrl;
+    }
+    if (typeof meta.senderAvatarUrl === 'string' && meta.senderAvatarUrl) {
+      return meta.senderAvatarUrl;
+    }
+    return undefined;
+  }
+
+  private buildDataPayload(
+    type: NotificationType,
+    idempotencyKey?: string,
+    meta?: Record<string, any>,
+  ): Record<string, string> {
+    const dataPayload: Record<string, string> = {
+      type,
+    };
+
+    if (idempotencyKey) {
+      dataPayload.idempotencyKey = idempotencyKey;
+    }
+
+    if (meta) {
+      for (const [key, value] of Object.entries(meta)) {
+        if (value === undefined || value === null) {
+          continue;
+        }
+
+        if (typeof value === 'string') {
+          dataPayload[key] = value;
+          continue;
+        }
+
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          dataPayload[key] = String(value);
+          continue;
+        }
+
+        try {
+          dataPayload[key] = JSON.stringify(value);
+        } catch {
+          dataPayload[key] = String(value);
+        }
+      }
+    }
+
+    return dataPayload;
   }
 
   private isInvalidTokenError(error: any): boolean {

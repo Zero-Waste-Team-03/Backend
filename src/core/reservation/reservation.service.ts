@@ -14,6 +14,9 @@ import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { PaginatedReservations } from './graphql/types/paginated-reservations.type';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
+import { User } from '../user/entities/user.entity';
+import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
+import { DonationPhoto } from '../donation/entities/donation-photo.entity';
 import { ReservationsFilterInput } from './graphql/inputs/reservations-filter.input';
 
 @Injectable()
@@ -214,27 +217,52 @@ queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere
           confirmedAt: new Date(),
         });
 
-        const savedReservation = await manager.getRepository(Reservation).save(reservation);
-
+        const savedReservation = await manager
+          .getRepository(Reservation)
+          .save(reservation);
 
         // TODO: Re-enable delayed expiration scheduling if product requirements require it.
 
         return {
           reservation: savedReservation,
           donorId: donation.userId,
+          donationTitle: donation.title,
         };
       },
     );
 
+    const beneficiary = await this.reservationRepository.manager.findOne(User, {
+      where: { id: beneficiaryId },
+      select: { id: true, displayName: true, avatarAttachmentId: true },
+    });
+
+    const beneficiaryAvatar = beneficiary?.avatarAttachmentId
+      ? await this.reservationRepository.manager.findOne(Attachment, {
+          where: { id: beneficiary.avatarAttachmentId },
+        })
+      : null;
+
+    const donationCover = await this.reservationRepository.manager
+      .createQueryBuilder(DonationPhoto, 'photo')
+      .innerJoin(Attachment, 'attachment', 'attachment.id = photo.attachmentId')
+      .where('photo.donationId = :donationId', { donationId })
+      .andWhere('photo.isMain = true')
+      .select('attachment.url', 'url')
+      .getRawOne<{ url: string }>();
+
     await this.notificationsService.sendNotification(
       'Donation reserved',
-      'A beneficiary has reserved your donation.',
+      `${beneficiary?.displayName ?? 'A beneficiary'} reserved qty of ${result.donationTitle}.`,
       result.donorId,
       NOTIFICATION_TYPE.RESERVATION_ALERT,
       {
+        action: 'reservation.open',
         reservationId: result.reservation.id,
         donationId,
-        beneficiaryId,
+        beneficiaryName: beneficiary?.displayName ?? null,
+        donationTitle: result.donationTitle,
+        donationImageUrl: donationCover?.url ?? null,
+        senderAvatarUrl: beneficiaryAvatar?.url ?? null,
         quantity,
         status: ReservationStatusValues.CONFIRMED,
       },
