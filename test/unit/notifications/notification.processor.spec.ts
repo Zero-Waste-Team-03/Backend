@@ -86,4 +86,73 @@ describe('NotificationProcessor', () => {
     );
     expect(send).toHaveBeenCalledTimes(1);
   });
+
+  describe('helpers', () => {
+    const proc = new NotificationProcessor(
+      notificationsService,
+      firebaseService,
+      userService,
+    ) as any;
+
+    it('buildDataPayload stringifies primitives, JSON-encodes objects, skips nullish', () => {
+      const payload = proc.buildDataPayload(
+        NOTIFICATION_TYPE.CHAT_MESSAGE,
+        'chat:msg-1',
+        {
+          conversationId: 'conv-1',
+          quantity: 3,
+          isRead: false,
+          missing: undefined,
+          empty: null,
+          nested: { a: 1 },
+        },
+      );
+
+      expect(payload).toEqual({
+        type: NOTIFICATION_TYPE.CHAT_MESSAGE,
+        idempotencyKey: 'chat:msg-1',
+        conversationId: 'conv-1',
+        quantity: '3',
+        isRead: 'false',
+        nested: JSON.stringify({ a: 1 }),
+      });
+    });
+
+    it('buildDataPayload omits idempotencyKey when not provided', () => {
+      const payload = proc.buildDataPayload(
+        NOTIFICATION_TYPE.CHAT_MESSAGE,
+        undefined,
+        { conversationId: 'conv-1' },
+      );
+
+      expect(payload.idempotencyKey).toBeUndefined();
+      expect(payload.conversationId).toBe('conv-1');
+    });
+
+    it('resolveImageUrl prefers imageUrl > donationImageUrl > senderAvatarUrl', () => {
+      expect(
+        proc.resolveImageUrl({
+          imageUrl: 'a',
+          donationImageUrl: 'b',
+          senderAvatarUrl: 'c',
+        }),
+      ).toBe('a');
+      expect(
+        proc.resolveImageUrl({
+          donationImageUrl: 'b',
+          senderAvatarUrl: 'c',
+        }),
+      ).toBe('b');
+      expect(proc.resolveImageUrl({ senderAvatarUrl: 'c' })).toBe('c');
+      expect(proc.resolveImageUrl({})).toBeUndefined();
+    });
+
+    it('buildNotificationBody truncates to 120 chars with ellipsis', () => {
+      expect(proc.buildNotificationBody('short')).toBe('short');
+      const longBody = 'a'.repeat(200);
+      const result = proc.buildNotificationBody(longBody);
+      expect(result).toHaveLength(120);
+      expect(result.endsWith('...')).toBe(true);
+    });
+  });
 });

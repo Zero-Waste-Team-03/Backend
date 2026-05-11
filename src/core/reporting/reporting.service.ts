@@ -99,6 +99,7 @@ export class ReportingService {
           adminUser.id,
           NOTIFICATION_TYPE.REPORT_ALERT,
           {
+            action: 'report.open',
             reportId: savedReport.id,
             targetType: savedReport.targetType,
             targetId: savedReport.targetId,
@@ -181,6 +182,7 @@ export class ReportingService {
       report.reporterId,
       NOTIFICATION_TYPE.REPORT_ALERT,
       {
+        action: 'report.open',
         reportId: savedReport.id,
         status: savedReport.status,
         targetType: savedReport.targetType,

@@ -17,6 +17,8 @@ import {
   Donation,
   DonationStatusValues,
 } from 'src/core/donation/entities/donation.entity';
+import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
+import { UserService } from 'src/core/user/v1/user.service';
 import { WsException } from '@nestjs/websockets';
 
 describe('ChatService', () => {
@@ -43,6 +45,14 @@ describe('ChatService', () => {
     manager: {
       transaction: jest.fn(),
     },
+  };
+
+  const attachmentRepository = {
+    findOne: jest.fn(),
+  };
+
+  const userService = {
+    findById: jest.fn(),
   };
 
   const notificationsService = {
@@ -73,6 +83,14 @@ describe('ChatService', () => {
         {
           provide: getRepositoryToken(Reservation),
           useValue: reservationRepository,
+        },
+        {
+          provide: getRepositoryToken(Attachment),
+          useValue: attachmentRepository,
+        },
+        {
+          provide: UserService,
+          useValue: userService,
         },
         {
           provide: NotificationsService,
@@ -191,13 +209,18 @@ describe('ChatService', () => {
     expect(
       notificationsService.sendNotificationWithoutSaving,
     ).toHaveBeenCalledWith(
-      'New chat message',
-      'You have received a new message.',
+      'New message',
+      'hello',
       'beneficiary-1',
       NOTIFICATION_TYPE.CHAT_MESSAGE,
       {
+        action: 'chat.open',
+        chatId: 'conv-1',
         conversationId: 'conv-1',
         messageId: 'msg-1',
+        senderId: 'donor-1',
+        senderName: null,
+        senderAvatarUrl: null,
       },
     );
     expect(chatQueue.add).toHaveBeenCalledWith(

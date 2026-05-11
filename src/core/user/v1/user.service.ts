@@ -126,6 +126,7 @@ export class UserService {
       user.id,
       NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
       {
+        action: 'account.open',
         userId: user.id,
         status: UserStatusValues.SUSPENDED,
       },
@@ -151,6 +152,7 @@ export class UserService {
       user.id,
       NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
       {
+        action: 'account.open',
         userId: user.id,
         status: UserStatusValues.ACTIVE,
       },

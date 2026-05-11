@@ -8,6 +8,11 @@ import { Token } from './entities/token.entity';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { NotificationType } from './enums/notification-type.enum';
+import {
+  normalizeNotificationAction,
+  NOTIFICATION_ACTION,
+} from './constants/notification-actions';
+import { sanitizeNotificationText } from 'src/common/utils/sanitize-notification-text';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SendNotificationResponseDto } from './dto/send-notification-response.dto';
 import { QUEUE_NAME } from 'src/common/constants/queues';
@@ -163,13 +168,14 @@ export class NotificationsService {
     type: NotificationType,
     data: Record<string, any>,
   ): Promise<Notification> {
+    const normalizedMeta = this.normalizeMeta(data);
     const createNotificationDto: CreateNotificationDto = {
-      title,
-      body,
+      title: sanitizeNotificationText(title, 120),
+      body: sanitizeNotificationText(body, 800),
       receiverId,
       type,
       isRead: false,
-      meta: data,
+      meta: normalizedMeta,
     };
     return this.create(createNotificationDto);
   }
@@ -297,14 +303,16 @@ export class NotificationsService {
     type: NotificationType,
     data?: Record<string, any>,
   ): Promise<SendNotificationResponseDto> {
+    const normalizedMeta = this.normalizeMeta(data);
     await this.notificationQueue.add(
       NOTIFICATION_JOBS.SEND_NOTIFICATION,
       {
-        title,
-        body,
+        title: sanitizeNotificationText(title, 120),
+        body: sanitizeNotificationText(body, 800),
         userId,
         type,
-        translationArgs: data,
+        translationArgs: normalizedMeta,
+        idempotencyKey: this.buildIdempotencyKey(normalizedMeta),
       },
       {
         attempts: 3,
@@ -331,14 +339,16 @@ export class NotificationsService {
     type: NotificationType,
     data?: Record<string, any>,
   ): Promise<SendNotificationResponseDto> {
+    const normalizedMeta = this.normalizeMeta(data);
     await this.notificationQueue.add(
       NOTIFICATION_JOBS.SEND_WITHOUT_SAVING,
       {
-        title,
-        body,
+        title: sanitizeNotificationText(title, 120),
+        body: sanitizeNotificationText(body, 800),
         userId,
         type,
-        translationArgs: data,
+        translationArgs: normalizedMeta,
+        idempotencyKey: this.buildIdempotencyKey(normalizedMeta),
       },
       {
         attempts: 3,
@@ -361,5 +371,48 @@ export class NotificationsService {
       success: true,
       message: 'Notification (without saving) job added to queue',
     };
+  }
+
+  private normalizeMeta(data?: Record<string, any>): Record<string, any> {
+    if (!data) {
+      return {};
+    }
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+      cleaned[key] = value;
+    }
+    return cleaned;
+  }
+
+  private buildIdempotencyKey(meta: Record<string, any>): string {
+    const action = normalizeNotificationAction(meta);
+    if (action === NOTIFICATION_ACTION.CHAT_OPEN) {
+      return `chat:${meta.messageId ?? meta.conversationId ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.DONATION_OPEN) {
+      return `donation:${meta.donationId ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.RESERVATION_OPEN) {
+      return `reservation:${meta.reservationId ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.REPORT_OPEN) {
+      return `report:${meta.reportId ?? meta.targetId ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.ACHIEVEMENT_OPEN) {
+      return `achievement:${meta.achievementId ?? meta.badgeCode ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.ACCOUNT_OPEN) {
+      return `account:${meta.userId ?? 'unknown'}:${meta.status ?? 'unknown'}`;
+    }
+    if (action === NOTIFICATION_ACTION.POST_OPEN) {
+      return `post:${meta.postId ?? 'unknown'}:${meta.commentId ?? 'root'}`;
+    }
+    if (action === NOTIFICATION_ACTION.MESSAGE_OPEN) {
+      return `message:${meta.threadId ?? meta.senderId ?? 'unknown'}`;
+    }
+    return `${action}:${Date.now()}`;
   }
 }

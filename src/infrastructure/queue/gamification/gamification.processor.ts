@@ -46,6 +46,7 @@ export class GamificationProcessor extends WorkerHost {
         achievement.userId,
         NOTIFICATION_TYPE.NEW_ACHIEVEMENT,
         {
+          action: 'achievement.open',
           badgeCode: achievement.badge.code,
           achievementId: achievement.id,
         },

@@ -29,6 +29,8 @@ import {
   DonationStatusValues,
 } from '../donation/entities/donation.entity';
 import { User } from '../user/entities/user.entity';
+import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
+import { UserService } from '../user/v1/user.service';
 import { Category } from '../category/entities/category.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
@@ -50,8 +52,11 @@ export class ChatService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
+    @InjectRepository(Attachment)
+    private readonly attachmentRepository: Repository<Attachment>,
     private readonly chatStateMachineService: ChatStateMachineService,
     private readonly notificationsService: NotificationsService,
+    private readonly userService: UserService,
     @InjectQueue(QUEUE_NAME.CHAT)
     private readonly chatQueue: Queue,
     @InjectQueue(QUEUE_NAME.GAMIFICATION)
@@ -370,14 +375,26 @@ export class ChatService {
       dto.senderId,
     );
 
+    const sender = await this.userService.findById(dto.senderId);
+    const senderAvatar = sender?.avatarAttachmentId
+      ? await this.attachmentRepository.findOne({
+          where: { id: sender.avatarAttachmentId },
+        })
+      : null;
+
     await this.notificationsService.sendNotificationWithoutSaving(
-      'New chat message',
-      'You have received a new message.',
+      sender?.displayName || 'New message',
+      saved.content,
       receiverId,
       NOTIFICATION_TYPE.CHAT_MESSAGE,
       {
+        action: 'chat.open',
+        chatId: conversation.id,
         conversationId: conversation.id,
         messageId: saved.id,
+        senderId: dto.senderId,
+        senderName: sender?.displayName ?? null,
+        senderAvatarUrl: senderAvatar?.url ?? null,
       },
     );
 
