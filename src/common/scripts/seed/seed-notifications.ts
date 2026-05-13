@@ -4,118 +4,301 @@ import {
   NOTIFICATION_TYPE,
   NotificationType,
 } from 'src/core/notifications/enums/notification-type.enum';
+import { NOTIFICATION_ACTION } from 'src/core/notifications/constants/notification-actions';
 import { User } from 'src/core/user/entities/user.entity';
+import { Donation } from 'src/core/donation/entities/donation.entity';
+import { Conversation } from 'src/core/chat/entities/conversation.entity';
+import { Reservation } from 'src/core/reservation/entities/reservation.entity';
+import { Message } from 'src/core/chat/entities/message.entity';
+import { Report } from 'src/core/reporting/entities/report.entity';
+import { Achievement } from 'src/core/gamification/entities/achievement.entity';
+import { Badge } from 'src/core/gamification/entities/badge.entity';
+
+/**
+ * Seeds one notification per supported `action` so the mobile/web clients can
+ * exercise tap-routing end-to-end against real IDs (no synthetic uuids).
+ *
+ * Each seed declares an `action` plus the hints needed to look up the linked
+ * entity (donation title + donor email, badge code, etc). At insert time we
+ * resolve those into the actual ids and write the result into `meta`. If a
+ * referenced entity is missing the seed is skipped with a clear message — run
+ * the upstream seeders first (donations → reservations → conversations →
+ * reports/achievements).
+ */
+
+type SeedAction =
+  | {
+      kind: 'chat';
+      donationTitle: string;
+      donorEmail: string;
+      beneficiaryEmail: string;
+    }
+  | { kind: 'donation'; donationTitle: string; donorEmail: string }
+  | {
+      kind: 'reservation';
+      donationTitle: string;
+      donorEmail: string;
+      beneficiaryEmail: string;
+    }
+  | { kind: 'report'; reporterEmail: string; reason: string }
+  | { kind: 'account'; userEmail: string }
+  | { kind: 'achievement'; userEmail: string; badgeCode: string }
+  | { kind: 'default' };
 
 type SeedNotification = {
   title: string;
   body: string;
   type: NotificationType;
   isRead: boolean;
-  meta?: Record<string, unknown>;
   /** email of the user who receives this notification */
   receiverEmail: string;
+  action: SeedAction;
 };
 
-const BASE_NOTIFICATIONS: SeedNotification[] = [
+const NOTIFICATIONS_TO_SEED: SeedNotification[] = [
+  // chat.open — donor gets a chat push from the beneficiary
+  {
+    title: 'Admin',
+    body: 'Reservation created. Waiting for confirmation.',
+    type: NOTIFICATION_TYPE.CHAT_MESSAGE,
+    isRead: false,
+    receiverEmail: 'user@gaspzero.local',
+    action: {
+      kind: 'chat',
+      donationTitle: 'Fresh baguettes',
+      donorEmail: 'user@gaspzero.local',
+      beneficiaryEmail: 'admin@gaspzero.local',
+    },
+  },
+
+  // reservation.open — donor notified a beneficiary reserved their donation
+  {
+    title: 'Donation reserved',
+    body: 'Admin reserved qty of Fresh baguettes.',
+    type: NOTIFICATION_TYPE.RESERVATION_ALERT,
+    isRead: false,
+    receiverEmail: 'user@gaspzero.local',
+    action: {
+      kind: 'reservation',
+      donationTitle: 'Fresh baguettes',
+      donorEmail: 'user@gaspzero.local',
+      beneficiaryEmail: 'admin@gaspzero.local',
+    },
+  },
+
+  // donation.open — generic deep-link to a donation (e.g. nearby listing)
+  {
+    title: 'New donation near you',
+    body: 'Fruit crate assortment is available now.',
+    type: NOTIFICATION_TYPE.NEW_POST,
+    isRead: false,
+    receiverEmail: 'user@gaspzero.local',
+    action: {
+      kind: 'donation',
+      donationTitle: 'Fruit crate assortment',
+      donorEmail: 'admin@gaspzero.local',
+    },
+  },
+
+  // report.open — admin gets alerted of a fresh report
+  {
+    title: 'New report filed',
+    body: 'A donation was reported for food safety concern.',
+    type: NOTIFICATION_TYPE.REPORT_ALERT,
+    isRead: false,
+    receiverEmail: 'admin@gaspzero.local',
+    action: {
+      kind: 'report',
+      reporterEmail: 'user@gaspzero.local',
+      reason: 'Food safety concern',
+    },
+  },
+
+  // account.open — account status change
+  {
+    title: 'Account verified',
+    body: 'Your organization account has been verified by an administrator.',
+    type: NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+    isRead: true,
+    receiverEmail: 'organization@gaspzero.local',
+    action: { kind: 'account', userEmail: 'organization@gaspzero.local' },
+  },
+
+  // achievement.open — user just unlocked a badge
+  {
+    title: 'New achievement unlocked',
+    body: 'You unlocked the "First Pickup" badge.',
+    type: NOTIFICATION_TYPE.NEW_ACHIEVEMENT,
+    isRead: false,
+    receiverEmail: 'user@gaspzero.local',
+    action: {
+      kind: 'achievement',
+      userEmail: 'user@gaspzero.local',
+      badgeCode: 'FIRST_PICKUP_COMPLETED',
+    },
+  },
+
+  // notification.open — fallback / no specific destination
   {
     title: 'Welcome to Gasp Zero',
     body: 'Your administrator account has been set up successfully.',
     type: NOTIFICATION_TYPE.TEST,
     isRead: true,
     receiverEmail: 'admin@gaspzero.local',
-  },
-  {
-    title: 'New reservation pending',
-    body: 'User #42 requested a pickup reservation. Please review.',
-    type: NOTIFICATION_TYPE.RESERVATION_ALERT,
-    isRead: false,
-    meta: { reservationId: 'res-001', userId: 'user-42' },
-    receiverEmail: 'admin@gaspzero.local',
-  },
-
-  {
-    title: 'Points earned!',
-    body: 'You just earned the "First Pickup" achievement badge.',
-    type: NOTIFICATION_TYPE.NEW_ACHIEVEMENT,
-    isRead: false,
-    meta: { achievementId: 'ach-first-pickup', points: 50 },
-    receiverEmail: 'user@gaspzero.local',
-  },
-  {
-    title: 'New message from Org',
-    body: 'Gasp Zero Org sent you a message about your recent post.',
-    type: NOTIFICATION_TYPE.MESSAGE,
-    isRead: true,
-    meta: { senderId: 'org-id-001', threadId: 'thread-007' },
-    receiverEmail: 'user@gaspzero.local',
-  },
-  {
-    title: 'New post nearby',
-    body: 'A new recycling point was added in your neighborhood.',
-    type: NOTIFICATION_TYPE.NEW_POST,
-    isRead: false,
-    meta: { postId: 'post-123', lat: 36.75, lng: 3.05 },
-    receiverEmail: 'user@gaspzero.local',
-  },
-  {
-    title: 'Reservation confirmed',
-    body: 'Your pickup reservation for tomorrow has been confirmed.',
-    type: NOTIFICATION_TYPE.RESERVATION_ALERT,
-    isRead: false,
-    meta: { reservationId: 'res-002', scheduledAt: '2026-03-29T09:00:00Z' },
-    receiverEmail: 'user@gaspzero.local',
-  },
-
-  {
-    title: 'Account verified',
-    body: 'Your organization account has been verified by an administrator.',
-    type: NOTIFICATION_TYPE.TEST,
-    isRead: true,
-    receiverEmail: 'organization@gaspzero.local',
-  },
-  {
-    title: 'New message from user',
-    body: 'A user sent you a message about your latest collection event.',
-    type: NOTIFICATION_TYPE.MESSAGE,
-    isRead: false,
-    meta: { senderId: 'user-id-001', threadId: 'thread-008' },
-    receiverEmail: 'organization@gaspzero.local',
-  },
-  {
-    title: 'New post on your collection event',
-    body: 'Someone commented on your recent community post.',
-    type: NOTIFICATION_TYPE.NEW_POST,
-    isRead: true,
-    meta: { postId: 'post-456', commentId: 'cmt-789' },
-    receiverEmail: 'organization@gaspzero.local',
+    action: { kind: 'default' },
   },
 ];
 
-function generateRandomNotifications(count: number): SeedNotification[] {
-  const receivers = [
-    'admin@gaspzero.local',
-    'user@gaspzero.local',
-    'organization@gaspzero.local',
-  ];
-  const types = Object.values(NOTIFICATION_TYPE);
+async function resolveMeta(
+  action: SeedAction,
+  context: string,
+): Promise<Record<string, unknown> | null> {
+  const userRepo = dataSource.getRepository(User);
+  const donationRepo = dataSource.getRepository(Donation);
+  const reservationRepo = dataSource.getRepository(Reservation);
+  const conversationRepo = dataSource.getRepository(Conversation);
+  const messageRepo = dataSource.getRepository(Message);
+  const reportRepo = dataSource.getRepository(Report);
+  const achievementRepo = dataSource.getRepository(Achievement);
+  const badgeRepo = dataSource.getRepository(Badge);
 
-  return Array.from({ length: count }, (_, i) => {
-    const type = types[i % types.length];
-    return {
-      title: `Generated notification #${i + 1}`,
-      body: `This is auto-generated notification body number ${i + 1} of type ${type}.`,
-      type,
-      isRead: i % 3 !== 0, // ~66 % read
-      meta: { generatedIndex: i + 1 },
-      receiverEmail: receivers[i % receivers.length],
-    };
-  });
+  switch (action.kind) {
+    case 'chat': {
+      const [donor, beneficiary] = await Promise.all([
+        userRepo.findOne({ where: { email: action.donorEmail } }),
+        userRepo.findOne({ where: { email: action.beneficiaryEmail } }),
+      ]);
+      if (!donor || !beneficiary) {
+        return missing(context, 'donor/beneficiary user(s)');
+      }
+      const donation = await donationRepo.findOne({
+        where: { title: action.donationTitle, userId: donor.id },
+      });
+      if (!donation) return missing(context, 'donation');
+      const reservation = await reservationRepo.findOne({
+        where: { donationId: donation.id, beneficiaryId: beneficiary.id },
+      });
+      if (!reservation) return missing(context, 'reservation');
+      const conversation = await conversationRepo.findOne({
+        where: { reservationId: reservation.id },
+      });
+      if (!conversation) return missing(context, 'conversation');
+      const message = await messageRepo.findOne({
+        where: { conversationId: conversation.id },
+        order: { createdAt: 'DESC' },
+      });
+      return {
+        action: NOTIFICATION_ACTION.CHAT_OPEN,
+        chatId: conversation.id,
+        conversationId: conversation.id,
+        messageId: message?.id ?? null,
+        senderId: beneficiary.id,
+        senderName: beneficiary.displayName ?? null,
+      };
+    }
+
+    case 'donation': {
+      const donor = await userRepo.findOne({
+        where: { email: action.donorEmail },
+      });
+      if (!donor) return missing(context, 'donor user');
+      const donation = await donationRepo.findOne({
+        where: { title: action.donationTitle, userId: donor.id },
+      });
+      if (!donation) return missing(context, 'donation');
+      return {
+        action: NOTIFICATION_ACTION.DONATION_OPEN,
+        donationId: donation.id,
+        donationTitle: donation.title,
+        donorId: donor.id,
+      };
+    }
+
+    case 'reservation': {
+      const [donor, beneficiary] = await Promise.all([
+        userRepo.findOne({ where: { email: action.donorEmail } }),
+        userRepo.findOne({ where: { email: action.beneficiaryEmail } }),
+      ]);
+      if (!donor || !beneficiary) {
+        return missing(context, 'donor/beneficiary user(s)');
+      }
+      const donation = await donationRepo.findOne({
+        where: { title: action.donationTitle, userId: donor.id },
+      });
+      if (!donation) return missing(context, 'donation');
+      const reservation = await reservationRepo.findOne({
+        where: { donationId: donation.id, beneficiaryId: beneficiary.id },
+      });
+      if (!reservation) return missing(context, 'reservation');
+      return {
+        action: NOTIFICATION_ACTION.RESERVATION_OPEN,
+        reservationId: reservation.id,
+        donationId: donation.id,
+        donationTitle: donation.title,
+        beneficiaryName: beneficiary.displayName ?? null,
+        quantity: reservation.quantity,
+        status: reservation.status,
+      };
+    }
+
+    case 'report': {
+      const reporter = await userRepo.findOne({
+        where: { email: action.reporterEmail },
+      });
+      if (!reporter) return missing(context, 'reporter user');
+      const report = await reportRepo.findOne({
+        where: { reporterId: reporter.id, reason: action.reason },
+      });
+      if (!report) return missing(context, 'report');
+      return {
+        action: NOTIFICATION_ACTION.REPORT_OPEN,
+        reportId: report.id,
+        targetType: report.targetType,
+        targetId: report.targetId,
+        status: report.status,
+      };
+    }
+
+    case 'account': {
+      const user = await userRepo.findOne({
+        where: { email: action.userEmail },
+      });
+      if (!user) return missing(context, 'user');
+      return {
+        action: NOTIFICATION_ACTION.ACCOUNT_OPEN,
+        userId: user.id,
+        status: user.status,
+      };
+    }
+
+    case 'achievement': {
+      const [user, badge] = await Promise.all([
+        userRepo.findOne({ where: { email: action.userEmail } }),
+        badgeRepo.findOne({ where: { code: action.badgeCode } }),
+      ]);
+      if (!user || !badge) return missing(context, 'user/badge');
+      const achievement = await achievementRepo.findOne({
+        where: { userId: user.id, badgeId: badge.id },
+      });
+      if (!achievement) return missing(context, 'achievement');
+      return {
+        action: NOTIFICATION_ACTION.ACHIEVEMENT_OPEN,
+        achievementId: achievement.id,
+        badgeCode: badge.code,
+      };
+    }
+
+    case 'default':
+      return { action: NOTIFICATION_ACTION.DEFAULT_OPEN };
+  }
 }
 
-const NOTIFICATIONS_TO_SEED: SeedNotification[] = [
-  ...BASE_NOTIFICATIONS,
-  ...generateRandomNotifications(30),
-];
+function missing(context: string, what: string): null {
+  process.stderr.write(
+    `[seed-notifications] Skipping "${context}": ${what} not found. Run upstream seeders first.\n`,
+  );
+  return null;
+}
 
 async function upsertNotification(seed: SeedNotification): Promise<void> {
   const notificationRepo = dataSource.getRepository(Notification);
@@ -132,6 +315,9 @@ async function upsertNotification(seed: SeedNotification): Promise<void> {
     return;
   }
 
+  const meta = await resolveMeta(seed.action, seed.title);
+  if (!meta) return;
+
   const existing = await notificationRepo.findOne({
     where: { title: seed.title, receiverId: receiver.id, type: seed.type },
   });
@@ -140,7 +326,7 @@ async function upsertNotification(seed: SeedNotification): Promise<void> {
     notificationRepo.merge(existing, {
       body: seed.body,
       isRead: seed.isRead,
-      meta: seed.meta,
+      meta,
     });
     await notificationRepo.save(existing);
     return;
@@ -151,7 +337,7 @@ async function upsertNotification(seed: SeedNotification): Promise<void> {
     body: seed.body,
     type: seed.type,
     isRead: seed.isRead,
-    meta: seed.meta,
+    meta,
     receiverId: receiver.id,
   });
 
