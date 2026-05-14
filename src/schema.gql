@@ -147,6 +147,7 @@ type ChatCounterpartPreview {
   avatarUrl: String
   displayName: String!
   isOnline: Boolean!
+  userId: String!
 }
 
 type ChatMessage {
@@ -840,7 +841,7 @@ type Query {
   donationStatistics: DonationStatistics!
 
   """Get all donation listings with optional filters and donor access"""
-  donations(behaviorContext: DonationBehaviorContextInput, filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
+  donations(behaviorContext: DonationBehaviorContextInput, filter: DonationsFilterInput, pagination: PaginationInput, searchName: String): PaginatedDonations!
 
   """
   Get viewport-based donation activity heatmap cells with normalized score
@@ -894,7 +895,7 @@ type Query {
   myReservation(id: ID!): Reservation!
 
   """Get reservations where the current user is donor or beneficiary"""
-  myReservations(filter: ReservationsFilterInput, pagination: PaginationInput): PaginatedReservations!
+  myReservations(filter: ReservationsFilterInput, pagination: PaginationInput, searchName: String): PaginatedReservations!
 }
 
 input RegisterInput {

@@ -36,11 +36,13 @@ export class ReservationResolver {
     @USER('id') userId: string,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
     @Args('filter', { nullable: true }) filter?: ReservationsFilterInput,
+    @Args('searchName', { nullable: true }) searchName?: string,
   ): Promise<PaginatedReservations> {
     return this.reservationService.findMyReservations(
       userId,
       filter,
       pagination,
+      searchName,
     );
   }
 
@@ -81,12 +83,11 @@ export class ReservationResolver {
     @Args() input: ReserveDonationInput,
     @USER('id') beneficiaryId: string,
   ): Promise<ReservationType> {
-
     return this.reservationService.reserveDonation(
       input.donationId,
       beneficiaryId,
       input.quantity,
-    ) as any; 
+    ) as any;
   }
 
   @UseGuards(AccessTokenGuard)

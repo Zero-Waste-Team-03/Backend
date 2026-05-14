@@ -7,7 +7,13 @@ import {
   type DonationStatus,
   type DonationUrgency,
 } from '../entities/donation.entity';
-import { DeleteResult, FindOptionsWhere, In, Not, Repository } from 'typeorm';
+import {
+  Brackets,
+  DeleteResult,
+  FindOptionsWhere,
+  In,
+  Repository,
+} from 'typeorm';
 import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
 import { throwAppError } from 'src/common/errors';
@@ -632,7 +638,7 @@ export class DonationService {
       donationId: savedDonation.id,
       categoryId: savedDonation.categoryId,
       category: savedDonation.category?.name ?? '',
-      donationTitle:savedDonation.title,
+      donationTitle: savedDonation.title,
       urgency: savedDonation.urgency,
       safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
     });
@@ -727,7 +733,6 @@ export class DonationService {
   }
 
   async unlikeDonation(donationId: string, userId: string) {
-  
     await this.donationLikeRepository.delete({ donationId, userId });
     return { message: 'Donation unliked successfully' };
   }
@@ -749,9 +754,11 @@ export class DonationService {
         'donation_like.donationId = donation.id AND donation_like.userId = :userId',
         { userId },
       )
-  .addSelect('donation_like.createdAt', 'donation_like_createdat') 
-      .orderBy('donation_like_createdat', 'DESC').skip(skip).take(limit);
-      
+      .addSelect('donation_like.createdAt', 'donation_like_createdat')
+      .orderBy('donation_like_createdat', 'DESC')
+      .skip(skip)
+      .take(limit);
+
     if (filter?.categoryId) {
       query.andWhere('donation.categoryId = :categoryId', {
         categoryId: filter.categoryId,
@@ -819,11 +826,15 @@ export class DonationService {
       pendingApprovals,
     };
   }
-  async getMyDonations(userId:string,filer?:DonationsFilterInput,pagination?:PaginationInput){
+  async getMyDonations(
+    userId: string,
+    filer?: DonationsFilterInput,
+    pagination?: PaginationInput,
+  ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where: FindOptionsWhere<Donation> = {userId:userId};
+    const where: FindOptionsWhere<Donation> = { userId: userId };
 
     if (filer?.categoryId) where.categoryId = filer.categoryId;
     if (filer?.urgency) where.urgency = filer.urgency;
@@ -835,7 +846,9 @@ export class DonationService {
       skip,
       take: limit,
     });
-    const items = await this.buildDonationResponses(donations, userId,{skipLikesLookup:true});
+    const items = await this.buildDonationResponses(donations, userId, {
+      skipLikesLookup: true,
+    });
     return {
       items,
       totalCount,
@@ -852,26 +865,68 @@ export class DonationService {
     behaviorContext?: DonationBehaviorContextInput,
     pagination?: PaginationInput,
     isAdmin: boolean = false,
+    searchName?: string,
   ) {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where: FindOptionsWhere<Donation> = {};
+    const queryBuilder = this.donationRepository
+      .createQueryBuilder('donation')
+      .orderBy('donation.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
     if (!isAdmin) {
-      where.userId = Not(userId);
-      where.status = DonationStatusValues.PUBLISHED as DonationStatus;
+      queryBuilder
+        .andWhere('donation.userId != :userId', { userId })
+        .andWhere('donation.status = :publishedStatus', {
+          publishedStatus: DonationStatusValues.PUBLISHED,
+        })
+        .andWhere('donation.quantity IS NOT NULL')
+        .andWhere(
+          'NOT EXISTS (SELECT 1 FROM reservations reservation WHERE reservation."donationId" = donation.id AND reservation."beneficiaryId" = :beneficiaryId AND reservation.status IN (:...excludedReservationStatuses))',
+          {
+            beneficiaryId: userId,
+            excludedReservationStatuses: [
+              ReservationStatusValues.PENDING,
+              ReservationStatusValues.CONFIRMED,
+            ],
+          },
+        );
     }
 
-    if (filter?.categoryId) where.categoryId = filter.categoryId;
-    if (filter?.urgency) where.urgency = filter.urgency;
-    if (filter?.status) where.status = filter.status;
+    if (filter?.categoryId) {
+      queryBuilder.andWhere('donation.categoryId = :categoryId', {
+        categoryId: filter.categoryId,
+      });
+    }
 
-    const [donations, totalCount] = await this.donationRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    if (filter?.urgency) {
+      queryBuilder.andWhere('donation.urgency = :urgency', {
+        urgency: filter.urgency,
+      });
+    }
+
+    if (filter?.status) {
+      queryBuilder.andWhere('donation.status = :status', {
+        status: filter.status,
+      });
+    }
+
+    const trimmedSearchName = searchName?.trim();
+    if (trimmedSearchName) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('donation.title ILIKE :searchName', {
+            searchName: `%${trimmedSearchName}%`,
+          }).orWhere('donation.description ILIKE :searchName', {
+            searchName: `%${trimmedSearchName}%`,
+          });
+        }),
+      );
+    }
+
+    const [donations, totalCount] = await queryBuilder.getManyAndCount();
 
     const items = await this.buildDonationResponses(donations, userId);
 
@@ -879,6 +934,7 @@ export class DonationService {
       Boolean(filter?.categoryId) ||
       Boolean(filter?.urgency) ||
       Boolean(filter?.status) ||
+      Boolean(trimmedSearchName) ||
       Boolean(behaviorContext?.distanceBucket) ||
       Boolean(behaviorContext?.origin);
 
@@ -957,13 +1013,16 @@ export class DonationService {
       };
     });
   }
-  async getUsersDonationsStats(userId:string):Promise<UsersDonationsStats>{
-    const [ totalDonations,likedDonations  ]= await Promise.all( [ this.donationRepository.count({where:{userId}}) ,this.donationLikeRepository.count({
-      where:{userId}
-    })
-    ] );
+  async getUsersDonationsStats(userId: string): Promise<UsersDonationsStats> {
+    const [totalDonations, likedDonations] = await Promise.all([
+      this.donationRepository.count({ where: { userId } }),
+      this.donationLikeRepository.count({
+        where: { userId },
+      }),
+    ]);
     return {
       totalDonations,
-      likedDonations}
-    }
+      likedDonations,
+    };
+  }
 }

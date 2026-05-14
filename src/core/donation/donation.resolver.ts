@@ -40,10 +40,12 @@ import { UsersDonationsStats } from './graphql/types/donations-stats.type';
 export class DonationResolver {
   constructor(private readonly donationService: DonationService) {}
 
-  @Query(()=>UsersDonationsStats,{
-    description:"Get the current user profile stats related to donations,"
+  @Query(() => UsersDonationsStats, {
+    description: 'Get the current user profile stats related to donations,',
   })
-  async myDonationsStats(@USER('id') userId:string):Promise<UsersDonationsStats>{
+  async myDonationsStats(
+    @USER('id') userId: string,
+  ): Promise<UsersDonationsStats> {
     return this.donationService.getUsersDonationsStats(userId);
   }
   @Query(() => DonationStatisticsType, {
@@ -83,6 +85,7 @@ export class DonationResolver {
     @USER('id') userId: string,
     @USER('role') role: UserRole,
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('searchName', { nullable: true }) searchName?: string,
     @Args('behaviorContext', { nullable: true })
     behaviorContext?: DonationBehaviorContextInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
@@ -93,6 +96,7 @@ export class DonationResolver {
       behaviorContext,
       pagination,
       role == 'Administrator',
+      searchName,
     );
   }
   @Query(() => PaginatedDonations, {
