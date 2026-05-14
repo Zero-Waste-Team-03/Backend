@@ -51,12 +51,18 @@ describe('ReservationResolver', () => {
       const filter = { status: ReservationStatusValues.PENDING };
       const pagination = { page: 1, limit: 10 };
 
-      const result = await resolver.myReservations('u1', pagination, filter);
+      const result = await resolver.myReservations(
+        'u1',
+        pagination,
+        filter,
+        undefined,
+      );
 
       expect(service.findMyReservations).toHaveBeenCalledWith(
         'u1',
         filter,
         pagination,
+        undefined,
       );
       expect(result).toEqual(paginated);
     });
@@ -66,10 +72,7 @@ describe('ReservationResolver', () => {
     it('passes quantity=1 when omitted', async () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r1' });
 
-      await resolver.reserveDonation(
-        { donationId: 'd1', quantity:1},
-        'u1',
-      );
+      await resolver.reserveDonation({ donationId: 'd1', quantity: 1 }, 'u1');
 
       expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 1);
     });
@@ -77,7 +80,7 @@ describe('ReservationResolver', () => {
     it('passes provided quantity to service', async () => {
       mockReservationService.reserveDonation.mockResolvedValue({ id: 'r2' });
 
-      await resolver.reserveDonation({ donationId: 'd1',quantity:2 }, 'u1');
+      await resolver.reserveDonation({ donationId: 'd1', quantity: 2 }, 'u1');
 
       expect(service.reserveDonation).toHaveBeenCalledWith('d1', 'u1', 2);
     });
