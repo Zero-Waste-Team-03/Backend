@@ -131,6 +131,11 @@ export class DonationType {
   })
   isLikedByMe: boolean;
 
+  @Field(() => Boolean, {
+    description: 'Whether the authenticated user can reserve this donation',
+  })
+  isReservable: boolean;
+
   @Field(() => Date)
   createdAt: Date;
 

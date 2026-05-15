@@ -34,11 +34,15 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 import { Category } from '../category/entities/category.entity';
 import { UsersDonationsStats } from './graphql/types/donations-stats.type';
+import { ReservationService } from '../reservation/reservation.service';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
-  constructor(private readonly donationService: DonationService) {}
+  constructor(
+    private readonly donationService: DonationService,
+    private readonly reservationService: ReservationService,
+  ) {}
 
   @Query(() => UsersDonationsStats, {
     description: 'Get the current user profile stats related to donations,',
@@ -156,6 +160,25 @@ export class DonationResolver {
   ) {
     if (!donation.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
+  }
+
+  @ResolveField(() => Boolean, {
+    description: 'Whether the authenticated user can reserve this donation',
+  })
+  async isReservable(
+    @Parent() donation: DonationType,
+    @Context() { req }: { req: any },
+  ): Promise<boolean> {
+    const userId = req?.user?.id;
+
+    if (!userId) {
+      return false;
+    }
+
+    return this.reservationService.canUserReserveDonation(
+      donation.id,
+      userId,
+    );
   }
   @Mutation(() => DonationType, {
     description:

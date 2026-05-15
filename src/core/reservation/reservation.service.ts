@@ -290,6 +290,63 @@ export class ReservationService {
     return result.reservation;
   }
 
+  /**
+   * Returns true when the beneficiary can reserve the donation.
+   * Mirrors the reserveDonation guards without mutating state.
+   */
+  async canUserReserveDonation(
+    donationId: string,
+    beneficiaryId: string,
+  ): Promise<boolean> {
+    const donation = await this.reservationRepository.manager.findOne(Donation, {
+      where: { id: donationId },
+      select: { id: true, status: true, quantity: true },
+    });
+
+    if (!donation) {
+      return false;
+    }
+
+    if (donation.status !== DonationStatusValues.PUBLISHED) {
+      return false;
+    }
+
+    const existingReservation = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .where('reservation.donationId = :donationId', { donationId })
+      .andWhere('reservation.beneficiaryId = :beneficiaryId', {
+        beneficiaryId,
+      })
+      .andWhere('reservation.status IN (:...activeStatuses)', {
+        activeStatuses: [
+          ReservationStatusValues.PENDING,
+          ReservationStatusValues.CONFIRMED,
+        ],
+      })
+      .getOne();
+
+    if (existingReservation) {
+      return false;
+    }
+
+    const activeReservationQuantity = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .where('reservation.donationId = :donationId', { donationId })
+      .andWhere('reservation.status IN (:...statuses)', {
+        statuses: [
+          ReservationStatusValues.PENDING,
+          ReservationStatusValues.CONFIRMED,
+        ],
+      })
+      .select('COALESCE(SUM(reservation.quantity), 0)', 'total')
+      .getRawOne<{ total: string | number }>();
+
+    const reservedQuantity = Number(activeReservationQuantity?.total ?? 0);
+    const remainingQuantity = donation.quantity - reservedQuantity;
+
+    return remainingQuantity > 0;
+  }
+
   async confirmReservation(
     reservationId: string,
     beneficiaryId: string,
