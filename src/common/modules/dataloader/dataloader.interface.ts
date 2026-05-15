@@ -17,4 +17,5 @@ export interface IDataLoaders {
   categoryLoader: DataLoader<string, Category | null>;
   donationLoader: DataLoader<string, Donation | null>;
   presenceLoader: DataLoader<string, boolean>;
+  donationReservableLoader?: DataLoader<string, boolean>;
 }

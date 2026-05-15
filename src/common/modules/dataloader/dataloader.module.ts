@@ -12,6 +12,8 @@ import { DonationDataLoader } from './donation.dataloader';
 import { DonationModule } from '../../../core/donation/donation.module';
 import { PresenceDataLoader } from './presence.dataloader';
 import { PresenceModule } from '../../../core/presence/presence.module';
+import { DonationReservableDataLoader } from './donation-reservable.dataloader';
+import { ReservationModule } from '../../../core/reservation/reservation.module';
 
 /**
  * DataLoader Module
@@ -28,6 +30,7 @@ import { PresenceModule } from '../../../core/presence/presence.module';
     CategoryModule,
     DonationModule,
     PresenceModule,
+    ReservationModule,
     TypeOrmModule.forFeature([Location, Attachment]),
   ],
   providers: [
@@ -37,6 +40,7 @@ import { PresenceModule } from '../../../core/presence/presence.module';
     CategoryDataLoader,
     DonationDataLoader,
     PresenceDataLoader,
+    DonationReservableDataLoader,
   ],
   exports: [
     UserDataLoader,
@@ -45,6 +49,7 @@ import { PresenceModule } from '../../../core/presence/presence.module';
     CategoryDataLoader,
     DonationDataLoader,
     PresenceDataLoader,
+    DonationReservableDataLoader,
   ],
 })
 export class DataLoaderModule {}

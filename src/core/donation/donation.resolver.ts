@@ -38,7 +38,9 @@ import { UsersDonationsStats } from './graphql/types/donations-stats.type';
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
-  constructor(private readonly donationService: DonationService) {}
+  constructor(
+    private readonly donationService: DonationService,
+  ) {}
 
   @Query(() => UsersDonationsStats, {
     description: 'Get the current user profile stats related to donations,',
@@ -156,6 +158,20 @@ export class DonationResolver {
   ) {
     if (!donation.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(donation.mainAttachmentId);
+  }
+
+  @ResolveField(() => Boolean, {
+    description: 'Whether the authenticated user can reserve this donation',
+  })
+  async isReservable(
+    @Parent() donation: DonationType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<boolean> {
+    if (!loaders?.donationReservableLoader) {
+      return false;
+    }
+
+    return loaders.donationReservableLoader.load(donation.id);
   }
   @Mutation(() => DonationType, {
     description:
