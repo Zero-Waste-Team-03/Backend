@@ -11,11 +11,9 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { Reservation } from '../reservation/entities/reservation.entity';
 import { User } from '../user/entities/user.entity';
 import { DonationLike } from './entities/donation-like.entity';
-import { ReservationModule } from '../reservation/reservation.module';
 
 @Module({
   imports: [
-    ReservationModule,
     TypeOrmModule.forFeature([
       Donation,
       DonationPhoto,

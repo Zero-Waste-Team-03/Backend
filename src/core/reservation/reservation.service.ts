@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import {
   Reservation,
   ReservationStatusValues,
@@ -345,6 +345,96 @@ export class ReservationService {
     const remainingQuantity = donation.quantity - reservedQuantity;
 
     return remainingQuantity > 0;
+  }
+
+  /**
+   * Returns a map of donationId -> reservable flag for a beneficiary.
+   * Mirrors the reserveDonation guards in a batched form.
+   */
+  async canUserReserveDonations(
+    donationIds: readonly string[],
+    beneficiaryId: string,
+  ): Promise<Record<string, boolean>> {
+    if (!donationIds.length) {
+      return {};
+    }
+
+    const donations = await this.reservationRepository.manager.find(Donation, {
+      where: { id: In([...donationIds]) },
+      select: { id: true, status: true, quantity: true },
+    });
+
+    const donationMap = new Map(
+      donations.map((donation) => [donation.id, donation]),
+    );
+
+    const activeReservationRows = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .where('reservation.donationId IN (:...donationIds)', {
+        donationIds,
+      })
+      .andWhere('reservation.beneficiaryId = :beneficiaryId', {
+        beneficiaryId,
+      })
+      .andWhere('reservation.status IN (:...activeStatuses)', {
+        activeStatuses: [
+          ReservationStatusValues.PENDING,
+          ReservationStatusValues.CONFIRMED,
+        ],
+      })
+      .select('reservation.donationId', 'donationId')
+      .groupBy('reservation.donationId')
+      .getRawMany<{ donationId: string }>();
+
+    const donationsWithActiveReservation = new Set(
+      activeReservationRows.map((row) => row.donationId),
+    );
+
+    const activeReservationTotals = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .where('reservation.donationId IN (:...donationIds)', {
+        donationIds,
+      })
+      .andWhere('reservation.status IN (:...statuses)', {
+        statuses: [
+          ReservationStatusValues.PENDING,
+          ReservationStatusValues.CONFIRMED,
+        ],
+      })
+      .select('reservation.donationId', 'donationId')
+      .addSelect('COALESCE(SUM(reservation.quantity), 0)', 'total')
+      .groupBy('reservation.donationId')
+      .getRawMany<{ donationId: string; total: string | number }>();
+
+    const reservationTotalsByDonationId = new Map(
+      activeReservationTotals.map((row) => [
+        row.donationId,
+        Number(row.total ?? 0),
+      ]),
+    );
+
+    return donationIds.reduce((result, donationId) => {
+      const donation = donationMap.get(donationId);
+
+      if (!donation) {
+        result[donationId] = false;
+        return result;
+      }
+
+      if (donation.status !== DonationStatusValues.PUBLISHED) {
+        result[donationId] = false;
+        return result;
+      }
+
+      if (donationsWithActiveReservation.has(donationId)) {
+        result[donationId] = false;
+        return result;
+      }
+
+      const reservedQuantity = reservationTotalsByDonationId.get(donationId) ?? 0;
+      result[donationId] = donation.quantity - reservedQuantity > 0;
+      return result;
+    }, {} as Record<string, boolean>);
   }
 
   async confirmReservation(

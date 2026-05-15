@@ -133,8 +133,9 @@ export class DonationType {
 
   @Field(() => Boolean, {
     description: 'Whether the authenticated user can reserve this donation',
+    nullable:true,
   })
-  isReservable: boolean;
+  isReservable?: boolean;
 
   @Field(() => Date)
   createdAt: Date;
