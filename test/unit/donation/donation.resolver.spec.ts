@@ -10,7 +10,7 @@ describe('DonationResolver', () => {
 
   const mockDonationService = {
     getStatistics: jest.fn(),
-    getUsersDonationsStats:jest.fn(),
+    getUsersDonationsStats: jest.fn(),
     findAll: jest.fn(),
     findLikedDonations: jest.fn(),
     getDonationById: jest.fn(),
@@ -46,19 +46,18 @@ describe('DonationResolver', () => {
   });
 
   describe('donationStatistics', () => {
-
-    it ("Should return current user's donation statistics", async () => {
-      const stats:UsersDonationsStats={
+    it("Should return current user's donation statistics", async () => {
+      const stats: UsersDonationsStats = {
         likedDonations: 5,
         totalDonations: 20,
-      }
+      };
       mockDonationService.getUsersDonationsStats.mockResolvedValue(stats);
-      const result= await resolver.myDonationsStats('u1');
-      
+      const result = await resolver.myDonationsStats('u1');
+
       expect(service.getUsersDonationsStats).toHaveBeenCalledWith('u1');
       expect(result).toEqual(stats);
-      })
-    
+    });
+
     it('should return donation statistics', async () => {
       const stats = {
         totalActiveDonations: 10,
@@ -97,6 +96,7 @@ describe('DonationResolver', () => {
         'u1',
         'User',
         filter,
+        undefined,
         behaviorContext as any,
         pagination,
       );
@@ -107,6 +107,7 @@ describe('DonationResolver', () => {
         behaviorContext,
         pagination,
         false,
+        undefined,
       );
       expect(result).toEqual(mockPaginatedResult);
     });

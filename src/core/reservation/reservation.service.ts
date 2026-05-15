@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import {
   Reservation,
   ReservationStatusValues,
@@ -31,8 +31,9 @@ export class ReservationService {
 
   async findMyReservations(
     userId: string,
-    filter:ReservationsFilterInput = {},
+    filter: ReservationsFilterInput = {},
     pagination?: PaginationInput,
+    searchName?: string,
   ): Promise<PaginatedReservations> {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
@@ -43,25 +44,41 @@ export class ReservationService {
       .orderBy('reservation.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
-  if (filter.status){
+
+    if (filter.status) {
       queryBuilder.andWhere('(reservation.status = :status)', {
         status: filter.status,
+      });
+    }
+
+    if (filter.roleFilter === 'BENEFICIARY') {
+      queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId });
+    } else if (filter.roleFilter === 'DONOR') {
+      queryBuilder.andWhere('donation.userId = :userId', { userId });
+    } else {
+      queryBuilder.andWhere(
+        '(reservation.beneficiaryId = :userId OR donation.userId = :userId)',
+        { userId },
+      );
+    }
+
+    const trimmedSearchName = searchName?.trim();
+    if (trimmedSearchName) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('donation.title ILIKE :searchName', {
+            searchName: `%${trimmedSearchName}%`,
+          }).orWhere('donation.description ILIKE :searchName', {
+            searchName: `%${trimmedSearchName}%`,
+          });
+        }),
+      );
+    }
+
+    this.logger.log(`Finding reservation for ${userId}`, {
+      filter,
+      query: queryBuilder.getSql(),
     });
-    }
-    if (filter.roleFilter==="BENEFICIARY"){
-queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId })
-    }
-      else if (filter.roleFilter==="DONOR"){
-      queryBuilder.andWhere('donation.userId = :userId', { userId })
-      }
-      else{
-queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere('donation.userId = :userId', { userId })
-      }
-   
-      this.logger.log(`Finding reservation for ${userId}`,{
-        filter,
-        query: queryBuilder.getSql(),
-      })
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 
@@ -140,7 +157,6 @@ queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere
     beneficiaryId: string,
     quantity = 1,
   ): Promise<Reservation> {
-      
     if (!Number.isInteger(quantity) || quantity < 1) {
       throwAppError('RESERVATION_QUANTITY_INVALID', { quantity });
     }
@@ -208,7 +224,10 @@ queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere
           });
         }
 
-        console.log("Creating reservation with quantity", {quantity, remainingQuantity})
+        console.log('Creating reservation with quantity', {
+          quantity,
+          remainingQuantity,
+        });
         const reservation = manager.getRepository(Reservation).create({
           donationId,
           beneficiaryId,

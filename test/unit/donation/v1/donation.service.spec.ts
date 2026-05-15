@@ -481,22 +481,26 @@ describe('DonationService', () => {
     });
   });
   describe('getStatistics', () => {
-    it ('returns Current users donations statistics',async ()=>{
-      const stats:UsersDonationsStats={
+    it('returns Current users donations statistics', async () => {
+      const stats: UsersDonationsStats = {
         totalDonations: 20,
-        likedDonations:5
-      }
-      donationRepository.count.mockImplementation((options) =>{
+        likedDonations: 5,
+      };
+      donationRepository.count.mockImplementation((options) => {
         if (options.where.userId === 'u1') return 20;
-      })
-      donationLikeRepository.count.mockImplementation((options)=>{
+      });
+      donationLikeRepository.count.mockImplementation((options) => {
         if (options.where.userId === 'u1') return 5;
-      })
-      const result= await service.getUsersDonationsStats('u1');
+      });
+      const result = await service.getUsersDonationsStats('u1');
       expect(result).toEqual(stats);
-      expect(donationRepository.count).toHaveBeenCalledWith({where:{userId:'u1'}});
-      expect(donationLikeRepository.count).toHaveBeenCalledWith({where:{userId:'u1'}});
-    })
+      expect(donationRepository.count).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+      });
+      expect(donationLikeRepository.count).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+      });
+    });
     it('returns correct counts for active, flagged and pending donations', async () => {
       donationRepository.count.mockImplementation((options) => {
         if (options.where.status === DonationStatusValues.PUBLISHED) return 10;
@@ -522,7 +526,14 @@ describe('DonationService', () => {
         { id: 'd1', title: 'Donation 1', userId: 'u1' },
         { id: 'd2', title: 'Donation 2', userId: 'u1' },
       ];
-      donationRepository.findAndCount.mockResolvedValue([mockDonations, 20]);
+      const queryBuilder = {
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockDonations, 20]),
+      };
+      donationRepository.createQueryBuilder.mockReturnValue(queryBuilder);
       donationPhotoRepository.find.mockResolvedValue([]);
 
       const filter = { categoryId: 'cat1' };
@@ -535,6 +546,9 @@ describe('DonationService', () => {
       expect(result.limit).toBe(10);
       expect(result.hasNextPage).toBe(false); // 20 <= 10 + 10
       expect(result.hasPreviousPage).toBe(true);
+      expect(donationRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'donation',
+      );
       expect(
         smartBehaviorPublisher.safePublishBeneficiarySearchPerformed,
       ).toHaveBeenCalledWith({
