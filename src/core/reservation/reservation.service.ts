@@ -252,7 +252,7 @@ queryBuilder.andWhere('reservation.beneficiaryId = :userId', { userId }).orWhere
 
     await this.notificationsService.sendNotification(
       'Donation reserved',
-      `${beneficiary?.displayName ?? 'A beneficiary'} reserved qty of ${result.donationTitle}.`,
+      `${beneficiary?.displayName ?? 'A beneficiary'} reserved ${result.reservation.quantity} of ${result.donationTitle}.`,
       result.donorId,
       NOTIFICATION_TYPE.RESERVATION_ALERT,
       {
