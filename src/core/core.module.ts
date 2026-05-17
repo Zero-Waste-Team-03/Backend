@@ -12,6 +12,7 @@ import { ReportingModule } from './reporting/reporting.module';
 import { StatsModule } from './stats/stats.module';
 import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
 import { PresenceModule } from './presence/presence.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PresenceModule } from './presence/presence.module';
     ReportingModule,
     StatsModule,
     PresenceModule,
+    LeaderboardModule,
   ],
   exports: [
     UserModule,
@@ -43,6 +45,7 @@ import { PresenceModule } from './presence/presence.module';
     ReportingModule,
     StatsModule,
     PresenceModule,
+    LeaderboardModule,
   ],
 })
 export class CoreModule {}
