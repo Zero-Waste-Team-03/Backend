@@ -35,6 +35,8 @@ import { Category } from '../category/entities/category.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
 import { throwGatewayAppError } from 'src/common/errors/throw-app-error';
+import { ReputationLog, ReputationLogSourceValues } from '../leaderboard/entities/reputation-log.entity';
+import { LeaderboardService } from '../leaderboard/leaderboard.service';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
 
@@ -61,6 +63,7 @@ export class ChatService {
     private readonly chatQueue: Queue,
     @InjectQueue(QUEUE_NAME.GAMIFICATION)
     private readonly gamificationQueue: Queue,
+    private readonly leaderboardService: LeaderboardService,
   ) {}
 
   async getOrCreateConversation(
@@ -672,6 +675,25 @@ export class ChatService {
             .setParameter('reputationGain', reputationGain)
             .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
             .execute();
+
+          const donorLog = manager.create(ReputationLog, {
+            userId: donorId,
+            pointsGained: reputationGain,
+            source: ReputationLogSourceValues.DONATION_COMPLETED,
+            referenceId: donation.id,
+          });
+          const recipientLog = manager.create(ReputationLog, {
+            userId: beneficiaryId,
+            pointsGained: reputationGain,
+            source: ReputationLogSourceValues.PICKUP_COMPLETED,
+            referenceId: reservation.id,
+          });
+          await manager.save(ReputationLog, [donorLog, recipientLog]);
+
+          await Promise.all([
+            this.leaderboardService.incrementUserPoints(donorId, reputationGain),
+            this.leaderboardService.incrementUserPoints(beneficiaryId, reputationGain),
+          ]);
 
           await this.gamificationQueue.add(
             GAMIFICATION_JOBS.EVALUATE_COMPLETION_ACHIEVEMENTS,
