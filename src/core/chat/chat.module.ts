@@ -15,6 +15,7 @@ import { Donation } from '../donation/entities/donation.entity';
 import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PresenceModule } from '../presence/presence.module';
+import { LeaderboardModule } from '../leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { PresenceModule } from '../presence/presence.module';
     NotificationsModule,
     AuthenticationModule,
     PresenceModule,
+    LeaderboardModule,
   ],
   providers: [
     ChatService,
