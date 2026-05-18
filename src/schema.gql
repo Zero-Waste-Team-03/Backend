@@ -311,6 +311,9 @@ type Donation {
   """Whether the authenticated user liked this donation"""
   isLikedByMe: Boolean!
 
+  """Whether the authenticated user can reserve this donation"""
+  isReservable: Boolean
+
   """Date when listing expires for visibility"""
   listingExpiresAt: DateTime
 
@@ -460,6 +463,14 @@ scalar JSON
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject
+
+type LeaderboardEntry {
+  avatarUrl: String
+  displayName: String
+  rank: Int!
+  score: Int!
+  userId: String!
+}
 
 type Location {
   """Location city"""
@@ -855,6 +866,8 @@ type Query {
   getNotificationStats: NotificationStats!
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
   getUrgentNotification: [Notification!]
+  leaderboardAllTime(limit: Int! = 10): [LeaderboardEntry!]!
+  leaderboardLastMonth(limit: Int! = 10): [LeaderboardEntry!]!
 
   """
   Get liked donations for the authenticated user with the same standard filters and pagination
