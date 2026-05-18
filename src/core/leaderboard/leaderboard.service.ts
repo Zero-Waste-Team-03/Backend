@@ -32,29 +32,12 @@ export class LeaderboardService {
     const allTimeKey = this.getAllTimeKey();
     const monthlyKey = this.getMonthlyKey(now);
 
-    try {
-      const redisAny = this.redisService as any;
-      if (typeof redisAny.zincrby === 'function') {
-        await Promise.all([
-          redisAny.zincrby(allTimeKey, points, userId),
-          redisAny.zincrby(monthlyKey, points, userId),
+await Promise.all([
+          this.redisService.zIncrBy(allTimeKey, points, userId),
+          this.redisService.zIncrBy(monthlyKey, points, userId),
         ]);
-      } else if (typeof redisAny.zIncrBy === 'function') {
-        await Promise.all([
-          redisAny.zIncrBy(allTimeKey, points, userId),
-          redisAny.zIncrBy(monthlyKey, points, userId),
-        ]);
-      } else {
-        const client = redisAny.getClient ? redisAny.getClient() : redisAny.redisClient;
-        await Promise.all([
-          client.zincrby(allTimeKey, points, userId),
-          client.zincrby(monthlyKey, points, userId),
-        ]);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to increment Redis ZSET for user ${userId}`, error);
-    }
-  }
+
+     }
 
   async getTopUsersAllTime(limit: number): Promise<LeaderboardEntry[]> {
     return this.getLeaderboard(this.getAllTimeKey(), limit);
@@ -67,20 +50,8 @@ export class LeaderboardService {
   }
 
   private async getLeaderboard(key: string, limit: number): Promise<LeaderboardEntry[]> {
-    let redisResult: string[] = [];
-    const redisAny = this.redisService as any;
-    
-    if (typeof redisAny.zrevrange === 'function') {
-      redisResult = await redisAny.zrevrange(key, 0, limit - 1, 'WITHSCORES');
-    } else if (typeof redisAny.zRange === 'function') {
-      redisResult = await redisAny.zRange(key, 0, limit - 1, { REV: true, WITHSCORES: true });
-    } else {
-      const client = redisAny.getClient ? redisAny.getClient() : redisAny.redisClient;
-      if (client) {
-         redisResult = await client.zrevrange(key, 0, limit - 1, 'WITHSCORES');
-      }
-    }
-    
+    const redisResult=await this.redisService.zRevRangeWithScores(key, 0, limit - 1);
+
     if (!redisResult || redisResult.length === 0) {
       return [];
     }
@@ -90,19 +61,12 @@ export class LeaderboardService {
     const userIds: string[] = [];
     const scoreMap = new Map<string, number>();
 
-    if (typeof redisResult[0] === 'object') {
-       for (const item of (redisResult as any)) {
+
+       for (const item of redisResult ) {
          userIds.push(item.value);
          scoreMap.set(item.value, Number(item.score));
        }
-    } else {
-      for (let i = 0; i < redisResult.length; i += 2) {
-        const id = redisResult[i];
-        const score = Number(redisResult[i + 1]);
-        userIds.push(id);
-        scoreMap.set(id, score);
-      }
-    }
+      
 
     if (userIds.length === 0) return [];
 
