@@ -20,6 +20,7 @@ import {
 import { Attachment } from 'src/common/modules/attachment/entities/attachment.entity';
 import { UserService } from 'src/core/user/v1/user.service';
 import { WsException } from '@nestjs/websockets';
+import { LeaderboardService } from 'src/core/leaderboard/leaderboard.service';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -54,6 +55,9 @@ describe('ChatService', () => {
   const userService = {
     findById: jest.fn(),
   };
+  const leaderboardService = {
+    incrementUserPoints: jest.fn(),
+  }
 
   const notificationsService = {
     sendNotificationWithoutSaving: jest.fn(),
@@ -91,6 +95,10 @@ describe('ChatService', () => {
         {
           provide: UserService,
           useValue: userService,
+        },
+        {
+          provide:LeaderboardService,
+          useValue: leaderboardService,
         },
         {
           provide: NotificationsService,
@@ -401,6 +409,7 @@ describe('ChatService', () => {
       create: jest.fn().mockImplementation((_: any, payload: any) => payload),
       save: jest
         .fn()
+        .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined)
