@@ -64,7 +64,7 @@
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
-    "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.1",
     "@nestjs/websockets": "^11.1.17",
     "@scalar/nestjs-api-reference": "^0.5.14",
     "@socket.io/redis-adapter": "^8.3.0",
