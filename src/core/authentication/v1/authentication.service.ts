@@ -89,6 +89,7 @@ export class AuthenticationService {
       const accessTokenPayload: AccessTokenPayload = {
         id,
         email,
+        isVerified: user.isVerified,
         role,
         resetVersion,
       };
