@@ -248,7 +248,7 @@ export class UserService {
       displayName: data.displayName,
       passwordHash: await generateHash(data.password),
       role: UserRoleValues.USER,
-      isMailVerified: true,
+      isVerified: false,
       location: savedLocation,
       locationId: savedLocation.id,
     });
@@ -273,7 +273,7 @@ export class UserService {
       displayName,
       role,
       passwordHash: await generateHash(temporaryPassword),
-      isMailVerified: true,
+      isVerified: true,
       status: UserStatusValues.ACTIVE,
     });
 
@@ -365,7 +365,7 @@ export class UserService {
       ...data,
       role: UserRoleValues.USER,
       passwordHash: '',
-      isMailVerified: true,
+      isVerified: false,
     });
     return this.userRepository.save(user);
   }

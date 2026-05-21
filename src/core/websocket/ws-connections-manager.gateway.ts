@@ -52,10 +52,7 @@ export class WsConnectionsManagerGateway
       return;
     }
     const userPayload: AccessTokenPayload = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      resetVersion: user.resetVersion,
+      ...user
     };
 
     client['user'] = userPayload;

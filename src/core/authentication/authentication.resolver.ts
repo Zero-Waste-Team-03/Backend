@@ -38,7 +38,7 @@ export class AuthenticationResolver {
   /**
    * Login user with email and password
    *
-   * @param loginInput - Email and password credentials
+   * @param _loginInput - Email and password credentials
    * @param user - User object populated by LocalGuard after validation
    * @returns Access token, refresh token, and user details
    *
@@ -53,7 +53,7 @@ export class AuthenticationResolver {
    *     user {
    *       id
    *       email
-   *       isMailVerified
+    *       isVerified
    *     }
    *   }
    * }
@@ -63,7 +63,7 @@ export class AuthenticationResolver {
     description: 'Login user and issue access and refresh tokens',
   })
   async login(
-    @Args('loginInput') loginInput: LoginInput,
+    @Args('loginInput') _loginInput: LoginInput,
     @USER() user: User,
   ): Promise<AuthResponseType> {
     return this.authenticationService.issueTokens(user);

@@ -10,6 +10,8 @@ import {
 } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
+import { RolesGuard } from '../authentication/guards/roles.guard';
+import { Roles } from '../authentication/decorators/roles.decorator';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { DonationType } from './graphql/types/donation.type';
 import { CreateDonationInput } from './graphql/inputs/create-donation.input';
@@ -23,7 +25,7 @@ import { DonationsFilterInput } from './graphql/inputs/donations-filter.input';
 import { DonationBehaviorContextInput } from './graphql/inputs/donation-behavior-context.input';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
-import { User, UserRole } from '../user/entities/user.entity';
+import { User, UserRole, UserRoleValues } from '../user/entities/user.entity';
 import { PaginatedDonations } from './graphql/types/paginated-donations.type';
 import { PaginationInput } from '../../common/graphql/inputs/pagination.input';
 import { DonationsHeatmapInput } from './graphql/inputs/donations-heatmap.input';
@@ -113,6 +115,31 @@ export class DonationResolver {
     return this.donationService.getMyDonations(userId, filter, pagination);
   }
 
+  /**
+   * Get paginated donations pending approval (Administrator only).
+   *
+   * @param userId - Admin user id.
+   * @param filter - Optional filters by category or urgency.
+   * @param pagination - Pagination input.
+   * @returns PaginatedDonations.
+   */
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Query(() => PaginatedDonations, {
+    description: 'Get donation listings pending approval (Administrator only)',
+  })
+  async pendingDonationApprovals(
+    @USER('id') userId: string,
+    @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<PaginatedDonations> {
+    return this.donationService.getPendingApprovals(
+      userId,
+      filter,
+      pagination,
+    );
+  }
+
   @Query(() => PaginatedDonations, {
     description:
       'Get liked donations for the authenticated user with the same standard filters and pagination',
@@ -180,8 +207,11 @@ export class DonationResolver {
   async createDonation(
     @Args('input') input: CreateDonationInput,
     @USER('id') userId: string,
+    @USER('role') role: UserRole,
+    @USER('isVerified') isVerified: boolean,
+
   ): Promise<DonationType> {
-    return await this.donationService.createDonation(input, userId);
+    return await this.donationService.createDonation(input, {isVerified,userId,isAdmin: role == 'Administrator' });
   }
 
   @Mutation(() => DonationType, {
@@ -201,8 +231,13 @@ export class DonationResolver {
   async donation(
     @Args('id', { type: () => ID }) id: string,
     @USER('id') userId: string,
+    @USER('role') role: UserRole,
   ): Promise<DonationType> {
-    return await this.donationService.getDonationById(id, userId);
+    return await this.donationService.getDonationById(
+      id,
+      userId,
+      role == 'Administrator',
+    );
   }
 
   @Mutation(() => MessageResponseType, {
@@ -240,10 +275,49 @@ export class DonationResolver {
       role == 'Administrator',
     );
   }
+  /**
+   * Approve a pending donation (Administrator only).
+   *
+   * @param donationId - Donation identifier.
+   * @param adminId - Administrator user id.
+   */
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => DonationType, {
+    description: 'Approve a donation listing (Administrator only).',
+  })
+  async approveDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @USER('id') adminId: string,
+  ): Promise<DonationType> {
+    return this.donationService.approveDonation(donationId, adminId);
+  }
+
+  /**
+   * Reject a pending donation (Administrator only).
+   *
+   * @param donationId - Donation identifier.
+   * @param reason - Optional rejection reason.
+   * @param adminId - Administrator user id.
+   */
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => DonationType, {
+    description: 'Reject a donation listing (Administrator only).',
+  })
+  async rejectDonation(
+    @Args('donationId', { type: () => ID }) donationId: string,
+    @Args('reason', { nullable: true , type:()=>String}) reason: string | undefined,
+    @USER('id') adminId: string,
+  ): Promise<DonationType> {
+    return this.donationService.rejectDonation(donationId, adminId, reason);
+  }
+
 }
 
 @Resolver(() => DonationMapMarkerType)
 export class DonationMapMarkerResolver {
+
   @ResolveField(() => AttachementType, {
     nullable: true,
     description: 'Main attachment details for map marker',
@@ -255,4 +329,5 @@ export class DonationMapMarkerResolver {
     if (!marker.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(marker.mainAttachmentId);
   }
+
 }

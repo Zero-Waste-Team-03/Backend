@@ -6,11 +6,12 @@ import { User } from 'src/core/user/entities/user.entity';
 const logger = new Logger('SeedReputationLogs');
 
 async function seedReputationLogs() {
-
-  const userRepo = dataSource.getRepository(User);
-  const reputationLogRepository = dataSource.getRepository(ReputationLog);
-
   try {
+    await dataSource.initialize();
+
+    const userRepo = dataSource.getRepository(User);
+    const reputationLogRepository = dataSource.getRepository(ReputationLog);
+
     logger.log('Starting ReputationLog seeding...');
 
     const allUsers =await userRepo.find();
@@ -48,7 +49,9 @@ async function seedReputationLogs() {
     logger.error(`ReputationLog seeding failed: ${error.message}`, error.stack);
     process.exit(1);
   } finally {
-    await dataSource.destroy();
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   }
 }
 
