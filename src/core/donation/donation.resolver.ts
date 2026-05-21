@@ -307,7 +307,7 @@ export class DonationResolver {
   })
   async rejectDonation(
     @Args('donationId', { type: () => ID }) donationId: string,
-    @Args('reason', { nullable: true }) reason: string | undefined,
+    @Args('reason', { nullable: true , type:()=>String}) reason: string | undefined,
     @USER('id') adminId: string,
   ): Promise<DonationType> {
     return this.donationService.rejectDonation(donationId, adminId, reason);
