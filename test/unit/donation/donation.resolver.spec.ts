@@ -146,9 +146,10 @@ describe('DonationResolver', () => {
       const payload = { id: 'd1', title: 'Donation', isLikedByMe: true };
       mockDonationService.getDonationById.mockResolvedValue(payload);
 
-      const result = await resolver.donation('d1', 'u1');
+      const result = await resolver.donation('d1', 'u1', 'User');
 
-      expect(service.getDonationById).toHaveBeenCalledWith('d1', 'u1');
+      expect(service.getDonationById).toHaveBeenCalledWith('d1', 'u1', false);
+
       expect(result).toEqual(payload);
     });
   });

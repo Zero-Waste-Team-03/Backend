@@ -114,6 +114,7 @@ describe('DonationService', () => {
     expect(service).toBeDefined();
   });
 
+
    describe('createDonation', () => {
      it('creates donation with authenticated owner and published status when verified', async () => {
       const input = {
@@ -156,7 +157,7 @@ describe('DonationService', () => {
         },
       ]);
 
-       const result = await service.createDonation(input, 'u1');
+       const result = await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
 
        expect(donationRepository.create).toHaveBeenCalledWith(
          expect.objectContaining({
@@ -227,7 +228,7 @@ describe('DonationService', () => {
         },
       ]);
 
-       const result = await service.createDonation(input, 'u1');
+       const result = await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
 
       expect(donationRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -277,7 +278,7 @@ describe('DonationService', () => {
             ],
             mainAttachmentId: 'a1111111-1111-1111-1111-111111111111',
           },
-          'u1',
+          {userId: 'u1',isAdmin:false,isVerified:true },
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
@@ -325,7 +326,7 @@ describe('DonationService', () => {
         },
       ]);
 
-      await service.createDonation(input, 'u1');
+      await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
 
       expect(locationRepository.create).toHaveBeenCalledWith(
         input.locationInput,
@@ -354,7 +355,7 @@ describe('DonationService', () => {
             },
             mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
           },
-          'u1',
+          {isVerified:false,isAdmin:false ,userId:'u1'},
         ),
        ).rejects.toBeInstanceOf(BadRequestException);
      });
@@ -393,7 +394,7 @@ describe('DonationService', () => {
          },
        ]);
 
-       const result = await service.createDonation(input, 'u1');
+       const result = await service.createDonation(input, {userId:'u1',isAdmin:false,isVerified:false});
 
        expect(donationRepository.create).toHaveBeenCalledWith(
          expect.objectContaining({
@@ -806,6 +807,7 @@ describe('DonationService', () => {
       donationRepository.findOne.mockResolvedValue({
         id: 'd1',
         title: 'Donation 1',
+        status: DonationStatusValues.PUBLISHED,
       });
       donationPhotoRepository.find.mockResolvedValue([]);
       donationLikeRepository.find.mockResolvedValue([{ donationId: 'd1' }]);
