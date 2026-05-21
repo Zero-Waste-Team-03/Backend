@@ -13,7 +13,7 @@ export class AddVerificationColumns1779374080195 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "donations" ADD "rejectedAt" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "donations" ADD "rejectedById" uuid`);
         await queryRunner.query(`ALTER TABLE "donations" ADD "rejectionReason" text`);
-        await queryRunner.query(`DRROP TRIGGER IF EXISTS "TRG_donations_enforce_quantity_status" ON "donations"`);
+        await queryRunner.query(`DROP TRIGGER IF EXISTS "TRG_donations_enforce_quantity_status" ON "donations"`);
 
         await queryRunner.query(`ALTER TYPE "public"."donations_status_enum" RENAME TO "donations_status_enum_old"`);
         await queryRunner.query(`CREATE TYPE "public"."donations_status_enum" AS ENUM('Draft', 'PendingApproval', 'Published', 'Reserved', 'Completed', 'Expired', 'Rejected')`);
