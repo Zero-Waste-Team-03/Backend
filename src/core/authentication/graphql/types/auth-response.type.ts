@@ -13,7 +13,7 @@ import { UserType } from './user.type';
  *   user: {
  *     id: "uuid",
  *     email: "user@example.com",
- *     isMailVerified: true
+  *     isVerified: true
  *   }
  * }
  */

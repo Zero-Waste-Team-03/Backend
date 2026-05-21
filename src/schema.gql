@@ -413,7 +413,9 @@ enum DonationStatusValues {
   COMPLETED
   DRAFT
   EXPIRED
+  PENDING_APPROVAL
   PUBLISHED
+  REJECTED
   RESERVED
 }
 
@@ -1220,8 +1222,8 @@ type User {
   """User unique identifier"""
   id: String!
 
-  """Whether the user has verified their email"""
-  isMailVerified: Boolean!
+  """Whether the user is verified"""
+  isVerified: Boolean!
 
   """Date the user last changed password"""
   lastChangedPasswordDate: DateTime

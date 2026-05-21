@@ -436,9 +436,9 @@ describe('UserService', () => {
         }),
       );
       expect(result.email).toBe(input.email);
-      expect(result.isMailVerified).toBe(true);
+      expect(result.isVerified).toBe(true);
       expect(result.email).toBe(input.email);
-      expect(result.isMailVerified).toBe(true);
+      expect(result.isVerified).toBe(true);
     });
   });
 

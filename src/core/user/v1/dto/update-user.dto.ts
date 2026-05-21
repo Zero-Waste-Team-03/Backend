@@ -59,11 +59,11 @@ export class UpdateUserDto {
   reputationScore?: number;
 
   @ApiPropertyOptional({
-    description: 'Whether the user email is verified',
+    description: 'Whether the user is verified',
   })
   @IsOptional()
   @IsBoolean()
-  isMailVerified?: boolean;
+  isVerified?: boolean;
 
   @ApiPropertyOptional({
     description: 'The ID of the location associated with the user',

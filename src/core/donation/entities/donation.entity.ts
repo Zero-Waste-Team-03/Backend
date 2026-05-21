@@ -19,10 +19,12 @@ import { DonationPhoto } from './donation-photo.entity';
 
 export const DonationStatusValues = {
   DRAFT: 'Draft',
+  PENDING_APPROVAL: 'PendingApproval',
   PUBLISHED: 'Published',
   RESERVED: 'Reserved',
   COMPLETED: 'Completed',
   EXPIRED: 'Expired',
+  REJECTED: 'Rejected',
 } as const;
 
 export const DONATION_STATUS_OPTIONS = Object.values(DonationStatusValues);
@@ -103,6 +105,29 @@ export class Donation {
 
   @Column({ type: 'timestamp', nullable: true })
   publishedAt?: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  approvedAt?: Date | null;
+
+  @Column('uuid', { nullable: true })
+  approvedById?: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'approvedById' })
+  approvedBy?: Relation<User>;
+
+  @Column({ type: 'timestamp', nullable: true })
+  rejectedAt?: Date | null;
+
+  @Column('uuid', { nullable: true })
+  rejectedById?: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'rejectedById' })
+  rejectedBy?: Relation<User>;
+
+  @Column({ type: 'text', nullable: true })
+  rejectionReason?: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   listingExpiresAt?: Date | null;

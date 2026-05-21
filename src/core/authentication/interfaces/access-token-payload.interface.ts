@@ -4,5 +4,6 @@ export interface AccessTokenPayload {
   id: string;
   email: string;
   role: UserRole;
+  isVerified: boolean;
   resetVersion: number;
 }

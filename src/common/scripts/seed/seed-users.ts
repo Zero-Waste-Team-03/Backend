@@ -12,7 +12,7 @@ type SeedUser = {
   description: string;
   role: User['role'];
   reputationScore: number;
-  isMailVerified: boolean;
+  isVerified: boolean;
   location: {
     latitude?: number;
     longitude?: number;
@@ -30,7 +30,7 @@ const BASE_USERS: SeedUser[] = [
     description: 'Platform administrator account.',
     role: UserRoleValues.ADMINISTRATOR,
     reputationScore: 1000,
-    isMailVerified: true,
+    isVerified: true,
     location: {
       latitude: 36.7538,
       longitude: 3.0588,
@@ -46,7 +46,7 @@ const BASE_USERS: SeedUser[] = [
     description: 'Standard user account for local testing.',
     role: UserRoleValues.USER,
     reputationScore: 50,
-    isMailVerified: true,
+    isVerified: true,
     location: {
       latitude: 35.6971,
       longitude: -0.6308,
@@ -62,7 +62,7 @@ const BASE_USERS: SeedUser[] = [
     description: 'Organization account for QA flows.',
     role: UserRoleValues.ORGANIZATION,
     reputationScore: 240,
-    isMailVerified: true,
+    isVerified: true,
     location: {
       latitude: 36.365,
       longitude: 6.6147,
@@ -93,7 +93,7 @@ function generateRandomUsers(count: number): SeedUser[] {
       description: `Generated ${role} account ${i}.`,
       role,
       reputationScore: Math.floor(Math.random() * 500),
-      isMailVerified: Math.random() > 0.1, // 90% chance verified
+      isVerified: false,
       location: {
         latitude: 36 + Math.random() * 2, // Around Algeria
         longitude: 3 + Math.random() * 4,
@@ -135,7 +135,7 @@ async function upsertUser(seed: SeedUser): Promise<void> {
       description: seed.description,
       role: seed.role,
       reputationScore: seed.reputationScore,
-      isMailVerified: seed.isMailVerified,
+      isVerified: seed.isVerified,
       passwordHash,
       location: savedLocation,
       locationId: savedLocation.id,
@@ -155,7 +155,7 @@ async function upsertUser(seed: SeedUser): Promise<void> {
     description: seed.description,
     role: seed.role,
     reputationScore: seed.reputationScore,
-    isMailVerified: seed.isMailVerified,
+    isVerified: seed.isVerified,
     passwordHash,
     location: savedLocation,
     locationId: savedLocation.id,
