@@ -20,6 +20,7 @@
     "seed:categories": "pnpm dlx tsx ./src/common/scripts/seed/seed-categories.ts",
     "seed:attachments": "pnpm dlx tsx ./src/common/scripts/seed/seed-attachments.ts",
     "seed:donations": "pnpm dlx tsx ./src/common/scripts/seed/seed-donations.ts",
+    "seed:leaderboard": "pnpm dlx tsx ./src/common/scripts/seed/seed-reputation-logs.ts",
     "seed:badges": "pnpm dlx tsx ./src/common/scripts/seed/seed-badges.ts",
     "seed:achievements": "pnpm dlx tsx ./src/common/scripts/seed/seed-achievements.ts",
     "seed:reservations": "pnpm dlx tsx ./src/common/scripts/seed/seed-reservations.ts",

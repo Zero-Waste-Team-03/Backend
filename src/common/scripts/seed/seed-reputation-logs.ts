@@ -1,21 +1,21 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../../../app.module';
 import { Logger } from '@nestjs/common';
-import { UserService } from '../../../core/user/v1/user.service';
 import { ReputationLog, ReputationLogSourceValues } from '../../../core/leaderboard/entities/reputation-log.entity';
 import dataSource from 'src/infrastructure/db/data-source';
+import { AppModule } from 'src/app.module';
+import { User } from 'src/core/user/entities/user.entity';
 
 const logger = new Logger('SeedReputationLogs');
 
 async function seedReputationLogs() {
   const app = await NestFactory.createApplicationContext(AppModule);
-  const userService = app.get(UserService);
+  const userRepo=dataSource.getRepository(User)
   const reputationLogRepository = dataSource.getRepository(ReputationLog);
 
   try {
     logger.log('Starting ReputationLog seeding...');
 
-    const allUsers = await userService.findAll();
+    const allUsers =await userRepo.find();
 
     if (!allUsers || allUsers.length === 0) {
       logger.warn('No users found. Please run seed-users.ts first.');
