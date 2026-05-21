@@ -8,11 +8,12 @@ import {
   type DonationUrgency,
 } from '../entities/donation.entity';
 import {
-  Brackets,
   DeleteResult,
   FindOptionsWhere,
+  ILike,
   In,
   Repository,
+  Between,
 } from 'typeorm';
 import { CreateDonationInput } from '../graphql/inputs/create-donation.input';
 import { UpdateDonationInput } from '../graphql/inputs/update-donation.input';
@@ -42,12 +43,14 @@ import { User } from 'src/core/user/entities/user.entity';
 import { DonationsHeatmapInput } from '../graphql/inputs/donations-heatmap.input';
 import { DonationsHeatmapType } from '../graphql/types/donations-heatmap.type';
 import { UsersDonationsStats } from '../graphql/types/donations-stats.type';
+import { UserMeta } from 'src/core/user/interfaces/user-meta.interface';
 
 type DonationResponse = Omit<Donation, 'generateId'> & {
   attachmentIds: string[];
   mainAttachmentId?: string;
   isLikedByMe: boolean;
 };
+
 
 @Injectable()
 export class DonationService {
@@ -88,8 +91,8 @@ export class DonationService {
         westLng: southWest.longitude,
         eastLng: northEast.longitude,
       })
-      .andWhere('donation.status != :expiredStatus', {
-        expiredStatus: DonationStatusValues.EXPIRED,
+      .andWhere('donation.status = :publishedStatus', {
+        publishedStatus: DonationStatusValues.PUBLISHED,
       })
       .select([
         'donation.id AS id',
@@ -491,10 +494,19 @@ export class DonationService {
   async getDonationById(
     id: string,
     viewerUserId?: string,
+    isAdmin: boolean = false,
   ): Promise<DonationResponse> {
     const donation = await this.donationRepository.findOne({ where: { id } });
 
     if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id });
+    }
+
+    if (
+      !isAdmin &&
+      donation.userId !== viewerUserId &&
+      donation.status !== DonationStatusValues.PUBLISHED
+    ) {
       throwAppError('DONATION_NOT_FOUND', { id });
     }
 
@@ -598,13 +610,15 @@ export class DonationService {
     await this.donationPhotoRepository.save(updatedPhotos);
   }
 
-  async createDonation(input: CreateDonationInput, userId: string) {
+  async createDonation(input: CreateDonationInput, {userId,isVerified,isAdmin}:UserMeta) {
     this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
-    const locationId = await this.resolveLocationId(
+        const locationId = await this.resolveLocationId(
       input.locationId,
       input.locationInput,
     );
-    const status = DonationStatusValues.PUBLISHED;
+    const status = isVerified || isAdmin
+      ? DonationStatusValues.PUBLISHED
+      : DonationStatusValues.PENDING_APPROVAL;
 
     const donation = this.donationRepository.create({
       userId,
@@ -633,15 +647,17 @@ export class DonationService {
       input.mainAttachmentId,
     );
 
-    await this.smartBehaviorPublisher.safePublishDonationPublished({
-      donorId: userId,
-      donationId: savedDonation.id,
-      categoryId: savedDonation.categoryId,
-      category: savedDonation.category?.name ?? '',
-      donationTitle: savedDonation.title,
-      urgency: savedDonation.urgency,
-      safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
-    });
+    if (status === DonationStatusValues.PUBLISHED) {
+      await this.smartBehaviorPublisher.safePublishDonationPublished({
+        donorId: userId,
+        donationId: savedDonation.id,
+        categoryId: savedDonation.categoryId,
+        category: savedDonation.category?.name ?? '',
+        donationTitle: savedDonation.title,
+        urgency: savedDonation.urgency,
+        safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
+      });
+    }
 
     return await this.mapDonationResponse(savedDonation, userId);
   }
@@ -675,6 +691,16 @@ export class DonationService {
     const resolvedLocationId = await this.resolveUpdateLocationId(input);
     if (resolvedLocationId !== undefined) {
       donation.locationId = resolvedLocationId;
+    }
+
+    if (donation.status === DonationStatusValues.REJECTED) {
+      donation.status = DonationStatusValues.PENDING_APPROVAL;
+      donation.rejectedAt = null;
+      donation.rejectedById = null;
+      donation.rejectionReason = null;
+      donation.publishedAt = null;
+      donation.approvedAt = null;
+      donation.approvedById = null;
     }
 
     const savedDonation = await this.donationRepository.save(donation);
@@ -816,7 +842,9 @@ export class DonationService {
           where: { urgency: DonationUrgencyValues.HIGH as DonationUrgency },
         }),
         this.donationRepository.count({
-          where: { status: DonationStatusValues.DRAFT as DonationStatus },
+          where: {
+            status: DonationStatusValues.PENDING_APPROVAL as DonationStatus,
+          },
         }),
       ]);
 
@@ -870,65 +898,81 @@ export class DonationService {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-    const queryBuilder = this.donationRepository
-      .createQueryBuilder('donation')
-      .orderBy('donation.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+    const trimmedSearchName = searchName?.trim();
+    const searchValue = trimmedSearchName ? `%${trimmedSearchName}%` : undefined;
+    const where: FindOptionsWhere<Donation>[] = [];
 
-    if (!isAdmin) {
-      queryBuilder
-        .andWhere('donation.userId != :userId', { userId })
-        .andWhere('donation.status = :publishedStatus', {
-          publishedStatus: DonationStatusValues.PUBLISHED,
-        })
-        .andWhere('donation.quantity IS NOT NULL')
-        .andWhere(
-          'NOT EXISTS (SELECT 1 FROM reservations reservation WHERE reservation."donationId" = donation.id AND reservation."beneficiaryId" = :beneficiaryId AND reservation.status IN (:...excludedReservationStatuses))',
-          {
+    if (trimmedSearchName) {
+      const baseFilters: FindOptionsWhere<Donation> = {};
+      const statusFilter = !isAdmin
+        ? (DonationStatusValues.PUBLISHED as DonationStatus)
+        : filter?.status;
+
+      if (filter?.categoryId) {
+        baseFilters.categoryId = filter.categoryId;
+      }
+      if (filter?.urgency) {
+        baseFilters.urgency = filter.urgency;
+      }
+      if (statusFilter) {
+        baseFilters.status = statusFilter;
+      }
+
+      where.push({ ...baseFilters, title: ILike(searchValue!) });
+      where.push({ ...baseFilters, description: ILike(searchValue!) });
+    } else {
+      const baseFilters: FindOptionsWhere<Donation> = {};
+      if (filter?.categoryId) {
+        baseFilters.categoryId = filter.categoryId;
+      }
+      if (filter?.urgency) {
+        baseFilters.urgency = filter.urgency;
+      }
+      if (!isAdmin) {
+        baseFilters.status = DonationStatusValues.PUBLISHED as DonationStatus;
+      } else if (filter?.status) {
+        baseFilters.status = filter.status;
+      }
+      where.push(baseFilters);
+    }
+
+    const [rawDonations] = await this.donationRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+    });
+
+    const baseFiltered = isAdmin
+      ? rawDonations
+      : rawDonations.filter((donation) => donation.userId !== userId);
+
+    const donationIds = baseFiltered.map((donation) => donation.id);
+    const reservations = donationIds.length
+      ? await this.reservationRepository.find({
+          where: {
+            donationId: In(donationIds),
             beneficiaryId: userId,
-            excludedReservationStatuses: [
+            status: In([
               ReservationStatusValues.PENDING,
               ReservationStatusValues.CONFIRMED,
-            ],
+            ]),
           },
+          select: ['donationId'],
+        })
+      : [];
+    const reservedDonationIds = new Set(
+      reservations.map((reservation) => reservation.donationId),
+    );
+
+    const filteredDonations = isAdmin
+      ? baseFiltered
+      : baseFiltered.filter(
+          (donation) => !reservedDonationIds.has(donation.id),
         );
-    }
 
-    if (filter?.categoryId) {
-      queryBuilder.andWhere('donation.categoryId = :categoryId', {
-        categoryId: filter.categoryId,
-      });
-    }
+    const effectiveTotalCount = filteredDonations.length;
+    const pagedDonations = filteredDonations.slice(skip, skip + limit);
 
-    if (filter?.urgency) {
-      queryBuilder.andWhere('donation.urgency = :urgency', {
-        urgency: filter.urgency,
-      });
-    }
-
-    if (filter?.status) {
-      queryBuilder.andWhere('donation.status = :status', {
-        status: filter.status,
-      });
-    }
-
-    const trimmedSearchName = searchName?.trim();
-    if (trimmedSearchName) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('donation.title ILIKE :searchName', {
-            searchName: `%${trimmedSearchName}%`,
-          }).orWhere('donation.description ILIKE :searchName', {
-            searchName: `%${trimmedSearchName}%`,
-          });
-        }),
-      );
-    }
-
-    const [donations, totalCount] = await queryBuilder.getManyAndCount();
-
-    const items = await this.buildDonationResponses(donations, userId);
+    const items = await this.buildDonationResponses(pagedDonations, userId);
 
     const hasBehaviorSignal =
       Boolean(filter?.categoryId) ||
@@ -950,6 +994,56 @@ export class DonationService {
 
     return {
       items,
+      totalCount: effectiveTotalCount,
+      page,
+      limit,
+      hasNextPage: effectiveTotalCount > skip + limit,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  /**
+   * Retrieves paginated donations awaiting admin approval.
+   *
+   * @param adminId - Admin user id used for likes mapping.
+   * @param filter - Optional filters for category or urgency.
+   * @param pagination - Pagination options.
+   * @returns Paginated list of pending donations.
+   */
+  async getPendingApprovals(
+    adminId: string,
+    filter?: DonationsFilterInput,
+    pagination?: PaginationInput,
+  ) {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: FindOptionsWhere<Donation> = {
+      status: DonationStatusValues.PENDING_APPROVAL as DonationStatus,
+    };
+
+    if (filter?.categoryId) {
+      where.categoryId = filter.categoryId;
+    }
+
+    if (filter?.urgency) {
+      where.urgency = filter.urgency;
+    }
+
+    const [donations, totalCount] = await this.donationRepository.findAndCount(
+      {
+        where,
+        order: { createdAt: 'DESC' },
+        skip,
+        take: limit,
+      },
+    );
+
+    const items = await this.buildDonationResponses(donations, adminId);
+
+    return {
+      items,
       totalCount,
       page,
       limit,
@@ -958,24 +1052,139 @@ export class DonationService {
     };
   }
 
+  /**
+   * Approves a pending donation and publishes it.
+   *
+   * @param donationId - Donation identifier.
+   * @param adminId - Admin user performing the approval.
+   * @returns Updated donation response.
+   */
+  async approveDonation(donationId: string, adminId: string) {
+    const donation = await this.donationRepository.findOne({
+      where: { id: donationId },
+      relations: { category: true },
+    });
+
+    if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id: donationId });
+    }
+
+    if (donation.status !== DonationStatusValues.PENDING_APPROVAL) {
+      throwAppError('DONATION_APPROVAL_STATUS_INVALID');
+    }
+
+    donation.status = DonationStatusValues.PUBLISHED;
+    donation.publishedAt = donation.publishedAt ?? new Date();
+    donation.approvedAt = new Date();
+    donation.approvedById = adminId;
+    donation.rejectedAt = null;
+    donation.rejectedById = null;
+    donation.rejectionReason = null;
+
+    const savedDonation = await this.donationRepository.save(donation);
+
+    await this.smartBehaviorPublisher.safePublishDonationPublished({
+      donorId: savedDonation.userId,
+      donationId: savedDonation.id,
+      categoryId: savedDonation.categoryId,
+      category: savedDonation.category?.name ?? '',
+      donationTitle: savedDonation.title,
+      urgency: savedDonation.urgency,
+      safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
+    });
+
+    return this.mapDonationResponse(savedDonation, adminId);
+  }
+
+  /**
+   * Rejects a pending donation and stores the rejection reason.
+   *
+   * @param donationId - Donation identifier.
+   * @param adminId - Admin user performing the rejection.
+   * @param rejectionReason - Optional reason for rejection.
+   * @returns Updated donation response.
+   */
+  async rejectDonation(
+    donationId: string,
+    adminId: string,
+    rejectionReason?: string,
+  ) {
+    const donation = await this.donationRepository.findOne({
+      where: { id: donationId },
+      relations: { category: true },
+    });
+
+    if (!donation) {
+      throwAppError('DONATION_NOT_FOUND', { id: donationId });
+    }
+
+    if (donation.status !== DonationStatusValues.PENDING_APPROVAL) {
+      throwAppError('DONATION_APPROVAL_STATUS_INVALID');
+    }
+
+    donation.status = DonationStatusValues.REJECTED;
+    donation.rejectedAt = new Date();
+    donation.rejectedById = adminId;
+    donation.rejectionReason = rejectionReason?.trim() || null;
+    donation.approvedAt = null;
+    donation.approvedById = null;
+
+    const savedDonation = await this.donationRepository.save(donation);
+    return this.mapDonationResponse(savedDonation, adminId);
+  }
+
   async getDonationsForMap(input: DonationsMapInput, userId?: string) {
     const { radius, latitude, longitude } = input;
+    const kilometerPerDegree = 111.32;
+    const latitudeOffset = radius / kilometerPerDegree;
+    const longitudeOffset =
+      radius / (kilometerPerDegree * Math.cos((latitude * Math.PI) / 180));
 
-    const donations = await this.donationRepository
-      .createQueryBuilder('donation')
-      .innerJoinAndSelect('donation.location', 'location')
-      .innerJoinAndSelect('donation.category', 'category')
-      .leftJoinAndSelect('donation.photos', 'photos', 'photos.isMain = true')
-      .where('donation.status = :status', {
-        status: DonationStatusValues.PUBLISHED,
-      })
-      .andWhere(
-        '(6371 * acos(cos(radians(:latitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:longitude)) + sin(radians(:latitude)) * sin(radians(location.latitude)))) <= :radius',
-        { latitude, longitude, radius },
-      )
-      .getMany();
+    const minLatitude = latitude - latitudeOffset;
+    const maxLatitude = latitude + latitudeOffset;
+    const minLongitude = longitude - longitudeOffset;
+    const maxLongitude = longitude + longitudeOffset;
 
-    const donationIds = donations.map((donation) => donation.id);
+    const donations = await this.donationRepository.find({
+      where: {
+        status: DonationStatusValues.PUBLISHED as DonationStatus,
+        location: {
+          latitude: Between(minLatitude, maxLatitude),
+          longitude: Between(minLongitude, maxLongitude),
+        },
+      },
+      relations: {
+        location: true,
+        category: true,
+        photos: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    const filteredDonations = donations.filter((donation) => {
+      if (!donation.location?.latitude || !donation.location?.longitude) {
+        return false;
+      }
+
+      const latRadians = (donation.location.latitude * Math.PI) / 180;
+      const lngRadians = (donation.location.longitude * Math.PI) / 180;
+      const centerLatRadians = (latitude * Math.PI) / 180;
+      const centerLngRadians = (longitude * Math.PI) / 180;
+
+      const deltaLat = latRadians - centerLatRadians;
+      const deltaLng = lngRadians - centerLngRadians;
+
+      const haversine =
+        Math.sin(deltaLat / 2) ** 2 +
+        Math.cos(centerLatRadians) *
+          Math.cos(latRadians) *
+          Math.sin(deltaLng / 2) ** 2;
+      const distance = 2 * 6371 * Math.asin(Math.sqrt(haversine));
+
+      return distance <= radius;
+    });
+
+    const donationIds = filteredDonations.map((donation) => donation.id);
     let likedDonationIds = new Set<string>();
 
     if (userId && donationIds.length) {
@@ -989,7 +1198,7 @@ export class DonationService {
       likedDonationIds = new Set(likes.map((like) => like.donationId));
     }
 
-    return donations.map((donation) => {
+    return filteredDonations.map((donation) => {
       const markerColor = this.getMarkerColor(
         donation.category?.sensitivity ?? CategorySensitivityValues.LOW,
       );
@@ -1002,7 +1211,8 @@ export class DonationService {
         markerColor,
         urgency: donation.urgency,
         categoryId: donation.categoryId,
-        mainAttachmentId: donation.photos?.[0]?.attachmentId,
+        mainAttachmentId: donation.photos?.find((photo) => photo.isMain)!
+          .attachmentId,
         donation: {
           ...donation,
           attachmentIds: donation.photos?.map((p) => p.attachmentId) || [],

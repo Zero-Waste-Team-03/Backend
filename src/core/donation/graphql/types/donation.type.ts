@@ -87,6 +87,36 @@ export class DonationType {
 
   @Field(() => Date, {
     nullable: true,
+    description: 'Date when listing was approved',
+  })
+  approvedAt?: Date | null;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Admin user id that approved the listing',
+  })
+  approvedById?: string | null;
+
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Date when listing was rejected',
+  })
+  rejectedAt?: Date | null;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Admin user id that rejected the listing',
+  })
+  rejectedById?: string | null;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Rejection reason for the listing',
+  })
+  rejectionReason?: string | null;
+
+  @Field(() => Date, {
+    nullable: true,
     description: 'Date when listing expires for visibility',
   })
   listingExpiresAt?: Date | null;

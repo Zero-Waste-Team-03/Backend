@@ -44,9 +44,6 @@ export class AuthenticationService {
     if (!user) {
       throwAppError('AUTH_INVALID_CREDENTIALS');
     }
-    if (!user.isMailVerified) {
-      throwAppError('AUTH_EMAIL_NOT_VERIFIED');
-    }
     if (user.status == UserStatusValues.SUSPENDED) {
       throwAppError('AUTH_ACCOUNT_SUSPENDED');
     }
@@ -92,6 +89,7 @@ export class AuthenticationService {
       const accessTokenPayload: AccessTokenPayload = {
         id,
         email,
+        isVerified: user.isVerified,
         role,
         resetVersion,
       };

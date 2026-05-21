@@ -71,7 +71,7 @@ export class User {
   reputationScore: number;
 
   @Column({ type: 'boolean', default: false })
-  isMailVerified: boolean;
+  isVerified: boolean;
 
   @Column({ type: 'int', default: 0 })
   resetVersion: number;

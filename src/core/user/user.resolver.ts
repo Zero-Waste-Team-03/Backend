@@ -44,7 +44,7 @@ export class UserResolver {
    *   currentUser {
    *     id
    *     email
-   *     isMailVerified
+    *     isVerified
    *   }
    * }
    *
@@ -78,7 +78,7 @@ export class UserResolver {
    *   }) {
    *     id
    *     email
-   *     isMailVerified
+    *     isVerified
    *   }
    * }
    *

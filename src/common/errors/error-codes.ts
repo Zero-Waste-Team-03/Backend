@@ -131,6 +131,12 @@ export const ERROR_CODES = {
     message: 'Cannot like your own donation.',
     args: { id: 'string' } as const,
   },
+  DONATION_APPROVAL_STATUS_INVALID: {
+    code: 'donation.approval_status_invalid',
+    httpStatus: 400,
+    message: 'Donation cannot be approved or rejected in its current status.',
+    args: { id: 'string', status: 'string' } as const,
+  },
 
   UPLOAD_FILE_REQUIRED: {
     code: 'upload.file_required',

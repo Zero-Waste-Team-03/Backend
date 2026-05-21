@@ -40,9 +40,9 @@ export class UserType {
   reputationScore: number;
 
   @Field(() => Boolean, {
-    description: 'Whether the user has verified their email',
+    description: 'Whether the user is verified',
   })
-  isMailVerified: boolean;
+  isVerified: boolean;
 
   @Field(() => String, { nullable: true, description: 'Location ID reference' })
   locationId?: string;

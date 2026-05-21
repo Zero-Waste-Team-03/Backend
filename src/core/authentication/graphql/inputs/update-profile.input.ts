@@ -22,7 +22,7 @@ import { IsAttachmentExist } from '../../../../common/modules/attachment/decorat
  *   }) {
  *     id
  *     email
- *     isMailVerified
+ *     isVerified
  *   }
  * }
  */
