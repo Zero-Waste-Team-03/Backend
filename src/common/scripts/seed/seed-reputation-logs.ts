@@ -1,15 +1,13 @@
-import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { ReputationLog, ReputationLogSourceValues } from '../../../core/leaderboard/entities/reputation-log.entity';
 import dataSource from 'src/infrastructure/db/data-source';
-import { AppModule } from 'src/app.module';
 import { User } from 'src/core/user/entities/user.entity';
 
 const logger = new Logger('SeedReputationLogs');
 
 async function seedReputationLogs() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const userRepo=dataSource.getRepository(User)
+
+  const userRepo = dataSource.getRepository(User);
   const reputationLogRepository = dataSource.getRepository(ReputationLog);
 
   try {
@@ -50,8 +48,15 @@ async function seedReputationLogs() {
     logger.error(`ReputationLog seeding failed: ${error.message}`, error.stack);
     process.exit(1);
   } finally {
-    await app.close();
+    await dataSource.destroy();
   }
 }
 
-seedReputationLogs();
+seedReputationLogs().then(() => {
+  console.log('Seeding process finished.');
+  process.exit(0);
+
+
+}).catch((error) => {
+  console.error(`Seeding process failed: ${error.message}`, error.stack);
+});
