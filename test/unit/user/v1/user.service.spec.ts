@@ -20,6 +20,7 @@ import * as hashUtils from 'src/common/utils/authentication/hash.utils';
 import { EntityNotFoundError } from 'typeorm';
 import { Report } from 'src/core/reporting/entities/report.entity';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
+import { Donation } from 'src/core/donation/entities/donation.entity';
 
 describe('UserService', () => {
   let service: UserService;
@@ -120,6 +121,10 @@ describe('UserService', () => {
         {
           provide: getRepositoryToken(Report),
           useValue: reportRepository,
+        },
+        {
+          provide: getRepositoryToken(Donation),
+          useValue: { count: jest.fn().mockResolvedValue(0) },
         },
         {
           provide: appConfig.KEY,
