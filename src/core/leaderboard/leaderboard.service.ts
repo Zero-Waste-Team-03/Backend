@@ -78,7 +78,7 @@ await Promise.all([
       return {
         userId,
         displayName: user?.displayName ?? null,
-        avatarUrl: null, // Basic version
+        avatarUrl: user?.avatar.url, // Basic version
         score: scoreMap.get(userId) ?? 0,
         rank: index + 1,
       };
