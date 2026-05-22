@@ -78,6 +78,14 @@ describe('NotificationProcessor', () => {
         body: 'World',
         userId: 'user-2',
         type: NOTIFICATION_TYPE.MESSAGE,
+        translationArgs: {
+          imageUrl: 'https://cdn.example.com/image.png',
+          donationId: 'donation-1',
+          quantity: 3,
+          missing: undefined,
+          empty: null,
+        },
+        idempotencyKey: 'donation:donation-1',
       },
     } as any);
 
@@ -85,6 +93,37 @@ describe('NotificationProcessor', () => {
       'user-2',
     );
     expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith({
+      token: 'token-1',
+      notification: {
+        title: 'Hello',
+        body: 'World',
+        image: 'https://cdn.example.com/image.png',
+      },
+      data: {
+        type: 'MESSAGE',
+        idempotencyKey: 'donation:donation-1',
+        imageUrl: 'https://cdn.example.com/image.png',
+        donationId: 'donation-1',
+        quantity: '3',
+        meta: JSON.stringify({
+          imageUrl: 'https://cdn.example.com/image.png',
+          donationId: 'donation-1',
+          quantity: 3,
+        }),
+      },
+      android: {
+        collapseKey: 'com.zerowaste.zerowaste',
+        notification: {
+          imageUrl: 'https://cdn.example.com/image.png',
+        },
+      },
+      apns: {
+        fcmOptions: {
+          imageUrl: 'https://cdn.example.com/image.png',
+        },
+      },
+    });
   });
 
   describe('helpers', () => {
@@ -99,6 +138,7 @@ describe('NotificationProcessor', () => {
         NOTIFICATION_TYPE.CHAT_MESSAGE,
         'chat:msg-1',
         {
+          type: 'client-supplied-type',
           conversationId: 'conv-1',
           quantity: 3,
           isRead: false,
@@ -109,13 +149,57 @@ describe('NotificationProcessor', () => {
       );
 
       expect(payload).toEqual({
-        type: NOTIFICATION_TYPE.CHAT_MESSAGE,
+        type: 'CHAT_MESSAGE',
         idempotencyKey: 'chat:msg-1',
         conversationId: 'conv-1',
         quantity: '3',
         isRead: 'false',
         nested: JSON.stringify({ a: 1 }),
+        meta: JSON.stringify({
+          type: 'client-supplied-type',
+          conversationId: 'conv-1',
+          quantity: 3,
+          isRead: false,
+          nested: { a: 1 },
+        }),
       });
+    });
+
+    it('buildDataPayload maps stored notification values to mobile type keys', () => {
+      expect(
+        proc.buildDataPayload(NOTIFICATION_TYPE.NEW_POST, undefined, {}).type,
+      ).toBe('NEW_POST');
+      expect(
+        proc.buildDataPayload(NOTIFICATION_TYPE.TEST, undefined, {}).type,
+      ).toBe('TEST');
+      expect(
+        proc.buildDataPayload(
+          NOTIFICATION_TYPE.NEW_ACHIEVEMENT,
+          undefined,
+          {},
+        ).type,
+      ).toBe('NEW_ACHIEVEMENT');
+      expect(
+        proc.buildDataPayload(
+          NOTIFICATION_TYPE.RESERVATION_ALERT,
+          undefined,
+          {},
+        ).type,
+      ).toBe('RESERVATION_ALERT');
+      expect(
+        proc.buildDataPayload(
+          NOTIFICATION_TYPE.REPORT_ALERT,
+          undefined,
+          {},
+        ).type,
+      ).toBe('REPORT_ALERT');
+      expect(
+        proc.buildDataPayload(
+          NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+          undefined,
+          {},
+        ).type,
+      ).toBe('ACCOUNT_STATUS_ALERT');
     });
 
     it('buildDataPayload omits idempotencyKey when not provided', () => {
@@ -127,6 +211,7 @@ describe('NotificationProcessor', () => {
 
       expect(payload.idempotencyKey).toBeUndefined();
       expect(payload.conversationId).toBe('conv-1');
+      expect(payload.meta).toBe(JSON.stringify({ conversationId: 'conv-1' }));
     });
 
     it('resolveImageUrl prefers imageUrl > donationImageUrl > senderAvatarUrl', () => {
