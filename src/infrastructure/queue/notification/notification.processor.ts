@@ -10,7 +10,10 @@ import { Logger } from '@nestjs/common';
 import { NOTIFICATION_JOBS } from 'src/common/constants/jobs';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { FirebaseService } from 'src/infrastructure/firebase/firebase.service';
-import { NotificationType } from 'src/core/notifications/enums/notification-type.enum';
+import {
+  NOTIFICATION_TYPE,
+  NotificationType,
+} from 'src/core/notifications/enums/notification-type.enum';
 import { UserService } from 'src/core/user/v1/user.service';
 
 class SendNotificationJob {
@@ -26,10 +29,12 @@ class NotificationMessage {
   notification: {
     title: string;
     body: string;
+    image?: string;
   };
   token: string;
   data?: Record<string, string>;
   android?: {
+    collapseKey?: string;
     notification?: {
       imageUrl?: string;
     };
@@ -58,6 +63,7 @@ export class InvalidTokenError extends Error {
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
   private readonly bodyMaxLength = 120;
+  private readonly androidCollapseKey = 'com.zerowaste.zerowaste';
 
   constructor(
     private readonly notificationsService: NotificationsService,
@@ -187,8 +193,14 @@ export class NotificationProcessor extends WorkerHost {
     };
 
     if (imageUrl) {
-      baseMessage.android = { notification: { imageUrl } };
+      baseMessage.notification.image = imageUrl;
+      baseMessage.android = {
+        collapseKey: this.androidCollapseKey,
+        notification: { imageUrl },
+      };
       baseMessage.apns = { fcmOptions: { imageUrl } };
+    } else {
+      baseMessage.android = { collapseKey: this.androidCollapseKey };
     }
 
     const messages: NotificationMessage[] = tokensWithLangs.map(
@@ -266,39 +278,77 @@ export class NotificationProcessor extends WorkerHost {
     idempotencyKey?: string,
     meta?: Record<string, any>,
   ): Record<string, string> {
-    const dataPayload: Record<string, string> = {
-      type,
-    };
+    const normalizedMeta = this.normalizeMeta(meta);
+    const dataPayload: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(normalizedMeta)) {
+      if (typeof value === 'string') {
+        dataPayload[key] = value;
+        continue;
+      }
+
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        dataPayload[key] = String(value);
+        continue;
+      }
+
+      dataPayload[key] = this.stringifyDataValue(value);
+    }
+
+    dataPayload.meta = this.stringifyDataValue(normalizedMeta);
+    dataPayload.type = this.toMobileNotificationType(type);
 
     if (idempotencyKey) {
       dataPayload.idempotencyKey = idempotencyKey;
     }
 
-    if (meta) {
-      for (const [key, value] of Object.entries(meta)) {
-        if (value === undefined || value === null) {
-          continue;
-        }
+    return dataPayload;
+  }
 
-        if (typeof value === 'string') {
-          dataPayload[key] = value;
-          continue;
-        }
-
-        if (typeof value === 'number' || typeof value === 'boolean') {
-          dataPayload[key] = String(value);
-          continue;
-        }
-
-        try {
-          dataPayload[key] = JSON.stringify(value);
-        } catch {
-          dataPayload[key] = String(value);
-        }
+  /**
+   * Converts Firebase data values to strings while preserving JSON for objects.
+   * @param value - Metadata value to place in the Firebase data payload.
+   */
+  private stringifyDataValue(value: any): string {
+    try {
+      const jsonValue = JSON.stringify(value);
+      if (typeof jsonValue === 'string') {
+        return jsonValue;
       }
+    } catch {
+      return String(value);
+    }
+    return String(value);
+  }
+
+  /**
+   * Removes nullish metadata before building the Firebase data payload.
+   * @param meta - Notification metadata from the queue job.
+   */
+  private normalizeMeta(meta?: Record<string, any>): Record<string, any> {
+    if (!meta) {
+      return {};
     }
 
-    return dataPayload;
+    const normalizedMeta: Record<string, any> = {};
+    for (const [key, value] of Object.entries(meta)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+      normalizedMeta[key] = value;
+    }
+    return normalizedMeta;
+  }
+
+  /**
+   * Converts persisted notification enum values to the mobile-facing contract.
+   * @param type - Stored notification type value.
+   */
+  private toMobileNotificationType(type: NotificationType): string {
+    const match = Object.entries(NOTIFICATION_TYPE).find(
+      ([, value]) => value === type,
+    );
+    return match?.[0] ?? type;
   }
 
   private isInvalidTokenError(error: any): boolean {

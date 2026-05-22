@@ -895,7 +895,7 @@ export class DonationService {
     isAdmin: boolean = false,
     searchName?: string,
   ) {
-    const page = pagination?.page ?? 1;
+   const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
     const trimmedSearchName = searchName?.trim();
