@@ -435,7 +435,7 @@ export class UserService {
 
   async findByIds(ids: string[]): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) },
+      where: { id: In(ids) ,}, relations:{avatar:true},
     });
   }
 }
