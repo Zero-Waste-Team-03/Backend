@@ -26,4 +26,9 @@ export class LocationDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @ApiPropertyOptional({ example: '16001' })
+  @IsOptional()
+  @IsString()
+  zipCode?: string;
 }

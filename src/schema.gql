@@ -288,6 +288,12 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Donation {
+  """Date when listing was approved"""
+  approvedAt: DateTime
+
+  """Admin user id that approved the listing"""
+  approvedById: String
+
   """Attachment ids for donation photos"""
   attachmentIds: [String!]!
 
@@ -334,6 +340,15 @@ type Donation {
 
   """Available quantity"""
   quantity: Int!
+
+  """Date when listing was rejected"""
+  rejectedAt: DateTime
+
+  """Admin user id that rejected the listing"""
+  rejectedById: String
+
+  """Rejection reason for the listing"""
+  rejectionReason: String
 
   """Whether safety checklist is completed"""
   safetyChecklistCompleted: Boolean!
@@ -545,6 +560,9 @@ type Mutation {
   """Admin: review or resolve report"""
   adminReviewReport(input: ReviewReportInput!): Report!
 
+  """Approve a donation listing (Administrator only)."""
+  approveDonation(donationId: ID!): Donation!
+
   """Approve a sensitive message to reveal it to the approver"""
   approveSensitiveMessage(input: ApproveSensitiveMessageInput!): ChatMessage!
 
@@ -628,6 +646,9 @@ type Mutation {
     registerInput: RegisterInput!
   ): MessageResponse!
   registerFcmToken(fcmToken: String!): MessageResponse!
+
+  """Reject a donation listing (Administrator only)."""
+  rejectDonation(donationId: ID!, reason: String): Donation!
 
   """Create a new reservation for a donation"""
   reserveDonation(donationId: ID!, quantity: Int = 1): Reservation!
@@ -911,6 +932,9 @@ type Query {
 
   """Get reservations where the current user is donor or beneficiary"""
   myReservations(filter: ReservationsFilterInput, pagination: PaginationInput, searchName: String): PaginatedReservations!
+
+  """Get donation listings pending approval (Administrator only)"""
+  pendingDonationApprovals(filter: DonationsFilterInput, pagination: PaginationInput): PaginatedDonations!
 }
 
 input RegisterInput {

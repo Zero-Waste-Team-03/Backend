@@ -8,6 +8,7 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { AdminUserResolver } from './admin/admin-user.resolver';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 import { Report } from '../reporting/entities/report.entity';
+import { Donation } from '../donation/entities/donation.entity';
 
 /**
  * User module
@@ -21,7 +22,7 @@ import { Report } from '../reporting/entities/report.entity';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Location, UserSettings, Report]),
+    TypeOrmModule.forFeature([User, Location, UserSettings, Report, Donation]),
     AttachmentModule,
   ],
   controllers: [],

@@ -6,6 +6,7 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
 import { GamificationService } from 'src/core/gamification/gamification.service';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
+import { UserService } from 'src/core/user/v1/user.service';
 
 type EvaluateCompletionAchievementsPayload = {
   donorId: string;
@@ -19,6 +20,7 @@ export class GamificationProcessor extends WorkerHost {
   constructor(
     private readonly gamificationService: GamificationService,
     private readonly notificationsService: NotificationsService,
+    private readonly userService: UserService,
   ) {
     super();
   }
@@ -53,11 +55,29 @@ export class GamificationProcessor extends WorkerHost {
       );
     }
 
+    const { wasJustVerified } =
+      await this.userService.checkAndAutoVerifyDonor(donorId);
+
+    if (wasJustVerified) {
+      await this.notificationsService.sendNotificationWithoutSaving(
+        'You are now a verified user',
+        'Congratulations! You completed 3 donations and your posts will now go live immediately.',
+        donorId,
+        NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+        {
+          action: 'account.open',
+          userId: donorId,
+          status: 'verified',
+        },
+      );
+    }
+
     this.logger.log('Gamification completion job processed', {
       jobId: job.id,
       donorId,
       beneficiaryId,
       awardedCount: achievements.length,
+      donorAutoVerified: wasJustVerified,
     });
   }
 }
