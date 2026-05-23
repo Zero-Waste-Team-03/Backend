@@ -8,6 +8,11 @@ import {
 import { UserSettings } from 'src/core/user/entities/user-settings.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository, LessThan, In } from 'typeorm';
+import {
+  Donation,
+  DonationStatusValues,
+} from 'src/core/donation/entities/donation.entity';
+import { AUTO_VERIFY_DONATIONS_THRESHOLD } from 'src/common/constants/thresholds';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Location } from 'src/common/locations/entities/location.entity';
 import {
@@ -52,6 +57,8 @@ export class UserService {
     private readonly userSettingsRepository: Repository<UserSettings>,
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Donation)
+    private readonly donationRepository: Repository<Donation>,
     @Inject(appConfig.KEY)
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     @InjectQueue(QUEUE_NAME.MAIL)
@@ -442,7 +449,45 @@ export class UserService {
     return this.userRepository.find({
       where: { id: In(ids) ,}, relations:relations,
     });
+  }
 
 
+  /**
+   * Checks if a donor has reached the auto-verification threshold and verifies them if so.
+   * Idempotent — safe to call multiple times; only fires once per donor.
+   *
+   * @param donorId - The ID of the donor to check.
+   * @returns `{ wasJustVerified: true }` when the donor was just flipped to verified.
+   */
+  async checkAndAutoVerifyDonor(
+    donorId: string,
+  ): Promise<{ wasJustVerified: boolean }> {
+    try {
+      const completedCount = await this.donationRepository.count({
+        where: {
+          userId: donorId,
+          status: DonationStatusValues.COMPLETED,
+        },
+      });
+
+      if (completedCount < AUTO_VERIFY_DONATIONS_THRESHOLD) {
+        return { wasJustVerified: false };
+      }
+
+      const result = await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ isVerified: true })
+        .where('id = :id AND "isVerified" = false', { id: donorId })
+        .execute();
+
+      return { wasJustVerified: (result.affected ?? 0) > 0 };
+    } catch (error) {
+      this.logger.error(
+        `checkAndAutoVerifyDonor failed for donor ${donorId}`,
+        error,
+      );
+      return { wasJustVerified: false };
+    }
   }
 }

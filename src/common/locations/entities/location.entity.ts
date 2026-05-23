@@ -29,6 +29,9 @@ export class Location {
   @Column({ type: 'varchar', nullable: true })
   country: string;
 
+  @Column({ type: 'varchar', nullable: true, length: 20 })
+  zipCode: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
