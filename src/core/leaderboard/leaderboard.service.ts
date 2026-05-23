@@ -70,7 +70,7 @@ await Promise.all([
 
     if (userIds.length === 0) return [];
 
-    const users = await this.userService.findByIds(userIds);
+    const users = await this.userService.findByIdsWithRelations(userIds,{avatar:true});
     const userDtoMap = new Map(users.map(u => [u.id, u]));
 
     return userIds.map((userId, index) => {
@@ -78,7 +78,7 @@ await Promise.all([
       return {
         userId,
         displayName: user?.displayName ?? null,
-        avatarUrl: user?.avatar.url, // Basic version
+        avatarUrl: user?.avatar?.url??null, // Basic version
         score: scoreMap.get(userId) ?? 0,
         rank: index + 1,
       };

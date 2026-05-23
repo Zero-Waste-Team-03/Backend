@@ -435,7 +435,14 @@ export class UserService {
 
   async findByIds(ids: string[]): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) ,}, relations:{avatar:true},
+      where: { id: In(ids) ,},
     });
+  }
+  async findByIdsWithRelations(ids:string[],relations:Record<"avatar", boolean>):Promise<User[]>{
+    return this.userRepository.find({
+      where: { id: In(ids) ,}, relations:relations,
+    });
+
+
   }
 }
