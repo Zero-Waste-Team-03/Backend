@@ -23,9 +23,6 @@ export class Location {
 
   @Column({ type: 'varchar', nullable: true })
   city: string;
-
-  @Column({ type: 'varchar', nullable: true })
-  zip: string;
   @Column({ type: 'varchar', nullable: true })
   country: string;
 
