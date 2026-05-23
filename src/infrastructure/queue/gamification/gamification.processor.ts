@@ -72,12 +72,19 @@ export class GamificationProcessor extends WorkerHost {
       );
     }
 
+    const { wasJustPromoted: donorWasPromoted } =
+      await this.userService.checkAndAutoPromoteFoodSaver(donorId);
+    const { wasJustPromoted: beneficiaryWasPromoted } =
+      await this.userService.checkAndAutoPromoteFoodSaver(beneficiaryId);
+
     this.logger.log('Gamification completion job processed', {
       jobId: job.id,
       donorId,
       beneficiaryId,
       awardedCount: achievements.length,
       donorAutoVerified: wasJustVerified,
+      donorAutoPromotedToFoodSaver: donorWasPromoted,
+      beneficiaryAutoPromotedToFoodSaver: beneficiaryWasPromoted,
     });
   }
 }

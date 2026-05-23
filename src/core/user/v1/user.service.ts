@@ -48,6 +48,8 @@ export interface OAuthUserPayload {
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+  private readonly FOOD_SAVER_REPUTATION_THRESHOLD = 40;
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -549,6 +551,72 @@ export class UserService {
         error,
       );
       return { wasJustVerified: false };
+    }
+  }
+
+  /**
+   * Checks if a user has reached the reputation threshold to become a food saver and promotes them if so.
+   * Idempotent — safe to call multiple times; only fires once per user.
+   *
+   * @param userId - The ID of the user to check.
+   * @returns `{ wasJustPromoted: true }` when the user was just flipped to food saver.
+   */
+  async checkAndAutoPromoteFoodSaver(
+    userId: string,
+  ): Promise<{ wasJustPromoted: boolean }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        select: { id: true, reputationScore: true, isFoodSaver: true },
+      });
+
+      if (!user) {
+        return { wasJustPromoted: false };
+      }
+
+      if (
+        user.isFoodSaver ||
+        user.reputationScore < this.FOOD_SAVER_REPUTATION_THRESHOLD
+      ) {
+        return { wasJustPromoted: false };
+      }
+
+      const result = await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ isFoodSaver: true })
+        .where(
+          'id = :id AND "isFoodSaver" = false AND "reputationScore" >= :threshold',
+          {
+            id: userId,
+            threshold: this.FOOD_SAVER_REPUTATION_THRESHOLD,
+          },
+        )
+        .execute();
+
+      const wasJustPromoted = (result.affected ?? 0) > 0;
+
+      if (wasJustPromoted) {
+        await this.notificationsService.sendNotification(
+          'Congratulations! You are now a Food Saver',
+          'You have reached the required reputation score! Your posts will now go live immediately, and you can verify other users in your neighborhood.',
+          userId,
+          NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+          {
+            action: 'account.open',
+            userId: userId,
+            isFoodSaver: true,
+          },
+        );
+      }
+
+      return { wasJustPromoted };
+    } catch (error) {
+      this.logger.error(
+        `checkAndAutoPromoteFoodSaver failed for user ${userId}`,
+        error,
+      );
+      return { wasJustPromoted: false };
     }
   }
 }
