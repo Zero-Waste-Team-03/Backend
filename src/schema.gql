@@ -560,6 +560,12 @@ type Mutation {
   """Admin: review or resolve report"""
   adminReviewReport(input: ReviewReportInput!): Report!
 
+  """Manually update the food saver status of a user"""
+  adminUpdateUserFoodSaverStatus(isFoodSaver: Boolean!, userId: String!): User!
+
+  """Manually update the verification status of a user"""
+  adminUpdateUserVerificationStatus(isVerified: Boolean!, userId: String!): User!
+
   """Approve a donation listing (Administrator only)."""
   approveDonation(donationId: ID!): Donation!
 
@@ -1245,6 +1251,9 @@ type User {
 
   """User unique identifier"""
   id: String!
+
+  """Whether the user is a food saver"""
+  isFoodSaver: Boolean!
 
   """Whether the user is verified"""
   isVerified: Boolean!

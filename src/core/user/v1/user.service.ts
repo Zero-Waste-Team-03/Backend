@@ -442,15 +442,76 @@ export class UserService {
 
   async findByIds(ids: string[]): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) ,},
+      where: { id: In(ids) },
     });
   }
-  async findByIdsWithRelations(ids:string[],relations:Record<"avatar", boolean>):Promise<User[]>{
+  async findByIdsWithRelations(
+    ids: string[],
+    relations: Record<'avatar', boolean>,
+  ): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) ,}, relations:relations,
+      where: { id: In(ids) },
+      relations: relations,
     });
   }
 
+  async adminUpdateUserVerificationStatus(
+    id: string,
+    isVerified: boolean,
+  ): Promise<UserType> {
+    this.logger.log(
+      `Updating user verification status for ID: ${id} to ${isVerified}`,
+    );
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throwAppError('USER_NOT_FOUND');
+    }
+    if (user.isVerified === isVerified) {
+      return user as unknown as UserType;
+    }
+    user.isVerified = isVerified;
+    await this.userRepository.save(user);
+
+    const statusMessage = isVerified ? 'verified' : 'unverified';
+    await this.notificationsService.sendNotification(
+      'Verification Status Changed',
+      `Your account has been ${statusMessage} by an admin.`,
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      { action: 'account.open', userId: user.id, isVerified },
+    );
+    return user as unknown as UserType;
+  }
+
+  async adminUpdateUserFoodSaverStatus(
+    id: string,
+    isFoodSaver: boolean,
+  ): Promise<UserType> {
+    this.logger.log(
+      `Updating user food saver status for ID: ${id} to ${isFoodSaver}`,
+    );
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throwAppError('USER_NOT_FOUND');
+    }
+    if (user.isFoodSaver === isFoodSaver) {
+      return user as unknown as UserType;
+    }
+    user.isFoodSaver = isFoodSaver;
+    await this.userRepository.save(user);
+
+    const statusMessage = isFoodSaver
+      ? 'promoted to a food saver'
+      : 'removed from being a food saver';
+    await this.notificationsService.sendNotification(
+      'Food Saver Status Changed',
+      `Your account has been ${statusMessage} by an admin.`,
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      { action: 'account.open', userId: user.id, isFoodSaver },
+    );
+    return user as unknown as UserType;
+  }
 
   /**
    * Checks if a donor has reached the auto-verification threshold and verifies them if so.

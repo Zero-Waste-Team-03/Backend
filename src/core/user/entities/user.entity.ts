@@ -73,6 +73,9 @@ export class User {
   @Column({ type: 'boolean', default: false })
   isVerified: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  isFoodSaver: boolean;
+
   @Column({ type: 'int', default: 0 })
   resetVersion: number;
 
