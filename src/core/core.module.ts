@@ -13,6 +13,7 @@ import { StatsModule } from './stats/stats.module';
 import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
 import { PresenceModule } from './presence/presence.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import {  VerificationRequestModule } from './verification-request/verification.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
     StatsModule,
     PresenceModule,
     LeaderboardModule,
+    VerificationRequestModule,
   ],
   exports: [
     UserModule,

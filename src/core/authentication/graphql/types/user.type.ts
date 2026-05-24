@@ -44,6 +44,11 @@ export class UserType {
   })
   isVerified: boolean;
 
+  @Field(() => Boolean, {
+    description: 'Whether the user is a food saver',
+  })
+  isFoodSaver: boolean;
+
   @Field(() => String, { nullable: true, description: 'Location ID reference' })
   locationId?: string;
 
@@ -62,7 +67,7 @@ export class UserType {
   @Field(() => String, { description: 'User account status' })
   status: string;
 
-  @Field(()=>String, { nullable: true, description: 'User phone number' })
+  @Field(() => String, { nullable: true, description: 'User phone number' })
   phoneNumber?: string;
 
   @Field(() => Date, { description: 'Date the user was created' })

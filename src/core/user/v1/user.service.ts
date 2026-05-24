@@ -48,6 +48,8 @@ export interface OAuthUserPayload {
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+  private readonly FOOD_SAVER_REPUTATION_THRESHOLD = 40;
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -67,6 +69,13 @@ export class UserService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  async isFoodSaver(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { isFoodSaver: true },
+    });
+    return user?.isFoodSaver ?? false;
+  }
   async getPaginatedUsers(
     args: AdminUsersArgs,
     excludedUserId?: string,
@@ -442,15 +451,81 @@ export class UserService {
 
   async findByIds(ids: string[]): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) ,},
+      where: { id: In(ids) },
     });
   }
-  async findByIdsWithRelations(ids:string[],relations:Record<"avatar", boolean>):Promise<User[]>{
+  async findByIdsWithRelations(
+    ids: string[],
+    relations: Record<'avatar', boolean>,
+  ): Promise<User[]> {
     return this.userRepository.find({
-      where: { id: In(ids) ,}, relations:relations,
+      where: { id: In(ids) },
+      relations: relations,
     });
   }
 
+  async adminUpdateUserVerificationStatus(
+    id: string,
+    isVerified: boolean,
+  ): Promise<UserType> {
+    return this.updateuserVerificationStatus(id, isVerified);
+  }
+  
+  async updateuserVerificationStatus(id: string, isVerified: boolean): Promise<UserType> {
+
+    this.logger.log(
+      `Updating user verification status for ID: ${id} to ${isVerified}`,
+    );
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throwAppError('USER_NOT_FOUND');
+    }
+    if (user.isVerified === isVerified) {
+      return user as unknown as UserType;
+    }
+    user.isVerified = isVerified;
+    await this.userRepository.save(user);
+
+    const statusMessage = isVerified ? 'verified' : 'unverified';
+    await this.notificationsService.sendNotification(
+      'Verification Status Changed',
+      `Your account has been ${statusMessage} by an admin.`,
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      { action: 'account.open', userId: user.id, isVerified },
+    );
+    return user;
+  }
+
+  async adminUpdateUserFoodSaverStatus(
+    id: string,
+    isFoodSaver: boolean,
+  ): Promise<UserType> {
+    this.logger.log(
+      `Updating user food saver status for ID: ${id} to ${isFoodSaver}`,
+    );
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throwAppError('USER_NOT_FOUND');
+    }
+    if (user.isFoodSaver === isFoodSaver) {
+      return user as unknown as UserType;
+    }
+    user.isFoodSaver = isFoodSaver;
+    await this.userRepository.save(user);
+
+    const statusMessage = isFoodSaver
+      ? 'promoted to a food saver'
+      : 'removed from being a food saver';
+    await this.notificationsService.sendNotification(
+      'Food Saver Status Changed',
+      `Your account has been ${statusMessage} by an admin.`,
+      user.id,
+      NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+      { action: 'account.open', userId: user.id, isFoodSaver },
+    );
+    return user as unknown as UserType;
+  }
 
   /**
    * Checks if a donor has reached the auto-verification threshold and verifies them if so.
@@ -488,6 +563,72 @@ export class UserService {
         error,
       );
       return { wasJustVerified: false };
+    }
+  }
+
+  /**
+   * Checks if a user has reached the reputation threshold to become a food saver and promotes them if so.
+   * Idempotent — safe to call multiple times; only fires once per user.
+   *
+   * @param userId - The ID of the user to check.
+   * @returns `{ wasJustPromoted: true }` when the user was just flipped to food saver.
+   */
+  async checkAndAutoPromoteFoodSaver(
+    userId: string,
+  ): Promise<{ wasJustPromoted: boolean }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        select: { id: true, reputationScore: true, isFoodSaver: true },
+      });
+
+      if (!user) {
+        return { wasJustPromoted: false };
+      }
+
+      if (
+        user.isFoodSaver ||
+        user.reputationScore < this.FOOD_SAVER_REPUTATION_THRESHOLD
+      ) {
+        return { wasJustPromoted: false };
+      }
+
+      const result = await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ isFoodSaver: true })
+        .where(
+          'id = :id AND "isFoodSaver" = false AND "reputationScore" >= :threshold',
+          {
+            id: userId,
+            threshold: this.FOOD_SAVER_REPUTATION_THRESHOLD,
+          },
+        )
+        .execute();
+
+      const wasJustPromoted = (result.affected ?? 0) > 0;
+
+      if (wasJustPromoted) {
+        await this.notificationsService.sendNotification(
+          'Congratulations! You are now a Food Saver',
+          'You have reached the required reputation score! Your posts will now go live immediately, and you can verify other users in your neighborhood.',
+          userId,
+          NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
+          {
+            action: 'account.open',
+            userId: userId,
+            isFoodSaver: true,
+          },
+        );
+      }
+
+      return { wasJustPromoted };
+    } catch (error) {
+      this.logger.error(
+        `checkAndAutoPromoteFoodSaver failed for user ${userId}`,
+        error,
+      );
+      return { wasJustPromoted: false };
     }
   }
 }
