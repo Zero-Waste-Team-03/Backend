@@ -48,7 +48,9 @@ export interface OAuthUserPayload {
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+  //NOTE: this is just to make it easier to test
   private readonly FOOD_SAVER_REPUTATION_THRESHOLD = 40;
+  
 
   constructor(
     @InjectRepository(User)
