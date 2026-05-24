@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { PaginatedVerificationRequests, VerificationRequestType } from './graphql/types/verification-request.type';
 import { USER } from '../authentication/decorators/user.decorartor';
 import { UseGuards } from '@nestjs/common';
@@ -9,6 +9,8 @@ import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { SameNeighborhoodGuard } from '../authentication/guards/same-neighborhood.guard';
 import { SameNeighborhood } from '../authentication/decorators/same-neighborhood.decorator';
 import { UpdateVerificationStatusInput } from './graphql/input/update-verification-status.input';
+import { UserType } from '../authentication/graphql/types/user.type';
+import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 
 @Resolver(() => VerificationRequestType)
 @UseGuards(AccessTokenGuard)
@@ -46,6 +48,22 @@ async updateVerificationRequestStatus(
     @Args('updateVerificationRequest') updateVerificationStatusInput:UpdateVerificationStatusInput
   
   ){
-     return this.verificationRequestService.updateVerificationRequestStatus(updateVerificationStatusInput,userId);}
+     return this.verificationRequestService.updateVerificationRequestStatus(updateVerificationStatusInput,userId);
   }
+  @ResolveField(()=>UserType)
+  async requester(@Parent() verificationRequest:VerificationRequestType,
+
+    @Context() { loaders }: { loaders: IDataLoaders },)
+                  {
+    return loaders.userLoader.load(verificationRequest.requesterId);
+  }
+  @ResolveField(()=>UserType)
+  async targetFoodSaver(@Parent() verificationRequest:VerificationRequestType,
+
+    @Context() { loaders }: { loaders: IDataLoaders },)
+                  {
+    return loaders.userLoader.load(verificationRequest.targetFoodSaverId);
+  }
+
+}
   

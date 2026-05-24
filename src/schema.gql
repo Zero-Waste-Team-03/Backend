@@ -507,6 +507,9 @@ type Location {
 
   """Location neighborhood"""
   neighborhood: String
+
+  """Location zip code"""
+  zipCode: String
 }
 
 input LocationInput {
@@ -515,6 +518,7 @@ input LocationInput {
   latitude: Float
   longitude: Float
   neighborhood: String
+  zipCode: String
 }
 
 input LoginInput {
@@ -1360,8 +1364,8 @@ type UsersDonationsStats {
 }
 
 enum VerficationStatusUpdateEnum {
+  APPROVED
   REJECTED
-  VERIFIED
 }
 
 type VerificationRequest {
@@ -1372,7 +1376,7 @@ type VerificationRequest {
   id: String!
 
   """User who requested verification"""
-  requester: User!
+  requester: User
 
   """Requester ID"""
   requesterId: String!
@@ -1381,7 +1385,7 @@ type VerificationRequest {
   status: VerificationRequestStatus!
 
   """Food saver being requested"""
-  targetFoodSaver: User!
+  targetFoodSaver: User
 
   """Target food saver ID"""
   targetFoodSaverId: String!

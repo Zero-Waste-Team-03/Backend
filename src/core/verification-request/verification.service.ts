@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { VerificationRequest, VerificationRequestStatus } from './verification-request.entity';
+import { FindManyOptions, ILike, Repository } from 'typeorm';
+import { VerificationRequest } from './verification-request.entity';
 import { PaginatedVerificationRequests, VerificationRequestType } from './graphql/types/verification-request.type';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 import { UserService } from '../user/v1/user.service';
 import { UpdateVerificationStatusInput } from './graphql/input/update-verification-status.input';
+import { throwAppError } from 'src/common/errors/throw-app-error';
 
 @Injectable()
 export class VerificationRequestsService {
@@ -18,8 +19,7 @@ export class VerificationRequestsService {
 
     const isFoodSaver=await this.userService.isFoodSaver(targetFoodSaverId);
     if (!isFoodSaver) {
-      //TODO create app error here
-      throw new Error('Target user is not a food saver');
+      throwAppError('VERIFICATION_TARGET_NOT_FOOD_SAVER');
     }
     const newRequest = this.verificationRequestRepository.create({
       requesterId,
@@ -30,10 +30,14 @@ export class VerificationRequestsService {
   }
   async getVerificationRequestForFoodSaver(foodSaverId: string,{page,limit}:PaginationInput,query?:string): Promise<PaginatedVerificationRequests> {
     const skip = (page - 1) * limit;
+    const where:FindManyOptions<VerificationRequest>['where'] = { targetFoodSaverId: foodSaverId };
+    if (query) {
+      where.requester = { displayName: ILike(`%${query}%`) };
+    }
     const [requests, totalCount] = await this.verificationRequestRepository.findAndCount({
       skip,
       take: limit,
-      where: { targetFoodSaverId: foodSaverId,requester:{displayName:query??ILike(`%${query}%`)} },
+      where,
       order: { createdAt: 'DESC' },
     });
     return {
@@ -48,18 +52,20 @@ export class VerificationRequestsService {
   }
   async updateVerificationRequestStatus({id,status}:UpdateVerificationStatusInput,foodSaverId:string): Promise<VerificationRequestType> {
     const request = await this.verificationRequestRepository.findOne({ where: { id} });
+    //TODO add args to this errors
     if (!request) {
-      //TODO create app error here
-      throw new Error('Verification request not found');
+      throwAppError('VERIFICATION_REQUEST_NOT_FOUND');
     }
     if (request.targetFoodSaverId !== foodSaverId) {
-      //TODO craete app error here
+      throwAppError('VERIFICATION_REQUEST_FORBIDDEN');
     }
     if (request.status !== 'Pending') {
-      throw new Error('Only pending requests can be updated');
-      
+      throwAppError('VERIFICATION_REQUEST_NOT_PENDING');
     }
-    request.status = status as VerificationRequestStatus;
+    if (status === 'Approved') {
+      await this.userService.updateuserVerificationStatus(request.requesterId,true);
+    }
+    request.status = status;
     return this.verificationRequestRepository.save(request);
   }
   async getSentVerificationRequests(requesterId: string,{page,limit}:PaginationInput): Promise<PaginatedVerificationRequests> {

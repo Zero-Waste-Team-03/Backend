@@ -468,6 +468,11 @@ export class UserService {
     id: string,
     isVerified: boolean,
   ): Promise<UserType> {
+    return this.updateuserVerificationStatus(id, isVerified);
+  }
+  
+  async updateuserVerificationStatus(id: string, isVerified: boolean): Promise<UserType> {
+
     this.logger.log(
       `Updating user verification status for ID: ${id} to ${isVerified}`,
     );
@@ -489,7 +494,7 @@ export class UserService {
       NOTIFICATION_TYPE.ACCOUNT_STATUS_ALERT,
       { action: 'account.open', userId: user.id, isVerified },
     );
-    return user as unknown as UserType;
+    return user;
   }
 
   async adminUpdateUserFoodSaverStatus(

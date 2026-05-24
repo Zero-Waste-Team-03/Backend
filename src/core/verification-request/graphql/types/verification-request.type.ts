@@ -16,14 +16,14 @@ export class VerificationRequestType {
   @Field(() => String, { description: 'Requester ID' })
   requesterId: string;
 
-  @Field(() => UserType, { description: 'User who requested verification' })
-  requester: UserType;
+  @Field(() => UserType, { description: 'User who requested verification' ,nullable:true})
+  requester?: UserType;
 
   @Field(() => String, { description: 'Target food saver ID' })
   targetFoodSaverId: string;
 
-  @Field(() => UserType, { description: 'Food saver being requested' })
-  targetFoodSaver: UserType;
+  @Field(() => UserType, { description: 'Food saver being requested' ,nullable:true })
+  targetFoodSaver?: UserType;
 
   @Field(() => VerificationRequestStatusValues, { description: 'Status of the request' })
   status: VerificationRequestStatus;

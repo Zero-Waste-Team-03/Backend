@@ -21,6 +21,10 @@ export class LocationInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  zipCode?: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
   city?: string;
 
   @Field(() => String, { nullable: true })
