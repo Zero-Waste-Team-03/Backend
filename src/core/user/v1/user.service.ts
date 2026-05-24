@@ -39,6 +39,7 @@ import { AttachmentService } from 'src/common/modules/attachment/attachment.serv
 import { Report } from 'src/core/reporting/entities/report.entity';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
+import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 
 export interface OAuthUserPayload {
   email: string;
@@ -71,6 +72,45 @@ export class UserService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  async getusersFromSameZipCode(userId: string,{page,limit}:PaginationInput,query?:string): Promise<IPaginatedType<UserType>> {
+    const skip = (page - 1) * limit;
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['location'],
+    });
+    if (!user||!user.location) {
+      throwAppError('USER_NOT_FOUND');
+    }
+    const zipCode = user.location.zipCode;
+    
+    const queryBuilder = this.userRepository.createQueryBuilder('user')
+      .where('user.id != :userId', { userId })
+      .andWhere('userLocation.zipCode = :zipCode', { zipCode })
+      .leftJoin('user.location', 'userLocation');
+
+      if (query) {
+        queryBuilder.andWhere(
+          '(user.email ILIKE :search OR user.displayName ILIKE :search)',
+          { search: `%${query}%` },
+        );
+      }
+      
+    queryBuilder.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+    const [items, totalCount] = await queryBuilder.getManyAndCount();
+    
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasNextPage,
+      hasPreviousPage,
+    }
+
+  }
   async isFoodSaver(userId: string): Promise<boolean> {
     const user = await this.userRepository.findOne({
       where: { id: userId },

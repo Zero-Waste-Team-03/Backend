@@ -20,6 +20,8 @@ import { LocationType } from '../authentication/graphql/types/location.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 import { UserSettingsType } from './graphql/types/user-settings.type';
+import { PaginatedUsersResponse } from './admin/admin-user.resolver';
+import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 
 /**
  * GraphQL resolver for user operations
@@ -132,6 +134,15 @@ export class UserResolver {
   })
   async deleteAccount(@USER() user: User): Promise<MessageResponseType> {
     return this.userService.deleteUser(user.id);
+  }
+  @UseGuards(AccessTokenGuard)
+  @Query(()=>PaginatedUsersResponse)
+  async getUsersFromSameNeighborhood(
+    @USER('id') userId:string,
+    @Args('pagination',{type:()=>PaginationInput}) pagination:PaginationInput,
+  @Args('search',{type:()=>String,nullable:true}) search?:string
+  ):Promise<PaginatedUsersResponse>{
+    return this.userService.getusersFromSameZipCode(userId,pagination,search);
   }
   @ResolveField(() => LocationType, { nullable: true })
   async location(
