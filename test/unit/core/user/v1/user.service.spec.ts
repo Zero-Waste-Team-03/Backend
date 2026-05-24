@@ -148,10 +148,10 @@ describe('UserService - Food Saver Features', () => {
       );
     });
 
-    it('should not promote if reputation score is < 500', async () => {
+    it('should not promote if reputation score is < 40', async () => {
       const mockUser = {
         id: 'user-1',
-        reputationScore: 499,
+        reputationScore: 39,
         isFoodSaver: false,
       };
 
