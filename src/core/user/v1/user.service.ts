@@ -69,6 +69,13 @@ export class UserService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  async isFoodSaver(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { isFoodSaver: true },
+    });
+    return user?.isFoodSaver ?? false;
+  }
   async getPaginatedUsers(
     args: AdminUsersArgs,
     excludedUserId?: string,
