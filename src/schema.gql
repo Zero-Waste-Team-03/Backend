@@ -507,6 +507,9 @@ type Location {
 
   """Location neighborhood"""
   neighborhood: String
+
+  """Location zip code"""
+  zipCode: String
 }
 
 input LocationInput {
@@ -515,6 +518,7 @@ input LocationInput {
   latitude: Float
   longitude: Float
   neighborhood: String
+  zipCode: String
 }
 
 input LoginInput {
@@ -560,6 +564,12 @@ type Mutation {
   """Admin: review or resolve report"""
   adminReviewReport(input: ReviewReportInput!): Report!
 
+  """Manually update the food saver status of a user"""
+  adminUpdateUserFoodSaverStatus(isFoodSaver: Boolean!, userId: String!): User!
+
+  """Manually update the verification status of a user"""
+  adminUpdateUserVerificationStatus(isVerified: Boolean!, userId: String!): User!
+
   """Approve a donation listing (Administrator only)."""
   approveDonation(donationId: ID!): Donation!
 
@@ -592,6 +602,7 @@ type Mutation {
 
   """Create a report for a user, message, or donation"""
   createReport(input: CreateReportInput!): Report!
+  createVerificationRequest(targetFoodSaverId: String!): VerificationRequest!
 
   """Delete current user account permanently"""
   deleteAccount: MessageResponse!
@@ -684,6 +695,7 @@ type Mutation {
 
   """Update current user profile information"""
   updateProfile(updateProfileInput: UpdateProfileInput!): User!
+  updateVerificationRequestStatus(updateVerificationRequest: UpdateVerificationStatusInput!): VerificationRequest!
 }
 
 enum NOTIFICATION_TYPE {
@@ -794,6 +806,15 @@ type PaginatedUsers {
   totalCount: Int!
 }
 
+type PaginatedVerificationRequests {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [VerificationRequest!]
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+}
+
 input PaginationInput {
   limit: Int = 10
   page: Int = 1
@@ -888,7 +909,9 @@ type Query {
   donationsMap(input: DonationsMapInput!): [DonationMapMarker!]!
   getNotificationStats: NotificationStats!
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
+  getSentVerificationRequests(pagination: PaginationInput! = {limit: 10, page: 1}): PaginatedVerificationRequests!
   getUrgentNotification: [Notification!]
+  getVerificationRequestsForFoodSaver(pagination: PaginationInput! = {limit: 10, page: 1}, search: String): PaginatedVerificationRequests!
   leaderboardAllTime(limit: Int! = 10): [LeaderboardEntry!]!
   leaderboardLastMonth(limit: Int! = 10): [LeaderboardEntry!]!
 
@@ -1214,6 +1237,14 @@ input UpdateReadNotificationsInput {
   ids: [ID!]!
 }
 
+input UpdateVerificationStatusInput {
+  """ID of the verification request to update"""
+  id: String!
+
+  """New status for the verification request"""
+  status: VerficationStatusUpdateEnum!
+}
+
 enum UploadStatusValues {
   COMPLETED
   FAILED
@@ -1245,6 +1276,9 @@ type User {
 
   """User unique identifier"""
   id: String!
+
+  """Whether the user is a food saver"""
+  isFoodSaver: Boolean!
 
   """Whether the user is verified"""
   isVerified: Boolean!
@@ -1327,4 +1361,42 @@ type UserStats {
 type UsersDonationsStats {
   likedDonations: Float!
   totalDonations: Float!
+}
+
+enum VerficationStatusUpdateEnum {
+  APPROVED
+  REJECTED
+}
+
+type VerificationRequest {
+  """Creation date"""
+  createdAt: DateTime!
+
+  """Unique identifier"""
+  id: String!
+
+  """User who requested verification"""
+  requester: User
+
+  """Requester ID"""
+  requesterId: String!
+
+  """Status of the request"""
+  status: VerificationRequestStatus!
+
+  """Food saver being requested"""
+  targetFoodSaver: User
+
+  """Target food saver ID"""
+  targetFoodSaverId: String!
+
+  """Update date"""
+  updatedAt: DateTime!
+}
+
+"""Status of a verification request"""
+enum VerificationRequestStatus {
+  APPROVED
+  PENDING
+  REJECTED
 }

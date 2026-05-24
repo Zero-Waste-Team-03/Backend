@@ -85,11 +85,12 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
-      const { id, email, role, resetVersion } = user;
+      const { id, email, role, resetVersion ,isFoodSaver,isVerified} = user;
       const accessTokenPayload: AccessTokenPayload = {
         id,
         email,
-        isVerified: user.isVerified,
+        isVerified,
+        isFoodSaver,
         role,
         resetVersion,
       };

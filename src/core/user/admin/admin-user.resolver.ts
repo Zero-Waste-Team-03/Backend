@@ -61,6 +61,30 @@ export class AdminUserResolver {
 
   @Roles(UserRoleValues.ADMINISTRATOR)
   @Mutation(() => UserType, {
+    name: 'adminUpdateUserVerificationStatus',
+    description: 'Manually update the verification status of a user',
+  })
+  async adminUpdateUserVerificationStatus(
+    @Args('userId') id: string,
+    @Args('isVerified') isVerified: boolean,
+  ): Promise<UserType> {
+    return this.userService.adminUpdateUserVerificationStatus(id, isVerified);
+  }
+
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => UserType, {
+    name: 'adminUpdateUserFoodSaverStatus',
+    description: 'Manually update the food saver status of a user',
+  })
+  async adminUpdateUserFoodSaverStatus(
+    @Args('userId') id: string,
+    @Args('isFoodSaver') isFoodSaver: boolean,
+  ): Promise<UserType> {
+    return this.userService.adminUpdateUserFoodSaverStatus(id, isFoodSaver);
+  }
+
+  @Roles(UserRoleValues.ADMINISTRATOR)
+  @Mutation(() => UserType, {
     name: 'adminCreateAccount',
     description:
       'Create a new user, organization, or administrator account. A temporary password will be generated and sent via email.',

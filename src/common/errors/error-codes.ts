@@ -218,6 +218,26 @@ export const ERROR_CODES = {
     message: 'You already have an active reservation for this donation.',
     args: { donationId: 'string', beneficiaryId: 'string' } as const,
   },
+  VERIFICATION_REQUEST_NOT_FOUND: {
+    code: 'verification_request.not_found',
+    httpStatus: 404,
+    message: 'Verification request not found.',
+  },
+  VERIFICATION_REQUEST_NOT_PENDING: {
+    code: 'verification_request.not_pending',
+    httpStatus: 400,
+    message: 'Only pending requests can be updated.',
+  },
+  VERIFICATION_REQUEST_FORBIDDEN: {
+    code: 'verification_request.forbidden',
+    httpStatus: 403,
+    message: 'You are not allowed to update this verification request.',
+  },
+  VERIFICATION_TARGET_NOT_FOOD_SAVER: {
+    code: 'verification_request.target_not_food_saver',
+    httpStatus: 400,
+    message: 'Target user is not a food saver.',
+  },
   DONATION_CAPACITY_EXCEEDED: {
     code: 'donation.capacity_exceeded',
     httpStatus: 400,

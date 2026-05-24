@@ -5,5 +5,6 @@ export interface AccessTokenPayload {
   email: string;
   role: UserRole;
   isVerified: boolean;
+  isFoodSaver: boolean;
   resetVersion: number;
 }
