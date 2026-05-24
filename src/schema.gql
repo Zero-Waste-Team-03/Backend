@@ -911,6 +911,7 @@ type Query {
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
   getSentVerificationRequests(pagination: PaginationInput! = {limit: 10, page: 1}): PaginatedVerificationRequests!
   getUrgentNotification: [Notification!]
+  getUsersFromSameNeighborhood(pagination: PaginationInput!, search: String): PaginatedUsers!
   getVerificationRequestsForFoodSaver(pagination: PaginationInput! = {limit: 10, page: 1}, search: String): PaginatedVerificationRequests!
   leaderboardAllTime(limit: Int! = 10): [LeaderboardEntry!]!
   leaderboardLastMonth(limit: Int! = 10): [LeaderboardEntry!]!
