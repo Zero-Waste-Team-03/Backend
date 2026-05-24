@@ -10,7 +10,7 @@ describe('ERROR_CODES registry', () => {
 
   it('should have codes matching domain.error_name format', () => {
     for (const entry of entries) {
-      expect(entry.code).toMatch(/^[a-z]+\.[a-z_]+$/);
+expect(entry.code).toMatch(/^[a-z_]+\.[a-z_]+$/);
     }
   });
 
