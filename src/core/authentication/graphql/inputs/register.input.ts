@@ -97,14 +97,14 @@ export class RegisterInput {
   })
   @IsStrongPassword()
   password: string;
-@Field(() => String, {
-    description:"Phone number of the user, optional but if provided must be a valid string",
-    nullable:true
+  @Field(() => String, {
+    description:
+      'Phone number of the user, optional but if provided must be a valid string',
+    nullable: true,
   })
   @IsOptional()
   @IsString()
   phoneNumber?: string;
-
 
   @Field(() => RegisterLocationInput, {
     description: 'Location payload for user registration',

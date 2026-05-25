@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from 'src/core/user/v1/user.service';
@@ -32,6 +33,7 @@ describe('UserService - Food Saver Features', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         UserService,
         {
           provide: getRepositoryToken(User),

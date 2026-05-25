@@ -53,7 +53,7 @@ export class AuthenticationResolver {
    *     user {
    *       id
    *       email
-    *       isVerified
+   *       isVerified
    *     }
    *   }
    * }

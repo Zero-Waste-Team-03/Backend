@@ -1,6 +1,17 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
-import { CategorySensitivityValues, CategorySensitivity } from '../../entities/category.entity';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import {
+  CategorySensitivityValues,
+  CategorySensitivity,
+} from '../../entities/category.entity';
 
 @InputType('CreateCategoryInput')
 export class CreateCategoryInput {

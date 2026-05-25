@@ -9,7 +9,11 @@ import { AttachmentCronService } from './attachment.cron';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Attachment, User])],
-  providers: [AttachmentService, IsAttachmentExistConstraint, AttachmentCronService],
+  providers: [
+    AttachmentService,
+    IsAttachmentExistConstraint,
+    AttachmentCronService,
+  ],
   exports: [AttachmentService],
 })
 export class AttachmentModule {}

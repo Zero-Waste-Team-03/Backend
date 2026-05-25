@@ -34,10 +34,13 @@ export class UserDataLoader {
       async (userIds: readonly string[]) => {
         const users = await this.userService.findByIds(userIds as string[]);
 
-        const userMap = users.reduce((map, user) => {
-          map[user.id] = user;
-          return map;
-        }, {} as Record<string, User>);
+        const userMap = users.reduce(
+          (map, user) => {
+            map[user.id] = user;
+            return map;
+          },
+          {} as Record<string, User>,
+        );
 
         return userIds.map((id) => userMap[id] || null);
       },

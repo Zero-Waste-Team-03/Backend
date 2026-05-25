@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddPushNotificationsEnabledToUserSettings1777400000000
-  implements MigrationInterface
-{
+export class AddPushNotificationsEnabledToUserSettings1777400000000 implements MigrationInterface {
   name = 'AddPushNotificationsEnabledToUserSettings1777400000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

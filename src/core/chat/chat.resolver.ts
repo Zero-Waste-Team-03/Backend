@@ -79,7 +79,8 @@ export class ChatResolver {
   }
 
   @Query(() => Int, {
-    description: 'Get total count of archived conversations for the current user',
+    description:
+      'Get total count of archived conversations for the current user',
   })
   async myArchivedConversationsCount(
     @USER('id') userId: string,

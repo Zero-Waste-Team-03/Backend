@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserResolver } from 'src/core/user/user.resolver';
 import { UserService } from 'src/core/user/v1/user.service';
@@ -19,6 +20,7 @@ describe('UserResolver', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         UserResolver,
         {
           provide: UserService,

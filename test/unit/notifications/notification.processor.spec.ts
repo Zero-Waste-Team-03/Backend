@@ -60,9 +60,9 @@ describe('NotificationProcessor', () => {
     (userService.getUserSettings as jest.Mock).mockResolvedValue({
       isPushNotificationsEnabled: true,
     });
-    (notificationsService.getActiveTokensForUser as jest.Mock).mockResolvedValue([
-      { token: 'token-1' },
-    ]);
+    (
+      notificationsService.getActiveTokensForUser as jest.Mock
+    ).mockResolvedValue([{ token: 'token-1' }]);
 
     const processor = new NotificationProcessor(
       notificationsService,
@@ -173,11 +173,8 @@ describe('NotificationProcessor', () => {
         proc.buildDataPayload(NOTIFICATION_TYPE.TEST, undefined, {}).type,
       ).toBe('TEST');
       expect(
-        proc.buildDataPayload(
-          NOTIFICATION_TYPE.NEW_ACHIEVEMENT,
-          undefined,
-          {},
-        ).type,
+        proc.buildDataPayload(NOTIFICATION_TYPE.NEW_ACHIEVEMENT, undefined, {})
+          .type,
       ).toBe('NEW_ACHIEVEMENT');
       expect(
         proc.buildDataPayload(
@@ -187,11 +184,8 @@ describe('NotificationProcessor', () => {
         ).type,
       ).toBe('RESERVATION_ALERT');
       expect(
-        proc.buildDataPayload(
-          NOTIFICATION_TYPE.REPORT_ALERT,
-          undefined,
-          {},
-        ).type,
+        proc.buildDataPayload(NOTIFICATION_TYPE.REPORT_ALERT, undefined, {})
+          .type,
       ).toBe('REPORT_ALERT');
       expect(
         proc.buildDataPayload(

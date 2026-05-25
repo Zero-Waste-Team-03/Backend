@@ -3,7 +3,10 @@ import { Location } from 'src/common/locations/entities/location.entity';
 import { generateHash } from 'src/common/utils/authentication/hash.utils';
 import { User, UserRoleValues } from 'src/core/user/entities/user.entity';
 import { UserSettings } from 'src/core/user/entities/user-settings.entity';
-import { ReputationLog, ReputationLogSourceValues } from 'src/core/leaderboard/entities/reputation-log.entity';
+import {
+  ReputationLog,
+  ReputationLogSourceValues,
+} from 'src/core/leaderboard/entities/reputation-log.entity';
 
 type SeedUser = {
   email: string;
@@ -165,7 +168,7 @@ async function upsertUser(seed: SeedUser): Promise<void> {
 
   if (seed.reputationScore > 0) {
     const reputationLogRepo = dataSource.getRepository(ReputationLog);
-    
+
     // Distribute points over two entries, one older, one recent to populate monthly leaderboard
     const recentDate = new Date();
     const olderDate = new Date();
@@ -173,23 +176,27 @@ async function upsertUser(seed: SeedUser): Promise<void> {
 
     const halfScore = Math.floor(seed.reputationScore / 2);
     const remainder = seed.reputationScore - halfScore;
-    
+
     if (halfScore > 0) {
-      await reputationLogRepo.save(reputationLogRepo.create({
-        userId: savedUser.id,
-        pointsGained: halfScore,
-        source: ReputationLogSourceValues.MANUAL_ADJUSTMENT,
-        createdAt: olderDate,
-      }));
+      await reputationLogRepo.save(
+        reputationLogRepo.create({
+          userId: savedUser.id,
+          pointsGained: halfScore,
+          source: ReputationLogSourceValues.MANUAL_ADJUSTMENT,
+          createdAt: olderDate,
+        }),
+      );
     }
 
     if (remainder > 0) {
-      await reputationLogRepo.save(reputationLogRepo.create({
-        userId: savedUser.id,
-        pointsGained: remainder,
-        source: ReputationLogSourceValues.MANUAL_ADJUSTMENT,
-        createdAt: recentDate,
-      }));
+      await reputationLogRepo.save(
+        reputationLogRepo.create({
+          userId: savedUser.id,
+          pointsGained: remainder,
+          source: ReputationLogSourceValues.MANUAL_ADJUSTMENT,
+          createdAt: recentDate,
+        }),
+      );
     }
   }
 }

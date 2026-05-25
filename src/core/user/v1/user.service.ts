@@ -39,6 +39,7 @@ import { AttachmentService } from 'src/common/modules/attachment/attachment.serv
 import { Report } from 'src/core/reporting/entities/report.entity';
 import { NotificationsService } from 'src/core/notifications/notifications.service';
 import { NOTIFICATION_TYPE } from 'src/core/notifications/enums/notification-type.enum';
+import { RedisService } from 'nestjs-redis-client';
 import { PaginationInput } from 'src/common/graphql/inputs/pagination.input';
 
 export interface OAuthUserPayload {
@@ -70,7 +71,18 @@ export class UserService {
     private readonly mailQueue: Queue,
     private readonly attachmentService: AttachmentService,
     private readonly notificationsService: NotificationsService,
+    private readonly redisService: RedisService,
   ) {}
+
+  public async incrementStateVersion(userId: string): Promise<void> {
+    const valStr = await this.redisService.get<string>(
+      `user:${userId}:stateVersion`,
+    );
+    const val = valStr ? parseInt(valStr, 10) : 0;
+    // Set without expiry because it shouldn't expire while the user uses tokens.
+    // In a real prod environment we could set TTL to 7 days (longer than token expiry)
+    await this.redisService.set(`user:${userId}:stateVersion`, val + 1, 604800);
+  }
 
   async getusersFromSameZipCode(userId: string,{page,limit}:PaginationInput,query?:string): Promise<IPaginatedType<UserType>> {
     const skip = (page - 1) * limit;
@@ -178,6 +190,7 @@ export class UserService {
     }
     user.status = UserStatusValues.SUSPENDED;
     await this.userRepository.save(user);
+    await this.incrementStateVersion(user.id);
     await this.notificationsService.sendNotification(
       'Account suspended',
       'Your account has been suspended. Contact support for more details.',
@@ -204,6 +217,7 @@ export class UserService {
     }
     user.status = UserStatusValues.ACTIVE;
     await this.userRepository.save(user);
+    await this.incrementStateVersion(user.id);
     await this.notificationsService.sendNotification(
       'Account reactivated',
       'Your account has been reactivated. You can now use the platform normally.',
@@ -389,9 +403,20 @@ export class UserService {
         userId: user.id,
       }) as UserSettings;
     }
+
+    const stateChanged =
+      (restOfData.role !== undefined && restOfData.role !== user.role) ||
+      (restOfData.isVerified !== undefined && restOfData.isVerified !== user.isVerified);
+
     Object.assign(user, restOfData);
 
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    if (stateChanged) {
+      await this.incrementStateVersion(user.id);
+    }
+
+    return savedUser;
   }
 
   async changePassword(
@@ -527,6 +552,7 @@ export class UserService {
     }
     user.isVerified = isVerified;
     await this.userRepository.save(user);
+    await this.incrementStateVersion(user.id);
 
     const statusMessage = isVerified ? 'verified' : 'unverified';
     await this.notificationsService.sendNotification(
@@ -555,6 +581,7 @@ export class UserService {
     }
     user.isFoodSaver = isFoodSaver;
     await this.userRepository.save(user);
+    await this.incrementStateVersion(user.id);
 
     const statusMessage = isFoodSaver
       ? 'promoted to a food saver'
@@ -598,7 +625,12 @@ export class UserService {
         .where('id = :id AND "isVerified" = false', { id: donorId })
         .execute();
 
-      return { wasJustVerified: (result.affected ?? 0) > 0 };
+      const wasJustVerified = (result.affected ?? 0) > 0;
+      if (wasJustVerified) {
+        await this.incrementStateVersion(donorId);
+      }
+
+      return { wasJustVerified };
     } catch (error) {
       this.logger.error(
         `checkAndAutoVerifyDonor failed for donor ${donorId}`,
@@ -651,6 +683,7 @@ export class UserService {
       const wasJustPromoted = (result.affected ?? 0) > 0;
 
       if (wasJustPromoted) {
+        await this.incrementStateVersion(userId);
         await this.notificationsService.sendNotification(
           'Congratulations! You are now a Food Saver',
           'You have reached the required reputation score! Your posts will now go live immediately, and you can verify other users in your neighborhood.',

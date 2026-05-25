@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ChatService } from 'src/core/chat/chat.service';
@@ -57,7 +58,7 @@ describe('ChatService', () => {
   };
   const leaderboardService = {
     incrementUserPoints: jest.fn(),
-  }
+  };
 
   const notificationsService = {
     sendNotificationWithoutSaving: jest.fn(),
@@ -75,6 +76,7 @@ describe('ChatService', () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         ChatService,
         {
           provide: getRepositoryToken(Conversation),
@@ -97,7 +99,7 @@ describe('ChatService', () => {
           useValue: userService,
         },
         {
-          provide:LeaderboardService,
+          provide: LeaderboardService,
           useValue: leaderboardService,
         },
         {

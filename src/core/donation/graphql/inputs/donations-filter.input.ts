@@ -1,4 +1,4 @@
-import { Field, InputType} from '@nestjs/graphql';
+import { Field, InputType } from '@nestjs/graphql';
 import { IsOptional, IsUUID, IsEnum } from 'class-validator';
 import {
   DonationUrgencyValues,
@@ -23,4 +23,4 @@ export class DonationsFilterInput {
   @IsOptional()
   @IsEnum(DonationStatusValues)
   status?: DonationStatus;
-  }
+}

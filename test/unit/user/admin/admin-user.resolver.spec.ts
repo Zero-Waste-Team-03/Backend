@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminUserResolver } from '../../../../src/core/user/admin/admin-user.resolver';
 import { UserService } from '../../../../src/core/user/v1/user.service';
@@ -22,6 +23,7 @@ describe('AdminUserResolver', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         AdminUserResolver,
         { provide: UserService, useValue: userService },
       ],
@@ -39,7 +41,10 @@ describe('AdminUserResolver', () => {
 
       const result = await resolver.adminGetUsers(args);
 
-      expect(userService.getPaginatedUsers).toHaveBeenCalledWith(args, undefined);
+      expect(userService.getPaginatedUsers).toHaveBeenCalledWith(
+        args,
+        undefined,
+      );
       expect(result).toEqual(expectedResult);
     });
   });

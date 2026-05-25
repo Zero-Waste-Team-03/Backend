@@ -16,14 +16,14 @@ export class RequireDeviceIdGuard implements CanActivate {
       gqlCtx.getType() === 'graphql'
         ? gqlCtx.getContext<{ req: ExtendedRequest }>().req
         : context.switchToHttp().getRequest<ExtendedRequest>();
-   const deviceId=request.headers['x-device-id']
+    const deviceId = request.headers['x-device-id'];
     if (!deviceId) {
       throwAppError('NOTIFICATION_DEVICE_ID_REQUIRED');
-    } 
+    }
     if (typeof deviceId === 'string') {
       request.deviceId = deviceId;
 
-        return true;
+      return true;
     }
     return false;
   }

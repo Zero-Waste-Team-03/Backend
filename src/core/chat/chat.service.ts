@@ -35,7 +35,10 @@ import { Category } from '../category/entities/category.entity';
 import { MarkTransactionCompletedDto } from './v1/dto/mark-transaction-completed.dto';
 import { ConversationPreviewType } from './graphql/types/conversation-preview.type';
 import { throwGatewayAppError } from 'src/common/errors/throw-app-error';
-import { ReputationLog, ReputationLogSourceValues } from '../leaderboard/entities/reputation-log.entity';
+import {
+  ReputationLog,
+  ReputationLogSourceValues,
+} from '../leaderboard/entities/reputation-log.entity';
 import { LeaderboardService } from '../leaderboard/leaderboard.service';
 
 const SENSITIVE_APPROVED_PREFIX = '[SENSITIVE_APPROVED]';
@@ -107,7 +110,11 @@ export class ChatService {
         'reservation.id = conversation.reservationId',
       )
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
-      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin(
+        'donation.photos',
+        'donationPhoto',
+        'donationPhoto.isMain = true',
+      )
       .leftJoin('donationPhoto.attachment', 'donationAttachment')
       .where(
         '(reservation.beneficiaryId = :requesterId OR donation.userId = :requesterId)',
@@ -127,11 +134,12 @@ export class ChatService {
         'donation.title AS "donationTitle"',
         'donationAttachment.url AS "donationImageUrl"',
       ])
-      .addSelect((qb) =>
-        qb
-          .select('MAX(message."createdAt")')
-          .from(Message, 'message')
-          .where('message."conversationId" = conversation.id'),
+      .addSelect(
+        (qb) =>
+          qb
+            .select('MAX(message."createdAt")')
+            .from(Message, 'message')
+            .where('message."conversationId" = conversation.id'),
         'lastMessageAt',
       )
       .orderBy('"lastMessageAt"', 'DESC', 'NULLS LAST')
@@ -203,7 +211,11 @@ export class ChatService {
     const totalCount = await baseQuery().getCount();
 
     const rows = await baseQuery()
-      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin(
+        'donation.photos',
+        'donationPhoto',
+        'donationPhoto.isMain = true',
+      )
       .leftJoin('donationPhoto.attachment', 'donationAttachment')
       .select([
         'conversation.id AS id',
@@ -216,11 +228,12 @@ export class ChatService {
         'donation.title AS "donationTitle"',
         'donationAttachment.url AS "donationImageUrl"',
       ])
-      .addSelect((qb) =>
-        qb
-          .select('MAX(message."createdAt")')
-          .from(Message, 'message')
-          .where('message."conversationId" = conversation.id'),
+      .addSelect(
+        (qb) =>
+          qb
+            .select('MAX(message."createdAt")')
+            .from(Message, 'message')
+            .where('message."conversationId" = conversation.id'),
         'lastMessageAt',
       )
       .orderBy('"lastMessageAt"', 'DESC', 'NULLS LAST')
@@ -300,7 +313,11 @@ export class ChatService {
         'reservation.id = conversation.reservationId',
       )
       .innerJoin(Donation, 'donation', 'donation.id = reservation.donationId')
-      .leftJoin('donation.photos', 'donationPhoto', 'donationPhoto.isMain = true')
+      .leftJoin(
+        'donation.photos',
+        'donationPhoto',
+        'donationPhoto.isMain = true',
+      )
       .leftJoin('donationPhoto.attachment', 'donationAttachment')
       .where('conversation.id = :conversationId', { conversationId })
       .select([
@@ -327,7 +344,9 @@ export class ChatService {
       }>();
 
     if (!row) {
-      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
+      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', {
+        id: conversationId,
+      });
     }
 
     return {
@@ -430,7 +449,7 @@ export class ChatService {
     const where: FindOptionsWhere<Message> = { conversationId };
     const [items, totalCount] = await this.messageRepository.findAndCount({
       where,
-      order: {createdAt: 'DESC' },
+      order: { createdAt: 'DESC' },
       skip,
       take: limit,
     });
@@ -512,7 +531,9 @@ export class ChatService {
     });
 
     if (!conversation) {
-      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', { id: conversationId });
+      throwGatewayAppError('CHAT_CONVERSATION_NOT_FOUND', {
+        id: conversationId,
+      });
     }
 
     const reservation = await this.requireAuthorizedReservation(
@@ -671,7 +692,9 @@ export class ChatService {
           await manager
             .createQueryBuilder()
             .update(User)
-            .set({ reputationScore: () => '"reputationScore" + :reputationGain' })
+            .set({
+              reputationScore: () => '"reputationScore" + :reputationGain',
+            })
             .setParameter('reputationGain', reputationGain)
             .where('id IN (:...ids)', { ids: [donorId, beneficiaryId] })
             .execute();
@@ -691,8 +714,14 @@ export class ChatService {
           await manager.save(ReputationLog, [donorLog, recipientLog]);
 
           await Promise.all([
-            this.leaderboardService.incrementUserPoints(donorId, reputationGain),
-            this.leaderboardService.incrementUserPoints(beneficiaryId, reputationGain),
+            this.leaderboardService.incrementUserPoints(
+              donorId,
+              reputationGain,
+            ),
+            this.leaderboardService.incrementUserPoints(
+              beneficiaryId,
+              reputationGain,
+            ),
           ]);
 
           await this.gamificationQueue.add(

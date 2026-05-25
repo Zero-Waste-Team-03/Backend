@@ -4,13 +4,14 @@ import {
   ReservationStatus,
   ReservationStatusValues,
 } from '../../entities/reservation.entity';
-const ReservationRoleFilter={
-   DONOR:'DONOR',
-  BENEFICIARY:'BENEFICIARY',
- } as const 
+const ReservationRoleFilter = {
+  DONOR: 'DONOR',
+  BENEFICIARY: 'BENEFICIARY',
+} as const;
 
- export type ReservationRoleFilter=typeof ReservationRoleFilter[keyof typeof ReservationRoleFilter];
-registerEnumType(ReservationRoleFilter,{name:'ReservationRoleFilter'})
+export type ReservationRoleFilter =
+  (typeof ReservationRoleFilter)[keyof typeof ReservationRoleFilter];
+registerEnumType(ReservationRoleFilter, { name: 'ReservationRoleFilter' });
 
 @InputType('ReservationsFilterInput')
 export class ReservationsFilterInput {
@@ -18,7 +19,7 @@ export class ReservationsFilterInput {
   @IsOptional()
   @IsEnum(ReservationStatusValues)
   status?: ReservationStatus;
-@Field(()=>ReservationRoleFilter,{nullable:true})
+  @Field(() => ReservationRoleFilter, { nullable: true })
   @IsOptional()
   roleFilter?: ReservationRoleFilter;
 }

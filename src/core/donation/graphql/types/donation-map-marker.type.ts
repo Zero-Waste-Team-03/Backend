@@ -1,6 +1,15 @@
-import { Field, Float, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import {
+  Field,
+  Float,
+  ID,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { IsEnum } from 'class-validator';
-import { DonationUrgency, DonationUrgencyValues } from '../../entities/donation.entity';
+import {
+  DonationUrgency,
+  DonationUrgencyValues,
+} from '../../entities/donation.entity';
 import { AttachementType } from 'src/common/modules/attachment/graphql/attachement.type';
 import { DonationType } from './donation.type';
 
@@ -10,7 +19,8 @@ export const MarkerColorValues = {
   GREEN: 'Green',
 } as const;
 
-export type MarkerColor = (typeof MarkerColorValues)[keyof typeof MarkerColorValues];
+export type MarkerColor =
+  (typeof MarkerColorValues)[keyof typeof MarkerColorValues];
 
 registerEnumType(MarkerColorValues, {
   name: 'MarkerColorValues',
@@ -45,7 +55,10 @@ export class DonationMapMarkerType {
   @Field(() => String, { description: 'Main attachment id reference' })
   mainAttachmentId: string;
 
-  @Field(() => AttachementType, { nullable: true, description: 'Main attachment details' })
+  @Field(() => AttachementType, {
+    nullable: true,
+    description: 'Main attachment details',
+  })
   mainAttachment?: AttachementType;
 
   @Field(() => DonationType, { description: 'Full donation details' })

@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GamificationProcessor } from 'src/infrastructure/queue/gamification/gamification.processor';
 import { GamificationService } from 'src/core/gamification/gamification.service';
@@ -14,7 +15,9 @@ describe('GamificationProcessor - Food Saver Features', () => {
 
   beforeEach(async () => {
     gamificationService = {
-      evaluateAndAwardCompletionBadgesWithoutManager: jest.fn().mockResolvedValue([]),
+      evaluateAndAwardCompletionBadgesWithoutManager: jest
+        .fn()
+        .mockResolvedValue([]),
     };
 
     notificationsService = {
@@ -22,12 +25,17 @@ describe('GamificationProcessor - Food Saver Features', () => {
     };
 
     userService = {
-      checkAndAutoVerifyDonor: jest.fn().mockResolvedValue({ wasJustVerified: false }),
-      checkAndAutoPromoteFoodSaver: jest.fn().mockResolvedValue({ wasJustPromoted: false }),
+      checkAndAutoVerifyDonor: jest
+        .fn()
+        .mockResolvedValue({ wasJustVerified: false }),
+      checkAndAutoPromoteFoodSaver: jest
+        .fn()
+        .mockResolvedValue({ wasJustPromoted: false }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         GamificationProcessor,
         {
           provide: GamificationService,
@@ -59,12 +67,18 @@ describe('GamificationProcessor - Food Saver Features', () => {
 
     await processor.process(job);
 
-    expect(gamificationService.evaluateAndAwardCompletionBadgesWithoutManager).toHaveBeenCalledWith('donor-1', 'beneficiary-1');
+    expect(
+      gamificationService.evaluateAndAwardCompletionBadgesWithoutManager,
+    ).toHaveBeenCalledWith('donor-1', 'beneficiary-1');
     expect(userService.checkAndAutoVerifyDonor).toHaveBeenCalledWith('donor-1');
-    
+
     // Check that both are evaluated for food saver promotion
-    expect(userService.checkAndAutoPromoteFoodSaver).toHaveBeenCalledWith('donor-1');
-    expect(userService.checkAndAutoPromoteFoodSaver).toHaveBeenCalledWith('beneficiary-1');
+    expect(userService.checkAndAutoPromoteFoodSaver).toHaveBeenCalledWith(
+      'donor-1',
+    );
+    expect(userService.checkAndAutoPromoteFoodSaver).toHaveBeenCalledWith(
+      'beneficiary-1',
+    );
   });
 
   it('should handle unknwon job names gracefully', async () => {
@@ -76,7 +90,9 @@ describe('GamificationProcessor - Food Saver Features', () => {
 
     await processor.process(job);
 
-    expect(gamificationService.evaluateAndAwardCompletionBadgesWithoutManager).not.toHaveBeenCalled();
+    expect(
+      gamificationService.evaluateAndAwardCompletionBadgesWithoutManager,
+    ).not.toHaveBeenCalled();
     expect(userService.checkAndAutoPromoteFoodSaver).not.toHaveBeenCalled();
   });
 });

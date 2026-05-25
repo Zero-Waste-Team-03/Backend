@@ -6,10 +6,12 @@ async function syncLeaderboard() {
   console.log('Initializing DB connection...');
   await dataSource.initialize();
   console.log('DB Connection successful!');
-  
-  const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379;
+
+  const redisPort = process.env.REDIS_PORT
+    ? parseInt(process.env.REDIS_PORT, 10)
+    : 6379;
   const redisHost = process.env.REDIS_HOST || 'localhost';
-  
+
   console.log(`Connecting to Redis at ${redisHost}:${redisPort}...`);
   const client = new Redis({
     host: redisHost,
@@ -44,7 +46,7 @@ async function syncLeaderboard() {
 
     await client.zincrby(allTimeKey, points, userId);
     await client.zincrby(monthlyKey, points, userId);
-    
+
     count++;
     if (count % 100 === 0) {
       console.log(`Synced ${count}/${logs.length} logs...`);

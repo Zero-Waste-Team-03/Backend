@@ -52,7 +52,7 @@ export class WsConnectionsManagerGateway
       return;
     }
     const userPayload: AccessTokenPayload = {
-      ...user
+      ...user,
     };
 
     client['user'] = userPayload;
@@ -109,11 +109,13 @@ export class WsConnectionsManagerGateway
   async validateToken(token: string): Promise<AccessTokenPayload | null> {
     try {
       //TODO: remove this ignore expiration after tests are done
-      const payload =
-        await this.jwtService.verifyAsync<AccessTokenPayload>(token,{ignoreExpiration:true});
+      const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
+        token,
+        { ignoreExpiration: true },
+      );
       return payload;
     } catch (e) {
-      console.log(e)
+      console.log(e);
       this.logger.error('Token validation error', e);
       return null;
     }

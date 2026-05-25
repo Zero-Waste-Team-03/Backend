@@ -70,13 +70,13 @@ describe('PresenceService', () => {
     const now = Date.now();
     redis.hGetAll.mockImplementation(async (key: string) => {
       if (key === 'presence:user:online-user') {
-        return { 's1': String(now + 5_000) };
+        return { s1: String(now + 5_000) };
       }
       if (key === 'presence:user:expired-user') {
-        return { 's2': String(now - 1_000) };
+        return { s2: String(now - 1_000) };
       }
       if (key === 'presence:user:mixed') {
-        return { 's3': String(now - 1_000), 's4': String(now + 5_000) };
+        return { s3: String(now - 1_000), s4: String(now + 5_000) };
       }
       return {};
     });

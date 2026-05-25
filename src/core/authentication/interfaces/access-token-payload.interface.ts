@@ -7,4 +7,5 @@ export interface AccessTokenPayload {
   isVerified: boolean;
   isFoodSaver: boolean;
   resetVersion: number;
+  stateVersion?: number;
 }

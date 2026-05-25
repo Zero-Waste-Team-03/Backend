@@ -85,7 +85,13 @@ export class AuthenticationService {
   }
   async issueTokens(user: User): Promise<AuthResponseDto> {
     try {
-      const { id, email, role, resetVersion ,isFoodSaver,isVerified} = user;
+      const { id, email, role, resetVersion, isFoodSaver, isVerified } = user;
+
+      const stateVersionStr = await this.redisService.get<string>(
+        `user:${id}:stateVersion`,
+      );
+      const stateVersion = stateVersionStr ? parseInt(stateVersionStr, 10) : 0;
+
       const accessTokenPayload: AccessTokenPayload = {
         id,
         email,
@@ -93,6 +99,7 @@ export class AuthenticationService {
         isFoodSaver,
         role,
         resetVersion,
+        stateVersion,
       };
       const refreshTokenPayload: RefreshTokenPayload = {
         id,

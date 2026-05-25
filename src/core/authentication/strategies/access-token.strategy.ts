@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import authConfig from 'src/config/auth.config';
-import { UserService } from 'src/core/user/v1/user.service';
+import { RedisService } from 'nestjs-redis-client';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
@@ -13,7 +13,7 @@ export class AccessTokenStrategy extends PassportStrategy(
 ) {
   constructor(
     @Inject(authConfig.KEY) configService: ConfigType<typeof authConfig>,
-    private readonly userService: UserService,
+    private readonly redisService: RedisService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -22,7 +22,16 @@ export class AccessTokenStrategy extends PassportStrategy(
     });
   }
 
-  validate(payload: AccessTokenPayload): AccessTokenPayload {
+  async validate(payload: AccessTokenPayload): Promise<AccessTokenPayload> {
+    const currentVersionStr = await this.redisService.get<string>(
+      `user:${payload.id}:stateVersion`,
+    );
+    const currentVersion = currentVersionStr ? parseInt(currentVersionStr, 10) : 0;
+
+    if (payload.stateVersion !== currentVersion) {
+      throw new UnauthorizedException('Token state version mismatch');
+    }
+
     return payload;
   }
 }
