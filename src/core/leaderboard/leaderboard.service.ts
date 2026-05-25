@@ -9,7 +9,6 @@ import { LeaderboardEntry } from './graphql/types/leaderboard-entry.type';
 export class LeaderboardService {
 
   constructor(
-    @InjectRepository(ReputationLog)
     private readonly redisService: RedisService,
     private readonly userService: UserService,
   ) {}
