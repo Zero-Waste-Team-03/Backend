@@ -1,6 +1,4 @@
 import { Injectable} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ReputationLog } from './entities/reputation-log.entity';
 import { UserService } from '../user/v1/user.service';
 import { RedisService } from 'nestjs-redis-client';
 import { LeaderboardEntry } from './graphql/types/leaderboard-entry.type';
@@ -9,7 +7,6 @@ import { LeaderboardEntry } from './graphql/types/leaderboard-entry.type';
 export class LeaderboardService {
 
   constructor(
-    @InjectRepository(ReputationLog)
     private readonly redisService: RedisService,
     private readonly userService: UserService,
   ) {}

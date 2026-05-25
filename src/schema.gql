@@ -947,6 +947,8 @@ type Query {
 
   """Get the current user profile stats related to donations,"""
   myDonationsStats: UsersDonationsStats!
+  myLeaderboardRankAllTime: LeaderboardEntry
+  myLeaderboardRankLastMonth: LeaderboardEntry
 
   """Get reports created by current user"""
   myReports: [Report!]!
