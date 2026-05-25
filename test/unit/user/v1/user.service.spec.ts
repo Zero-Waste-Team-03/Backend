@@ -1,3 +1,4 @@
+import { RedisService } from 'nestjs-redis-client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/core/user/v1/user.service';
@@ -111,6 +112,7 @@ describe('UserService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: RedisService, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
         UserService,
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Location), useValue: {} },

@@ -13,7 +13,7 @@ import { StatsModule } from './stats/stats.module';
 import { ReservationCompletionModule } from './reservation-completion/reservation-completion.module';
 import { PresenceModule } from './presence/presence.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
-import {  VerificationRequestModule } from './verification-request/verification.module';
+import { VerificationRequestModule } from './verification-request/verification.module';
 
 @Module({
   imports: [

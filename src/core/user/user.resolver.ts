@@ -46,7 +46,7 @@ export class UserResolver {
    *   currentUser {
    *     id
    *     email
-    *     isVerified
+   *     isVerified
    *   }
    * }
    *
@@ -80,7 +80,7 @@ export class UserResolver {
    *   }) {
    *     id
    *     email
-    *     isVerified
+   *     isVerified
    *   }
    * }
    *
@@ -136,13 +136,14 @@ export class UserResolver {
     return this.userService.deleteUser(user.id);
   }
   @UseGuards(AccessTokenGuard)
-  @Query(()=>PaginatedUsersResponse)
+  @Query(() => PaginatedUsersResponse)
   async getUsersFromSameNeighborhood(
-    @USER('id') userId:string,
-    @Args('pagination',{type:()=>PaginationInput}) pagination:PaginationInput,
-  @Args('search',{type:()=>String,nullable:true}) search?:string
-  ):Promise<PaginatedUsersResponse>{
-    return this.userService.getusersFromSameZipCode(userId,pagination,search);
+    @USER('id') userId: string,
+    @Args('pagination', { type: () => PaginationInput })
+    pagination: PaginationInput,
+    @Args('search', { type: () => String, nullable: true }) search?: string,
+  ): Promise<PaginatedUsersResponse> {
+    return this.userService.getusersFromSameZipCode(userId, pagination, search);
   }
   @ResolveField(() => LocationType, { nullable: true })
   async location(
@@ -169,11 +170,9 @@ export class UserResolver {
     return this.avatar(user, { loaders });
   }
   //NOTE: this does not use dataloader as user settinng are only queries on user profile and not in list of users, so no N+1 problem, and also user settings are not expected to be queried as much as other fields, so performance impact is minimal
-  @ResolveField(()=>UserSettingsType, { nullable: true })
-  async settings(
-    @Parent() user: UserType,
-  ): Promise<UserSettingsType | null> {
+  @ResolveField(() => UserSettingsType, { nullable: true })
+  async settings(@Parent() user: UserType): Promise<UserSettingsType | null> {
     if (!user.id) return null;
-    return await this.userService.getUserSettings(user.id)
+    return await this.userService.getUserSettings(user.id);
   }
 }

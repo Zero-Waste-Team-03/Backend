@@ -7,6 +7,6 @@ import { UserModule } from '../user/user.module';
 
 @Module({
   providers: [VerificationResolver, VerificationRequestsService],
-  imports: [TypeOrmModule.forFeature([VerificationRequest]),UserModule],
+  imports: [TypeOrmModule.forFeature([VerificationRequest]), UserModule],
 })
 export class VerificationRequestModule {}

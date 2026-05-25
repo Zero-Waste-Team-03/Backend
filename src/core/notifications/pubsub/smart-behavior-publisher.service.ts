@@ -145,12 +145,11 @@ export class SmartBehaviorPublisherService {
   }
 
   async emitLikedDonation(event: LikedDonationEvent): Promise<void> {
-    
-    this.logger.log("Emitting liked donation event", {
+    this.logger.log('Emitting liked donation event', {
       eventId: event.eventId,
       donationId: event.donationId,
       likerUserId: event.likerUserId,
-    })
+    });
     await this.redisService.publish(
       REDIS_PUBSUB_CHANNELS.SMART_BEHAVIOR_EVENTS,
       JSON.stringify({
@@ -161,11 +160,11 @@ export class SmartBehaviorPublisherService {
   }
 
   async emitDonationPublished(event: DonationPublishedEvent): Promise<void> {
-    this.logger.log("Emitting donation published event", {
+    this.logger.log('Emitting donation published event', {
       eventId: event.eventId,
       donationId: event.donationId,
       donorId: event.donorId,
-    })
+    });
     await this.redisService.publish(
       REDIS_PUBSUB_CHANNELS.SMART_BEHAVIOR_EVENTS,
       JSON.stringify({
@@ -178,10 +177,10 @@ export class SmartBehaviorPublisherService {
   async emitBeneficiarySearchPerformed(
     event: BeneficiarySearchPerformedEvent,
   ): Promise<void> {
-    this.logger.log("Emitting beneficiary search performed event", {
+    this.logger.log('Emitting beneficiary search performed event', {
       eventId: event.eventId,
       userId: event.userId,
-    })
+    });
     await this.redisService.publish(
       REDIS_PUBSUB_CHANNELS.SMART_BEHAVIOR_EVENTS,
       JSON.stringify({

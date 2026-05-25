@@ -2,8 +2,11 @@ import { Injectable } from '@nestjs/common';
 import DataLoader from 'dataloader';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Attachment, UploadStatusValues } from '../attachment/entities/attachment.entity';
-import {  throwAppError } from '../../errors';
+import {
+  Attachment,
+  UploadStatusValues,
+} from '../attachment/entities/attachment.entity';
+import { throwAppError } from '../../errors';
 
 @Injectable()
 export class AttachmentDataLoader {
@@ -22,7 +25,10 @@ export class AttachmentDataLoader {
         const attachmentMap = new Map(attachments.map((att) => [att.id, att]));
         return attachmentIds.map((id) => {
           const attachment = attachmentMap.get(id);
-          if (attachment && attachment.uploadStatus === UploadStatusValues.FAILED) {
+          if (
+            attachment &&
+            attachment.uploadStatus === UploadStatusValues.FAILED
+          ) {
             throwAppError('UPLOAD_FAILED_ATTACHMENT', { id });
           }
           return attachment || null;

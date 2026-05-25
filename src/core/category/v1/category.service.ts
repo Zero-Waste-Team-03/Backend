@@ -14,7 +14,7 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
-  ) { }
+  ) {}
 
   /**
    * Creates a new category.
@@ -78,7 +78,8 @@ export class CategoryService {
    */
   async findByIds(ids: string[]): Promise<Category[]> {
     if (!ids.length) return [];
-    return this.categoryRepository.createQueryBuilder('category')
+    return this.categoryRepository
+      .createQueryBuilder('category')
       .where('category.id IN (:...ids)', { ids })
       .getMany();
   }

@@ -1,4 +1,12 @@
-import { Args, Context, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';
@@ -89,11 +97,12 @@ export class ReportingResolver {
   ): Promise<ReportStatsType> {
     return this.reportingService.getReportStats(input);
   }
-  @ResolveField(()=>UserType)
-  async reporter(@Parent() report:ReportType,
+  @ResolveField(() => UserType)
+  async reporter(
+    @Parent() report: ReportType,
     @Context() { loaders }: { loaders: IDataLoaders },
-): Promise<User | null> {
-  if (report.reporterId) return null
+  ): Promise<User | null> {
+    if (report.reporterId) return null;
     return loaders.userLoader.load(report.reporterId);
   }
 }

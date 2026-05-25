@@ -163,7 +163,7 @@ export class DonationType {
 
   @Field(() => Boolean, {
     description: 'Whether the authenticated user can reserve this donation',
-    nullable:true,
+    nullable: true,
   })
   isReservable?: boolean;
 

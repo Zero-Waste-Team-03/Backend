@@ -20,11 +20,9 @@ export class NotificationsResolver {
 
   constructor(private readonly notificationsService: NotificationsService) {}
   @UseGuards(AccessTokenGuard)
-  @Query(() => [NotificationTypeGraphQL],{nullable:true})
-  async getUrgentNotification(
-    @USER('id') userId: string,
-  ){
-    this.logger.log("Fetching urgent notifications for user", { userId });
+  @Query(() => [NotificationTypeGraphQL], { nullable: true })
+  async getUrgentNotification(@USER('id') userId: string) {
+    this.logger.log('Fetching urgent notifications for user', { userId });
     return null;
   }
 
@@ -41,11 +39,8 @@ export class NotificationsResolver {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Query(()=>NotificationStats)
-  
-  async getNotificationStats(
-    @USER('id') userId: string,
-  ){
+  @Query(() => NotificationStats)
+  async getNotificationStats(@USER('id') userId: string) {
     return this.notificationsService.getUsersNotificationStats(userId);
   }
   @UseGuards(AccessTokenGuard)

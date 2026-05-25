@@ -32,22 +32,33 @@ export class AttachmentCronService {
       }
 
       const attachmentIds = failedAttachments.map((a) => a.id);
-      this.logger.log(`Found ${attachmentIds.length} failed attachments. Processing...`);
+      this.logger.log(
+        `Found ${attachmentIds.length} failed attachments. Processing...`,
+      );
 
       const updateResult = await this.userRepository.update(
         { avatarAttachmentId: In(attachmentIds) },
         { avatarAttachmentId: null as any },
       );
-      
+
       if (updateResult.affected && updateResult.affected > 0) {
-        this.logger.log(`Set avatar to null for ${updateResult.affected} user profile(s).`);
+        this.logger.log(
+          `Set avatar to null for ${updateResult.affected} user profile(s).`,
+        );
       }
 
-      const deleteResult = await this.attachmentRepository.delete({ id: In(attachmentIds) });
-      
-      this.logger.log(`Deleted ${deleteResult.affected} failed attachments successfully.`);
+      const deleteResult = await this.attachmentRepository.delete({
+        id: In(attachmentIds),
+      });
+
+      this.logger.log(
+        `Deleted ${deleteResult.affected} failed attachments successfully.`,
+      );
     } catch (error) {
-      this.logger.error('Failed to process cleanup for failed attachments', error);
+      this.logger.error(
+        'Failed to process cleanup for failed attachments',
+        error,
+      );
     }
   }
 }

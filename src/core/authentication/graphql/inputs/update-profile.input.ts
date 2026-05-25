@@ -46,9 +46,9 @@ export class UpdateProfileInput {
   email?: string;
 
   @IsOptional()
-  @Field(()=>String,{
-    description:'Phone number of the user',
-    nullable:true
+  @Field(() => String, {
+    description: 'Phone number of the user',
+    nullable: true,
   })
   @IsString()
   phoneNumber?: string;

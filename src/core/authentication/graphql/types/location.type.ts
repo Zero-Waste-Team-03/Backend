@@ -16,7 +16,7 @@ export class LocationType {
     description: 'Location neighborhood',
   })
   neighborhood?: string;
-  @Field(() => String, { nullable: true, description: 'Location zip code'})
+  @Field(() => String, { nullable: true, description: 'Location zip code' })
   zipCode?: string;
 
   @Field(() => String, { nullable: true, description: 'Location city' })

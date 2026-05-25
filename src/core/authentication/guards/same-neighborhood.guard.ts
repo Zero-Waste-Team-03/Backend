@@ -12,7 +12,10 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Donation } from '../../donation/entities/donation.entity';
-import { SAME_NEIGHBORHOOD_KEY, SameNeighborhoodOptions } from '../decorators/same-neighborhood.decorator';
+import {
+  SAME_NEIGHBORHOOD_KEY,
+  SameNeighborhoodOptions,
+} from '../decorators/same-neighborhood.decorator';
 import { ExtendedRequest } from '../types/extended-req.type';
 
 @Injectable()
@@ -46,7 +49,9 @@ export class SameNeighborhoodGuard implements CanActivate {
     });
 
     if (!currentUser?.location?.zipCode) {
-      throw new ForbiddenException('Your zip code is not set. Cannot perform neighborhood checks.');
+      throw new ForbiddenException(
+        'Your zip code is not set. Cannot perform neighborhood checks.',
+      );
     }
 
     const gqlCtx = GqlExecutionContext.create(context);
@@ -54,7 +59,9 @@ export class SameNeighborhoodGuard implements CanActivate {
     const targetId = args[options.argName];
 
     if (!targetId) {
-      throw new NotFoundException(`Target ID argument "${options.argName}" not found.`);
+      throw new NotFoundException(
+        `Target ID argument "${options.argName}" not found.`,
+      );
     }
 
     let targetZipCode: string | undefined;
@@ -74,11 +81,15 @@ export class SameNeighborhoodGuard implements CanActivate {
     }
 
     if (!targetZipCode) {
-      throw new ForbiddenException('Target zip code is not set or target not found.');
+      throw new ForbiddenException(
+        'Target zip code is not set or target not found.',
+      );
     }
 
     if (currentUser.location.zipCode !== targetZipCode) {
-      throw new ForbiddenException('You must be in the same neighborhood (zip code) to perform this action.');
+      throw new ForbiddenException(
+        'You must be in the same neighborhood (zip code) to perform this action.',
+      );
     }
 
     return true;

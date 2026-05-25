@@ -43,7 +43,7 @@ describe('Errors Contract Endpoint (e2e)', () => {
       expect(entry).toHaveProperty('httpStatus');
       expect(entry).toHaveProperty('message');
       expect(entry).toHaveProperty('args');
-expect(entry.code).toMatch(/^[a-z_]+\.[a-z_]+$/);
+      expect(entry.code).toMatch(/^[a-z_]+\.[a-z_]+$/);
     }
   });
 

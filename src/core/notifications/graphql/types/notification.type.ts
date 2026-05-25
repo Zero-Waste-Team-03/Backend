@@ -1,5 +1,8 @@
 import { Field, ObjectType, ID, registerEnumType } from '@nestjs/graphql';
-import { NOTIFICATION_TYPE, NotificationType } from '../../enums/notification-type.enum';
+import {
+  NOTIFICATION_TYPE,
+  NotificationType,
+} from '../../enums/notification-type.enum';
 import { GraphQLJSON } from 'graphql-type-json';
 registerEnumType(NOTIFICATION_TYPE, {
   name: 'NOTIFICATION_TYPE',
@@ -15,7 +18,7 @@ export class NotificationTypeGraphQL {
   @Field(() => String)
   body: string;
 
-  @Field(() =>NOTIFICATION_TYPE)
+  @Field(() => NOTIFICATION_TYPE)
   type: NotificationType;
 
   @Field(() => String)

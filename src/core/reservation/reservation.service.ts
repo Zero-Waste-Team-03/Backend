@@ -298,10 +298,13 @@ export class ReservationService {
     donationId: string,
     beneficiaryId: string,
   ): Promise<boolean> {
-    const donation = await this.reservationRepository.manager.findOne(Donation, {
-      where: { id: donationId },
-      select: { id: true, status: true, quantity: true },
-    });
+    const donation = await this.reservationRepository.manager.findOne(
+      Donation,
+      {
+        where: { id: donationId },
+        select: { id: true, status: true, quantity: true },
+      },
+    );
 
     if (!donation) {
       return false;
@@ -413,28 +416,32 @@ export class ReservationService {
       ]),
     );
 
-    return donationIds.reduce((result, donationId) => {
-      const donation = donationMap.get(donationId);
+    return donationIds.reduce(
+      (result, donationId) => {
+        const donation = donationMap.get(donationId);
 
-      if (!donation) {
-        result[donationId] = false;
+        if (!donation) {
+          result[donationId] = false;
+          return result;
+        }
+
+        if (donation.status !== DonationStatusValues.PUBLISHED) {
+          result[donationId] = false;
+          return result;
+        }
+
+        if (donationsWithActiveReservation.has(donationId)) {
+          result[donationId] = false;
+          return result;
+        }
+
+        const reservedQuantity =
+          reservationTotalsByDonationId.get(donationId) ?? 0;
+        result[donationId] = donation.quantity - reservedQuantity > 0;
         return result;
-      }
-
-      if (donation.status !== DonationStatusValues.PUBLISHED) {
-        result[donationId] = false;
-        return result;
-      }
-
-      if (donationsWithActiveReservation.has(donationId)) {
-        result[donationId] = false;
-        return result;
-      }
-
-      const reservedQuantity = reservationTotalsByDonationId.get(donationId) ?? 0;
-      result[donationId] = donation.quantity - reservedQuantity > 0;
-      return result;
-    }, {} as Record<string, boolean>);
+      },
+      {} as Record<string, boolean>,
+    );
   }
 
   async confirmReservation(

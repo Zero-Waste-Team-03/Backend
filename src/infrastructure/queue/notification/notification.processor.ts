@@ -244,7 +244,7 @@ export class NotificationProcessor extends WorkerHost {
       );
     }
 
-    this.logger.log("Notification Sent succefully",{
+    this.logger.log('Notification Sent succefully', {
       message: 'Sending notification handled',
       totalTokens: tokensWithLangs.length,
       successfulTokens: results.filter((r) => r.status === 'fulfilled').length,

@@ -15,13 +15,18 @@ export class CategoryDataLoader {
   createLoader(): DataLoader<string, Category | null> {
     return new DataLoader<string, Category | null>(
       async (categoryIds: readonly string[]) => {
-        const categories = await this.categoryService.findByIds(categoryIds as string[]);
+        const categories = await this.categoryService.findByIds(
+          categoryIds as string[],
+        );
 
         // Map categories back to the order of requested IDs
-        const categoryMap = categories.reduce((map, category) => {
-          map[category.id] = category;
-          return map;
-        }, {} as Record<string, Category>);
+        const categoryMap = categories.reduce(
+          (map, category) => {
+            map[category.id] = category;
+            return map;
+          },
+          {} as Record<string, Category>,
+        );
 
         return categoryIds.map((id) => categoryMap[id] || null);
       },

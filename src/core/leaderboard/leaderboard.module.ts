@@ -6,10 +6,7 @@ import { LeaderboardResolver } from './leaderboard.resolver';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ReputationLog]),
-    UserModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ReputationLog]), UserModule],
   providers: [LeaderboardService, LeaderboardResolver],
   exports: [LeaderboardService],
 })

@@ -53,15 +53,15 @@ describe('DonationService', () => {
     delete: jest.fn(),
   };
 
-   const reservationRepository = {
-     createQueryBuilder: jest.fn(),
-     find: jest.fn(),
-   };
+  const reservationRepository = {
+    createQueryBuilder: jest.fn(),
+    find: jest.fn(),
+  };
 
-   const userRepository = {
-     createQueryBuilder: jest.fn(),
-     findOne: jest.fn(),
-   };
+  const userRepository = {
+    createQueryBuilder: jest.fn(),
+    findOne: jest.fn(),
+  };
 
   const smartBehaviorPublisher = {
     safePublishBeneficiarySearchPerformed: jest.fn(),
@@ -114,9 +114,8 @@ describe('DonationService', () => {
     expect(service).toBeDefined();
   });
 
-
-   describe('createDonation', () => {
-     it('creates donation with authenticated owner and published status when verified', async () => {
+  describe('createDonation', () => {
+    it('creates donation with authenticated owner and published status when verified', async () => {
       const input = {
         categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
         title: 'Bread packs',
@@ -131,16 +130,16 @@ describe('DonationService', () => {
         mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
       };
 
-       const createdEntity = {
-         id: 'd1',
-         ...input,
-         userId: 'u1',
-         status: DonationStatusValues.PUBLISHED,
-       };
+      const createdEntity = {
+        id: 'd1',
+        ...input,
+        userId: 'u1',
+        status: DonationStatusValues.PUBLISHED,
+      };
 
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
-       donationRepository.create.mockReturnValue(createdEntity);
-       donationRepository.save.mockResolvedValue(createdEntity);
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
+      donationRepository.create.mockReturnValue(createdEntity);
+      donationRepository.save.mockResolvedValue(createdEntity);
       donationPhotoRepository.create.mockImplementation((entity) => entity);
       donationPhotoRepository.save.mockResolvedValue(undefined);
       locationRepository.create.mockImplementation((entity) => entity);
@@ -157,10 +156,14 @@ describe('DonationService', () => {
         },
       ]);
 
-       const result = await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
+      const result = await service.createDonation(input, {
+        userId: 'u1',
+        isAdmin: false,
+        isVerified: true,
+      });
 
-       expect(donationRepository.create).toHaveBeenCalledWith(
-         expect.objectContaining({
+      expect(donationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
           categoryId: input.categoryId,
           title: input.title,
           description: input.description,
@@ -168,11 +171,11 @@ describe('DonationService', () => {
           specification: input.specification,
           expiryDate: input.expiryDate,
           userId: 'u1',
-           status: DonationStatusValues.PUBLISHED,
-           urgency: DonationUrgencyValues.MEDIUM,
-           safetyChecklistCompleted: false,
-         }),
-       );
+          status: DonationStatusValues.PUBLISHED,
+          urgency: DonationUrgencyValues.MEDIUM,
+          safetyChecklistCompleted: false,
+        }),
+      );
       expect(donationRepository.save).toHaveBeenCalledWith(createdEntity);
       expect(
         smartBehaviorPublisher.safePublishDonationPublished,
@@ -194,7 +197,7 @@ describe('DonationService', () => {
       );
     });
 
-     it('creates donation with only mainAttachmentId', async () => {
+    it('creates donation with only mainAttachmentId', async () => {
       const input = {
         categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
         title: 'No image donation',
@@ -215,9 +218,9 @@ describe('DonationService', () => {
         status: DonationStatusValues.PUBLISHED,
       };
 
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
-       donationRepository.create.mockReturnValue(createdEntity);
-       donationRepository.save.mockResolvedValue(createdEntity);
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
+      donationRepository.create.mockReturnValue(createdEntity);
+      donationRepository.save.mockResolvedValue(createdEntity);
       donationPhotoRepository.create.mockImplementation((entity) => entity);
       donationPhotoRepository.save.mockResolvedValue(undefined);
       donationPhotoRepository.find.mockResolvedValue([
@@ -228,7 +231,11 @@ describe('DonationService', () => {
         },
       ]);
 
-       const result = await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
+      const result = await service.createDonation(input, {
+        userId: 'u1',
+        isAdmin: false,
+        isVerified: true,
+      });
 
       expect(donationRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -258,8 +265,8 @@ describe('DonationService', () => {
       );
     });
 
-     it('throws BadRequestException when attachment ids are duplicated', async () => {
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
+    it('throws BadRequestException when attachment ids are duplicated', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
       await expect(
         service.createDonation(
           {
@@ -278,12 +285,12 @@ describe('DonationService', () => {
             ],
             mainAttachmentId: 'a1111111-1111-1111-1111-111111111111',
           },
-          {userId: 'u1',isAdmin:false,isVerified:true },
+          { userId: 'u1', isAdmin: false, isVerified: true },
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-     it('creates donation from locationInput when locationId is not provided', async () => {
+    it('creates donation from locationInput when locationId is not provided', async () => {
       const input = {
         categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
         title: 'Location input donation',
@@ -308,8 +315,8 @@ describe('DonationService', () => {
         ...input,
       };
 
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
-       locationRepository.create.mockImplementation((entity) => entity);
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
+      locationRepository.create.mockImplementation((entity) => entity);
       locationRepository.save.mockResolvedValue({
         id: 'loc-created',
         ...input.locationInput,
@@ -326,7 +333,11 @@ describe('DonationService', () => {
         },
       ]);
 
-      await service.createDonation(input, {userId: 'u1',isAdmin:false,isVerified:true });
+      await service.createDonation(input, {
+        userId: 'u1',
+        isAdmin: false,
+        isVerified: true,
+      });
 
       expect(locationRepository.create).toHaveBeenCalledWith(
         input.locationInput,
@@ -334,9 +345,9 @@ describe('DonationService', () => {
       expect(locationRepository.save).toHaveBeenCalled();
     });
 
-     it('throws BadRequestException when locationId and locationInput are both provided', async () => {
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
-       await expect(
+    it('throws BadRequestException when locationId and locationInput are both provided', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: true });
+      await expect(
         service.createDonation(
           {
             categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
@@ -355,58 +366,62 @@ describe('DonationService', () => {
             },
             mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
           },
-          {isVerified:false,isAdmin:false ,userId:'u1'},
+          { isVerified: false, isAdmin: false, userId: 'u1' },
         ),
-       ).rejects.toBeInstanceOf(BadRequestException);
-     });
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
 
-     it('creates donation with pending approval status when user is not verified', async () => {
-       const input = {
-         categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
-         title: 'Pending donation',
-         description: 'Needs approval',
-         quantity: 2,
-         foodWeightKg: 1,
-         specification: {},
-         expiryDate: new Date('2030-01-01T10:00:00.000Z'),
-         urgency: DonationUrgencyValues.LOW,
-         safetyChecklistCompleted: false,
-         mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
-       };
+    it('creates donation with pending approval status when user is not verified', async () => {
+      const input = {
+        categoryId: '8f7f7173-b34c-4560-9766-13f113a5d7f1',
+        title: 'Pending donation',
+        description: 'Needs approval',
+        quantity: 2,
+        foodWeightKg: 1,
+        specification: {},
+        expiryDate: new Date('2030-01-01T10:00:00.000Z'),
+        urgency: DonationUrgencyValues.LOW,
+        safetyChecklistCompleted: false,
+        mainAttachmentId: 'fb995c73-55ed-4511-bec5-8f930f2328d5',
+      };
 
-       const createdEntity = {
-         id: 'd-pending',
-         ...input,
-         userId: 'u1',
-         status: DonationStatusValues.PENDING_APPROVAL,
-       };
+      const createdEntity = {
+        id: 'd-pending',
+        ...input,
+        userId: 'u1',
+        status: DonationStatusValues.PENDING_APPROVAL,
+      };
 
-       userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: false });
-       donationRepository.create.mockReturnValue(createdEntity);
-       donationRepository.save.mockResolvedValue(createdEntity);
-       donationPhotoRepository.create.mockImplementation((entity) => entity);
-       donationPhotoRepository.save.mockResolvedValue(undefined);
-       donationPhotoRepository.find.mockResolvedValue([
-         {
-           donationId: 'd-pending',
-           attachmentId: input.mainAttachmentId,
-           isMain: true,
-         },
-       ]);
+      userRepository.findOne.mockResolvedValue({ id: 'u1', isVerified: false });
+      donationRepository.create.mockReturnValue(createdEntity);
+      donationRepository.save.mockResolvedValue(createdEntity);
+      donationPhotoRepository.create.mockImplementation((entity) => entity);
+      donationPhotoRepository.save.mockResolvedValue(undefined);
+      donationPhotoRepository.find.mockResolvedValue([
+        {
+          donationId: 'd-pending',
+          attachmentId: input.mainAttachmentId,
+          isMain: true,
+        },
+      ]);
 
-       const result = await service.createDonation(input, {userId:'u1',isAdmin:false,isVerified:false});
+      const result = await service.createDonation(input, {
+        userId: 'u1',
+        isAdmin: false,
+        isVerified: false,
+      });
 
-       expect(donationRepository.create).toHaveBeenCalledWith(
-         expect.objectContaining({
-           status: DonationStatusValues.PENDING_APPROVAL,
-         }),
-       );
-       expect(
-         smartBehaviorPublisher.safePublishDonationPublished,
-       ).not.toHaveBeenCalled();
-       expect(result.status).toBe(DonationStatusValues.PENDING_APPROVAL);
-     });
-   });
+      expect(donationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: DonationStatusValues.PENDING_APPROVAL,
+        }),
+      );
+      expect(
+        smartBehaviorPublisher.safePublishDonationPublished,
+      ).not.toHaveBeenCalled();
+      expect(result.status).toBe(DonationStatusValues.PENDING_APPROVAL);
+    });
+  });
 
   describe('updateDonation', () => {
     it('updates donation when owner matches', async () => {
@@ -823,73 +838,73 @@ describe('DonationService', () => {
     });
   });
 
-   describe('getDonationsForMap', () => {
+  describe('getDonationsForMap', () => {
     it('should return mapped donation markers with correct colors based on urgency and category', async () => {
       const input = { radius: 10, latitude: 36.7, longitude: 3.0 };
-       const mockDonations = [
-         {
-           id: 'd1',
-           title: 'Produce 1',
-           urgency: DonationUrgencyValues.MEDIUM,
-           categoryId: 'cat1',
-           location: { latitude: 36.71, longitude: 3.01 },
-           category: { name: 'Fresh Produce', sensitivity: 'Low' },
-           photos: [{ attachmentId: 'a1', isMain: true }],
-         },
-         {
-           id: 'd2',
-           title: 'Bakery 1',
-           urgency: DonationUrgencyValues.MEDIUM,
-           categoryId: 'cat2',
-           location: { latitude: 36.72, longitude: 3.02 },
-           category: { name: 'Bakery', sensitivity: 'Medium' },
-           photos: [{ attachmentId: 'a2', isMain: true }],
-         },
-         {
-           id: 'd3',
-           title: 'Urgent 1',
-           urgency: DonationUrgencyValues.HIGH,
-           categoryId: 'cat3',
-           location: { latitude: 36.73, longitude: 3.03 },
-           category: { name: 'Beverages', sensitivity: 'High' },
-           photos: [{ attachmentId: 'a3', isMain: true }],
-         },
-       ];
+      const mockDonations = [
+        {
+          id: 'd1',
+          title: 'Produce 1',
+          urgency: DonationUrgencyValues.MEDIUM,
+          categoryId: 'cat1',
+          location: { latitude: 36.71, longitude: 3.01 },
+          category: { name: 'Fresh Produce', sensitivity: 'Low' },
+          photos: [{ attachmentId: 'a1', isMain: true }],
+        },
+        {
+          id: 'd2',
+          title: 'Bakery 1',
+          urgency: DonationUrgencyValues.MEDIUM,
+          categoryId: 'cat2',
+          location: { latitude: 36.72, longitude: 3.02 },
+          category: { name: 'Bakery', sensitivity: 'Medium' },
+          photos: [{ attachmentId: 'a2', isMain: true }],
+        },
+        {
+          id: 'd3',
+          title: 'Urgent 1',
+          urgency: DonationUrgencyValues.HIGH,
+          categoryId: 'cat3',
+          location: { latitude: 36.73, longitude: 3.03 },
+          category: { name: 'Beverages', sensitivity: 'High' },
+          photos: [{ attachmentId: 'a3', isMain: true }],
+        },
+      ];
 
-       donationRepository.find.mockResolvedValue(mockDonations);
+      donationRepository.find.mockResolvedValue(mockDonations);
 
       const result = await service.getDonationsForMap(input);
 
-       expect(donationRepository.find).toHaveBeenCalledWith(
-         expect.objectContaining({
-           where: expect.objectContaining({
-             status: DonationStatusValues.PUBLISHED,
-           }),
-         }),
-       );
+      expect(donationRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: DonationStatusValues.PUBLISHED,
+          }),
+        }),
+      );
 
-       expect(result).toHaveLength(3);
+      expect(result).toHaveLength(3);
       // Produce 1 -> GREEN (default)
-       expect(result[0]).toEqual(
-         expect.objectContaining({
-           id: 'd1',
-           markerColor: MarkerColorValues.GREEN,
-         }),
-       );
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: 'd1',
+          markerColor: MarkerColorValues.GREEN,
+        }),
+      );
       // Bakery 1 -> ORANGE (category match)
-       expect(result[1]).toEqual(
-         expect.objectContaining({
-           id: 'd2',
-           markerColor: MarkerColorValues.ORANGE,
-         }),
-       );
+      expect(result[1]).toEqual(
+        expect.objectContaining({
+          id: 'd2',
+          markerColor: MarkerColorValues.ORANGE,
+        }),
+      );
       // Urgent 1 -> RED (urgency HIGH)
-       expect(result[2]).toEqual(
-         expect.objectContaining({
-           id: 'd3',
-           markerColor: MarkerColorValues.RED,
-         }),
-       );
+      expect(result[2]).toEqual(
+        expect.objectContaining({
+          id: 'd3',
+          markerColor: MarkerColorValues.RED,
+        }),
+      );
     });
   });
 });

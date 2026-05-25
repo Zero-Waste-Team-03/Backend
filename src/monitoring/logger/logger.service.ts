@@ -44,7 +44,8 @@ export class LoggerServiceBuilder {
           winston.format.simple(),
           winston.format.timestamp(),
           winston.format.json(),
-          winston.format.errors({ stack: true })),
+          winston.format.errors({ stack: true }),
+        ),
         level: process.env.LOG_LEVEL || 'info',
       }),
     ];

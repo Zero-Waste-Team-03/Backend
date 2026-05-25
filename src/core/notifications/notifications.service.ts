@@ -60,7 +60,7 @@ export class NotificationsService {
     });
   }
 
-  async getUsersNotificationStats(userId: string):Promise<NotificationStats> {
+  async getUsersNotificationStats(userId: string): Promise<NotificationStats> {
     const unreadCount = await this.notificationRepo.count({
       where: { receiverId: userId, isRead: false },
     });
@@ -81,9 +81,12 @@ export class NotificationsService {
    * @param paginationaQuery - The pagination query parameters.
    * @returns A promise that resolves to a list of notifications.
    */
-  async findAll(paginationQuery: PaginationQueryDto, userId: string):Promise<PaginatedNotifications> {
+  async findAll(
+    paginationQuery: PaginationQueryDto,
+    userId: string,
+  ): Promise<PaginatedNotifications> {
     const { limit, page } = paginationQuery;
-    const [items,count]= await this.notificationRepo.findAndCount({
+    const [items, count] = await this.notificationRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       where: { receiverId: userId },
@@ -260,10 +263,7 @@ export class NotificationsService {
    * @param userId - The ID of the user logging out.
    * @param deviceId - The device identifier sent by the client.
    */
-  async revokeTokenForDevice(
-    userId: string,
-    deviceId: string,
-  ): Promise<void> {
+  async revokeTokenForDevice(userId: string, deviceId: string): Promise<void> {
     await this.tokenRepo.delete({ userId, deviceId });
     this.logger.log('FCM token revoked for device', {
       userId,

@@ -1,5 +1,5 @@
-export class UserMeta{
- userId:string;
-isAdmin:boolean;
-isVerified:boolean;
+export class UserMeta {
+  userId: string;
+  isAdmin: boolean;
+  isVerified: boolean;
 }

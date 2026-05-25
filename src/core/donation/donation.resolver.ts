@@ -40,9 +40,7 @@ import { UsersDonationsStats } from './graphql/types/donations-stats.type';
 @UseGuards(AccessTokenGuard)
 @Resolver(() => DonationType)
 export class DonationResolver {
-  constructor(
-    private readonly donationService: DonationService,
-  ) {}
+  constructor(private readonly donationService: DonationService) {}
 
   @Query(() => UsersDonationsStats, {
     description: 'Get the current user profile stats related to donations,',
@@ -133,11 +131,7 @@ export class DonationResolver {
     @Args('filter', { nullable: true }) filter?: DonationsFilterInput,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedDonations> {
-    return this.donationService.getPendingApprovals(
-      userId,
-      filter,
-      pagination,
-    );
+    return this.donationService.getPendingApprovals(userId, filter, pagination);
   }
 
   @Query(() => PaginatedDonations, {
@@ -209,9 +203,12 @@ export class DonationResolver {
     @USER('id') userId: string,
     @USER('role') role: UserRole,
     @USER('isVerified') isVerified: boolean,
-
   ): Promise<DonationType> {
-    return await this.donationService.createDonation(input, {isVerified,userId,isAdmin: role == 'Administrator' });
+    return await this.donationService.createDonation(input, {
+      isVerified,
+      userId,
+      isAdmin: role == 'Administrator',
+    });
   }
 
   @Mutation(() => DonationType, {
@@ -307,17 +304,16 @@ export class DonationResolver {
   })
   async rejectDonation(
     @Args('donationId', { type: () => ID }) donationId: string,
-    @Args('reason', { nullable: true , type:()=>String}) reason: string | undefined,
+    @Args('reason', { nullable: true, type: () => String })
+    reason: string | undefined,
     @USER('id') adminId: string,
   ): Promise<DonationType> {
     return this.donationService.rejectDonation(donationId, adminId, reason);
   }
-
 }
 
 @Resolver(() => DonationMapMarkerType)
 export class DonationMapMarkerResolver {
-
   @ResolveField(() => AttachementType, {
     nullable: true,
     description: 'Main attachment details for map marker',
@@ -329,5 +325,4 @@ export class DonationMapMarkerResolver {
     if (!marker.mainAttachmentId) return null;
     return loaders.attachmentLoader.load(marker.mainAttachmentId);
   }
-
 }

@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddReputationIncreaseOnCategory1777303493459
-  implements MigrationInterface
-{
+export class AddReputationIncreaseOnCategory1777303493459 implements MigrationInterface {
   name = 'AddReputationIncreaseOnCategory1777303493459';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

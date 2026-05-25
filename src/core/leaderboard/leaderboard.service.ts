@@ -32,12 +32,11 @@ export class LeaderboardService {
     const allTimeKey = this.getAllTimeKey();
     const monthlyKey = this.getMonthlyKey(now);
 
-await Promise.all([
-          this.redisService.zIncrBy(allTimeKey, points, userId),
-          this.redisService.zIncrBy(monthlyKey, points, userId),
-        ]);
-
-     }
+    await Promise.all([
+      this.redisService.zIncrBy(allTimeKey, points, userId),
+      this.redisService.zIncrBy(monthlyKey, points, userId),
+    ]);
+  }
 
   async getTopUsersAllTime(limit: number): Promise<LeaderboardEntry[]> {
     return this.getLeaderboard(this.getAllTimeKey(), limit);
@@ -49,8 +48,15 @@ await Promise.all([
     return this.getLeaderboard(this.getMonthlyKey(now), limit);
   }
 
-  private async getLeaderboard(key: string, limit: number): Promise<LeaderboardEntry[]> {
-    const redisResult=await this.redisService.zRevRangeWithScores(key, 0, limit - 1);
+  private async getLeaderboard(
+    key: string,
+    limit: number,
+  ): Promise<LeaderboardEntry[]> {
+    const redisResult = await this.redisService.zRevRangeWithScores(
+      key,
+      0,
+      limit - 1,
+    );
 
     if (!redisResult || redisResult.length === 0) {
       return [];
@@ -61,24 +67,24 @@ await Promise.all([
     const userIds: string[] = [];
     const scoreMap = new Map<string, number>();
 
-
-       for (const item of redisResult ) {
-         userIds.push(item.value);
-         scoreMap.set(item.value, Number(item.score));
-       }
-      
+    for (const item of redisResult) {
+      userIds.push(item.value);
+      scoreMap.set(item.value, Number(item.score));
+    }
 
     if (userIds.length === 0) return [];
 
-    const users = await this.userService.findByIdsWithRelations(userIds,{avatar:true});
-    const userDtoMap = new Map(users.map(u => [u.id, u]));
+    const users = await this.userService.findByIdsWithRelations(userIds, {
+      avatar: true,
+    });
+    const userDtoMap = new Map(users.map((u) => [u.id, u]));
 
     return userIds.map((userId, index) => {
       const user = userDtoMap.get(userId);
       return {
         userId,
         displayName: user?.displayName ?? null,
-        avatarUrl: user?.avatar?.url??null, // Basic version
+        avatarUrl: user?.avatar?.url ?? null, // Basic version
         score: scoreMap.get(userId) ?? 0,
         rank: index + 1,
       };

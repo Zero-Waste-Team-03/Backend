@@ -51,7 +51,6 @@ type DonationResponse = Omit<Donation, 'generateId'> & {
   isLikedByMe: boolean;
 };
 
-
 @Injectable()
 export class DonationService {
   constructor(
@@ -610,15 +609,19 @@ export class DonationService {
     await this.donationPhotoRepository.save(updatedPhotos);
   }
 
-  async createDonation(input: CreateDonationInput, {userId,isVerified,isAdmin}:UserMeta) {
+  async createDonation(
+    input: CreateDonationInput,
+    { userId, isVerified, isAdmin }: UserMeta,
+  ) {
     this.validatePhotoInput(input.attachmentIds, input.mainAttachmentId);
-        const locationId = await this.resolveLocationId(
+    const locationId = await this.resolveLocationId(
       input.locationId,
       input.locationInput,
     );
-    const status = isVerified || isAdmin
-      ? DonationStatusValues.PUBLISHED
-      : DonationStatusValues.PENDING_APPROVAL;
+    const status =
+      isVerified || isAdmin
+        ? DonationStatusValues.PUBLISHED
+        : DonationStatusValues.PENDING_APPROVAL;
 
     const donation = this.donationRepository.create({
       userId,
@@ -895,11 +898,13 @@ export class DonationService {
     isAdmin: boolean = false,
     searchName?: string,
   ) {
-   const page = pagination?.page ?? 1;
+    const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
     const trimmedSearchName = searchName?.trim();
-    const searchValue = trimmedSearchName ? `%${trimmedSearchName}%` : undefined;
+    const searchValue = trimmedSearchName
+      ? `%${trimmedSearchName}%`
+      : undefined;
     const where: FindOptionsWhere<Donation>[] = [];
 
     if (trimmedSearchName) {
@@ -1031,14 +1036,12 @@ export class DonationService {
       where.urgency = filter.urgency;
     }
 
-    const [donations, totalCount] = await this.donationRepository.findAndCount(
-      {
-        where,
-        order: { createdAt: 'DESC' },
-        skip,
-        take: limit,
-      },
-    );
+    const [donations, totalCount] = await this.donationRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
 
     const items = await this.buildDonationResponses(donations, adminId);
 
