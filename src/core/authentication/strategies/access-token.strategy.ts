@@ -28,8 +28,8 @@ export class AccessTokenStrategy extends PassportStrategy(
     );
     const currentVersion = currentVersionStr ? parseInt(currentVersionStr, 10) : 0;
 
-    if (payload.stateVersion !== currentVersion) {
-      throw new UnauthorizedException('Token state version mismatch');
+if (payload.stateVersion !== currentVersion) {
+      throw new UnauthorizedException();
     }
 
     return payload;

@@ -1,6 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ReputationLog } from './entities/reputation-log.entity';
 import { UserService } from '../user/v1/user.service';
 import { RedisService } from 'nestjs-redis-client';
@@ -8,11 +7,9 @@ import { LeaderboardEntry } from './graphql/types/leaderboard-entry.type';
 
 @Injectable()
 export class LeaderboardService {
-  private readonly logger = new Logger(LeaderboardService.name);
 
   constructor(
     @InjectRepository(ReputationLog)
-    private readonly reputationLogRepository: Repository<ReputationLog>,
     private readonly redisService: RedisService,
     private readonly userService: UserService,
   ) {}
@@ -63,10 +60,9 @@ export class LeaderboardService {
     userId: string,
   ): Promise<LeaderboardEntry | null> {
     // Access the underlying ioredis client to use zrevrank
-    const client = (this.redisService as any).getClient();
 
     const [rank, score] = await Promise.all([
-      client.zrevrank(key, userId) as Promise<number | null>,
+      this.redisService.zRevRank(key, userId),
       this.redisService.zScore(key, userId),
     ]);
 

@@ -171,8 +171,8 @@ importers:
         specifier: ^1.10.2
         version: 1.10.2(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(winston@3.19.0)
       nestjs-redis-client:
-        specifier: ^1.0.11
-        version: 1.0.11(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17)
+        specifier: ^1.0.12
+        version: 1.0.12(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17)
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -4785,8 +4785,8 @@ packages:
       '@nestjs/common': ^5.0.0 || ^6.6.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
       winston: ^3.0.0
 
-  nestjs-redis-client@1.0.11:
-    resolution: {integrity: sha512-WWVGCnt48rNA82sNTswUyJW87ks66I9D9BAWxjbwiARX9l1RF1fr5c2WFbANeGs3RC3LrqROQKVL1k/LsmbEBw==}
+  nestjs-redis-client@1.0.12:
+    resolution: {integrity: sha512-wJp0rawWsn3vzLj0UqR0PwdEsLQxFs+xzEr7NlqJ2yB2Its9D2uPpHP+jX2UUH5SoK4D9Iq3c3k/9l5HYL574w==}
     peerDependencies:
       '@nestjs/common': ^9 || ^10 || ^11
       '@nestjs/core': ^9 || ^10 || ^11
@@ -11677,7 +11677,7 @@ snapshots:
       fast-safe-stringify: 2.1.1
       winston: 3.19.0
 
-  nestjs-redis-client@1.0.11(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17):
+  nestjs-redis-client@1.0.12(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17):
     dependencies:
       '@nestjs/common': 11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.17(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.17)(@nestjs/websockets@11.1.17)(reflect-metadata@0.2.2)(rxjs@7.8.2)
