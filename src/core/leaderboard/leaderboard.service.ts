@@ -48,6 +48,46 @@ export class LeaderboardService {
     return this.getLeaderboard(this.getMonthlyKey(now), limit);
   }
 
+  async getUserRankAllTime(userId: string): Promise<LeaderboardEntry | null> {
+    return this.getUserRank(this.getAllTimeKey(), userId);
+  }
+
+  async getUserRankLastMonth(userId: string): Promise<LeaderboardEntry | null> {
+    const now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    return this.getUserRank(this.getMonthlyKey(now), userId);
+  }
+
+  private async getUserRank(
+    key: string,
+    userId: string,
+  ): Promise<LeaderboardEntry | null> {
+    // Access the underlying ioredis client to use zrevrank
+    const client = (this.redisService as any).getClient();
+
+    const [rank, score] = await Promise.all([
+      client.zrevrank(key, userId) as Promise<number | null>,
+      this.redisService.zScore(key, userId),
+    ]);
+
+    if (rank === null || score === null) {
+      return null;
+    }
+
+    const users = await this.userService.findByIdsWithRelations([userId], {
+      avatar: true,
+    });
+    const user = users[0];
+
+    return {
+      userId,
+      displayName: user?.displayName ?? null,
+      avatarUrl: user?.avatar?.url ?? null,
+      score: Number(score),
+      rank: rank + 1,
+    };
+  }
+
   private async getLeaderboard(
     key: string,
     limit: number,
