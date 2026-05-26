@@ -911,6 +911,10 @@ type Query {
   getNotifications(pagination: PaginationQueryInput): PaginatedNotifications!
   getSentVerificationRequests(pagination: PaginationInput! = {limit: 10, page: 1}): PaginatedVerificationRequests!
   getUrgentNotification: [Notification!]
+
+  """
+  Get Food savers from the same neighborhood (same zip code) with pagination and optional search by name or email
+  """
   getUsersFromSameNeighborhood(pagination: PaginationInput!, search: String): PaginatedUsers!
   getVerificationRequestsForFoodSaver(pagination: PaginationInput! = {limit: 10, page: 1}, search: String): PaginatedVerificationRequests!
   leaderboardAllTime(limit: Int! = 10): [LeaderboardEntry!]!
