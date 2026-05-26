@@ -85,7 +85,7 @@ describe('UserService - Food Saver Features', () => {
       };
 
       userRepository.findOneBy.mockResolvedValue(mockUser);
-      userRepository.save.mockResolvedValue({ ...mockUser, isFoodSaver: true });
+      userRepository.save.mockResolvedValue({ ...mockUser, isFoodSaver: true ,isVerified: true});
 
       const result = await service.adminUpdateUserFoodSaverStatus('user-1', true);
 
@@ -140,7 +140,7 @@ describe('UserService - Food Saver Features', () => {
 
       expect(result.wasJustPromoted).toBe(true);
       expect(updateMock).toHaveBeenCalledWith(User);
-      expect(setMock).toHaveBeenCalledWith({ isFoodSaver: true });
+      expect(setMock).toHaveBeenCalledWith({ isFoodSaver: true ,isVerified: true});
       expect(notificationsService.sendNotification).toHaveBeenCalledWith(
         'Congratulations! You are now a Food Saver',
         expect.any(String),
