@@ -27,6 +27,17 @@ export class VerificationRequestsService {
     if (!isFoodSaver) {
       throwAppError('VERIFICATION_TARGET_NOT_FOOD_SAVER');
     }
+    //TODO: rethink this
+    const existingRequest = await this.verificationRequestRepository.findOne({
+      where: {
+        requesterId,
+        targetFoodSaverId,
+      },
+    });
+    //TODO this should be handled with a unique index but we are running out of time  a bit
+    if (existingRequest) {
+      throwAppError('VERIFICATION_REQUEST_ALREADY_EXISTS');
+    }
     const newRequest = this.verificationRequestRepository.create({
       requesterId,
       targetFoodSaverId,
