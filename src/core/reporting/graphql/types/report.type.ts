@@ -5,6 +5,7 @@ import {
   ReportTargetType,
   ReportTargetTypeValues,
 } from '../../entities/report.entity';
+import { ReportedRecord } from './reported-record.union';
 
 registerEnumType(ReportTargetTypeValues, {
   name: 'ReportTargetType',
@@ -50,4 +51,7 @@ export class ReportType {
 
   @Field(() => Date)
   updatedAt: Date;
+
+  @Field(() => ReportedRecord, { nullable: true })
+  reportedRecord?: unknown;
 }

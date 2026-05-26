@@ -14,6 +14,8 @@ import { PresenceDataLoader } from './presence.dataloader';
 import { PresenceModule } from '../../../core/presence/presence.module';
 import { DonationReservableDataLoader } from './donation-reservable.dataloader';
 import { ReservationModule } from '../../../core/reservation/reservation.module';
+import { MessageDataLoader } from './message.dataloader';
+import { Message } from '../../../core/chat/entities/message.entity';
 
 /**
  * DataLoader Module
@@ -31,7 +33,7 @@ import { ReservationModule } from '../../../core/reservation/reservation.module'
     DonationModule,
     PresenceModule,
     ReservationModule,
-    TypeOrmModule.forFeature([Location, Attachment]),
+    TypeOrmModule.forFeature([Location, Attachment, Message]),
   ],
   providers: [
     UserDataLoader,
@@ -41,6 +43,7 @@ import { ReservationModule } from '../../../core/reservation/reservation.module'
     DonationDataLoader,
     PresenceDataLoader,
     DonationReservableDataLoader,
+    MessageDataLoader,
   ],
   exports: [
     UserDataLoader,
@@ -50,6 +53,7 @@ import { ReservationModule } from '../../../core/reservation/reservation.module'
     DonationDataLoader,
     PresenceDataLoader,
     DonationReservableDataLoader,
+    MessageDataLoader,
   ],
 })
 export class DataLoaderModule {}
