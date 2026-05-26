@@ -218,6 +218,11 @@ export const ERROR_CODES = {
     message: 'You already have an active reservation for this donation.',
     args: { donationId: 'string', beneficiaryId: 'string' } as const,
   },
+  VERIFICATION_REQUEST_ALREADY_EXISTS: {
+    code: 'verification_request.already_exists',
+    httpStatus: 409,
+    message: 'A pending verification request between these users already exists.',
+  },
   VERIFICATION_REQUEST_NOT_FOUND: {
     code: 'verification_request.not_found',
     httpStatus: 404,
