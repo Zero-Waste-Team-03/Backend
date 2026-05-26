@@ -97,6 +97,7 @@ export class UserService {
     
     const queryBuilder = this.userRepository.createQueryBuilder('user')
       .where('user.id != :userId', { userId })
+      .andWhere('user.isFoodSaver = true')
       .andWhere('userLocation.zipCode = :zipCode', { zipCode })
       .leftJoin('user.location', 'userLocation');
 
@@ -580,6 +581,9 @@ export class UserService {
       return user as unknown as UserType;
     }
     user.isFoodSaver = isFoodSaver;
+    if (isFoodSaver) {
+      user.isVerified = true;
+    }
     await this.userRepository.save(user);
     await this.incrementStateVersion(user.id);
 
@@ -670,7 +674,7 @@ export class UserService {
       const result = await this.userRepository
         .createQueryBuilder()
         .update(User)
-        .set({ isFoodSaver: true })
+        .set({ isFoodSaver: true, isVerified: true })
         .where(
           'id = :id AND "isFoodSaver" = false AND "reputationScore" >= :threshold',
           {
