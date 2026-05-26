@@ -1,271 +1,339 @@
-# 🧪 NestJS Starter
+# Gazp Zero — Backend
 
-A scalable, production-ready NestJS boilerplate with batteries included. This starter is built for teams and individuals who want a robust backend setup with Redis, Elasticsearch, WebSockets, and more.
-
----
-
-## Status
-
-This project is currently in active development , but it can be used for projects just fine. Contributions are welcome!
-
-## 📖 Table of Contents
-
-* [🚀 Features](#-features)
-* [📂 Folder Structure](#-folder-structure)
-* [🛠️ Setup & Run](#-setup--run)
-* [🧪 Scripts](#-scripts)
-* [📖 API Documentation](#-api-documentation)
-* [📬 Mailer Setup](#-mailer-setup)
-* [⚙️ Background Jobs](#-background-jobs)
-* [🧠 Redis Usage](#-redis-usage)
-* [🌐 WebSockets](#-websockets)
-* [🔒 Security](#-security)
-* [❤️ Health Checks](#-health-checks)
-* [🐳 Docker Compose](#-docker-compose)
-* [🚄 Fastify Support](#-fastify-support)
-* [📦 License](#-license)
-* [🤝 Contributing](#-contributing)
-* [🧑‍💻 Author](#-author)
-* [📬 Contact](#-contact)
-
-## 🚀 Features
-
-* ✅ **Modular Configuration**: Centralized config management via `.env` and `ConfigModule`.
-* 🔐 **Authentication System**:
-
-  * Passport.js integration
-  * Built-in **JWT strategy**
-  * Easily extendable to add OAuth, local, etc.
-* 📦 **Elasticsearch**: Seamless integration for full-text search and analytics use-cases.
-* 🧰 **Utility Functions**: Common helper functions to keep your code DRY and clean.
-* 🧠 **Redis Integration** (via `ioredis`):
-
-  * Caching layer
-  * Pub/Sub support
-  * Redis Streams support for message/event queues
-* 🌐 **WebSocket Manager**:
-
-  * Centralized gateway
-  * **Redis adapter** for horizontal scaling
-  * User connections registered for **1-to-1 messaging**
-* 📬 **Mailing Module**: Easily plug in mailing services like SendGrid, Mailgun, or SMTP.
-* 🛡️ **Security**:
-
-  * CSRF protection (double-submit cookie strategy)
-  * Secure headers via `Helmet`
-  * **Rate Limiting** with `@nestjs/throttler`
-* 📚 **API Documentation**:
-
-  * Swagger auto-generated docs
-  * Beautiful UI powered by **Scalar**
-* 🎯 **Background Jobs**:
-
-  * Bull Module with Redis backend
-  * For tasks like email queues, notifications, etc.
-* 🔁 **Health Checks**:
-
-  * Exposed endpoint for service health & readiness using `@nestjs/terminus`
-* 📦 **Docker Compose Ready**:
-
-  * Includes services like Redis, Elasticsearch, and more
-* 📑 **Request & Response Logging**:
-
-  * Custom **interceptors** log HTTP traffic
-  * Extendable for audit logging or debugging
+Backend for **Gazp Zero**, a community-driven food-waste reduction platform. Users discover and reserve surplus food donations nearby, chat in real time, build reputation through a gamification system, and verify their identity via food savers.
 
 ---
 
-## 📂 Folder Structure
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Runtime** | Node.js + NestJS |
+| **API** | GraphQL (Apollo Server) |
+| **Database** | PostgreSQL + TypeORM |
+| **Cache** | Redis (`ioredis`) |
+| **Job Queue** | BullMQ (Redis-backed) |
+| **Search** | Elasticsearch |
+| **Auth** | Passport — JWT + Local + Google OAuth 2.0 |
+| **Real-time** | Socket.IO + Redis adapter |
+| **Storage** | Cloudinary |
+| **Push** | Firebase Cloud Messaging |
+| **Monitoring** | Winston + Loki + Terminus health checks |
+| **Docs** | Swagger/OpenAPI + Scalar UI + Bull Board |
+
+---
+
+## Folder Structure
 
 ```
 src/
-├── common/
-│   ├── constants/
-│   │   ├── jobs.ts
-│   │   └── queues.ts
-│   ├── filter/
-│   ├── interceptors/
-│   ├── modules/
-│   ├── scripts/
-│   ├── types/
-│   └── utils/
+├── common/                     # Shared modules, filters, interceptors, types, utils
+│   ├── constants/              # App-wide constants (jobs, queues)
+│   ├── errors/                 # Error codes & error module
+│   ├── filter/                 # Global exception filters
+│   ├── interceptors/           # Logging & response formatting
+│   ├── modules/                # Shared modules
+│   │   ├── als/                # AsyncLocalStorage (request context)
+│   │   ├── attachment/         # Attachment entity & management
+│   │   ├── dataloader/         # GraphQL DataLoaders (7 loaders)
+│   │   ├── email/              # Handlebars email templates + sending
+│   │   └── upload/             # Multer file upload handling
+│   ├── scripts/                # DB seed scripts & utilities
+│   ├── types/                  # Shared TypeScript types
+│   └── utils/                  # Common helpers
 │
-├── config/
-│   ├── interfaces/
-│   ├── app.config.ts
-│   ├── auth.config.ts
-│   ├── cloud.config.ts
-│   ├── db.config.ts
-│   ├── elastic-search.config.ts
-│   ├── mail.config.ts
-│   └── redis.config.ts
+├── config/                     # Centralized config (app, auth, db, redis, mail, cloud, es, firebase)
 │
-├── core/
-│   ├── authentication/
-│   ├── user/
-│   ├── websocket/
+├── core/                       # Feature modules — business logic
+│   ├── authentication/         # Register, login, JWT, Google OAuth, guards, strategies, decorators
+│   ├── user/                   # User CRUD, profile, settings, admin user management
+│   ├── category/               # Food donation categories
+│   ├── donation/               # Donations CRUD, geolocation, heatmaps, photos, likes
+│   ├── reservation/            # Donation reservation workflow
+│   ├── reservation-completion/ # Reservation transaction completion
+│   ├── chat/                   # Real-time chat (messages, conversations, state machine)
+│   ├── notifications/          # Push notifications + pub/sub events
+│   ├── gamification/           # Badges & achievements system
+│   ├── leaderboard/            # Reputation leaderboard & reputation logs
+│   ├── reporting/              # User reporting & moderation
+│   ├── stats/                  # Admin dashboard statistics
+│   ├── presence/               # Online/offline user presence
+│   ├── verification-request/   # Identity verification by food savers
+│   ├── websocket/              # Global WebSocket connection manager
 │   └── core.module.ts
 │
-├── infrastructure/
-│   ├── cloudinary/
-│   ├── db/
-│   ├── queue/
-│   ├── search/
-│   └── infrastructure.module.ts
+├── infrastructure/             # Infrastructure services
+│   ├── cloudinary/             # Cloudinary image upload wrapper
+│   ├── clusters/               # Node.js cluster mode service
+│   ├── db/                     # TypeORM data source, migrations
+│   ├── firebase/               # Firebase Admin SDK (FCM push)
+│   ├── queue/                  # BullMQ queues (mail, chat, notification, upload, search, gamification...)
+│   └── search/                 # Elasticsearch indexing & search
 │
-├── monitoring/
-│   ├── health/
-│   └── monitoring.module.ts
-│
-├── security/
-│   ├── rate-limiting/
-│   └── security.module.ts
-│
-├── app.controller.spec.ts
-├── app.controller.ts
-├── app.module.ts
-├── app.service.ts
-└── main.ts```
+├── monitoring/                 # Health checks, logging, alerting
+├── security/                   # Rate limiting & security policies
+├── app.module.ts               # Root module
+└── main.ts                     # Bootstrap entry point
+```
 
 ---
 
-## 🛠️ Setup & Run
+## Prerequisites
+
+- **Node.js** >= 22
+- **pnpm** >= 10
+- **PostgreSQL**, **Redis**, **Elasticsearch** (see Docker section below for a quick spin-up)
+
+## Setup & Run
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/nestjs-starter.git
-cd nestjs-starter
+git clone <repo-url>
+cd backend
 
 # Install dependencies
-npm install
+pnpm install
 
 # Setup environment
 cp .env.example .env
+# Fill in your DB, Redis, Mail, JWT, Cloudinary credentials
 
-# Run the app
-npm run start:dev
+# Run migrations
+pnpm migration:run
+
+# Seed sample data (optional)
+pnpm seed:all
+
+# Start in development mode
+pnpm start:dev
+```
+
+## Docker
+
+### Infrastructure Services
+
+Spin up PostgreSQL, Redis, and Elasticsearch locally:
+
+```bash
+docker run -d --name gazp-postgres   -e POSTGRES_USER=postgres   -e POSTGRES_PASSWORD=password   -e POSTGRES_DB=myapp   -p 5433:5432   postgres:16-alpine
+
+docker run -d --name gazp-redis      -p 6380:6379   redis:7-alpine
+
+docker run -d --name gazp-elastic    -e "discovery.type=single-node"   -e "xpack.security.enabled=false"   -p 9200:9200   elasticsearch:8.15.0
+```
+
+Then update your `.env` with `DB_HOST=localhost`, `DB_PORT=5433`, `REDIS_HOST=localhost`, `REDIS_PORT=6380`.
+
+### App via Docker
+
+Build and run the application itself using the provided Dockerfiles:
+
+**Development** (hot-reload):
+```bash
+docker build -f Dockerfile.development -t gazp-backend:dev .
+docker run -d --name gazp-backend   --env-file .env   --network host   gazp-backend:dev
+```
+
+**Production**:
+```bash
+docker build -f Dockerfile.production -t gazp-backend:prod .
+docker run -d --name gazp-backend   --env-file .env   -p 8080:8080   gazp-backend:prod
 ```
 
 ---
 
-## 🧪 Scripts
+## Scripts
 
-| Script       | Description                   |
-| ------------ | ----------------------------- |
-| `start:dev`  | Start in development mode     |
-| `start:prod` | Build and start in production |
-| `test`       | Run unit tests                |
-| `lint`       | Lint your codebase            |
+| Script | Description |
+|---|---|
+| `pnpm start:dev` | Start with hot-reload |
+| `pnpm start:prod` | Build & start in production |
+| `pnpm build` | Compile TypeScript |
+| `pnpm migration:generate` | Generate TypeORM migration |
+| `pnpm migration:run` | Run pending migrations |
+| `pnpm migration:revert` | Revert last migration |
+| `pnpm seed:all` | Seed all sample data |
+| `pnpm seed:users` / `:donations` / `:reservations` / ... | Seed individual entities |
+| `pnpm lint` | Lint with oxlint |
+| `pnpm lint:fix` | Auto-fix lint issues |
+| `pnpm test` | Unit tests |
+| `pnpm test:e2e` | End-to-end tests |
+| `pnpm test:all` | Unit + E2E tests |
 
 ---
 
-## 📖 API Documentation
+## Core Features
 
-Swagger is auto-generated at runtime and available at:
+### Authentication
+- JWT access + refresh token rotation
+- Local strategy (email/password)
+- Google OAuth 2.0
+- Role-based guards (`FoodSaverGuard`, `RolesGuard`, `SameNeighborhoodGuard`)
 
+### Donations & Reservations
+- Geolocation-based donation discovery with heatmaps and map markers
+- Neighborhood-based filtering (zip code matching)
+- Reservation workflow with expiry timers (BullMQ)
+- Photo uploads via Cloudinary
+
+### Real-time Chat
+- Socket.IO with Redis adapter for horizontal scaling
+- Chat state machine (active → accepted → completed)
+- Per-conversation WebSocket rooms
+- Presence tracking (online/offline)
+
+### Gamification & Reputation
+- Badge & achievement system
+- Reputation leaderboard
+- Auto-promotion to food saver based on reputation score
+- Auto-verification of donors after threshold donations
+
+### Notifications
+- Firebase Cloud Messaging (FCM) for push
+- Smart notification system with pub/sub events
+- Token management for multiple devices
+
+---
+
+## API Documentation
+
+GraphQL Playground available at:
 ```
-http://localhost:3000/api-docs
+http://localhost:3000/graphql
 ```
 
-Beautiful UI powered by [Scalar](https://github.com/sdorra/swagger-ui-scalar).
+Swagger/OpenAPI reference at:
+```
+http://localhost:3000/docs
+```
 
----
-
-## 📬 Mailer Setup
-
-Update your mailing provider details in the `.env` file:
-
-```env
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USER=username
-MAIL_PASS=securepassword
+Bull Board (job monitoring) at:
+```
+http://localhost:3000/bull-board
 ```
 
 ---
 
-## ⚙️ Background Jobs
+## Architecture
 
-Jobs are processed using **Bull** and stored in Redis. Define jobs under `common/constants/` and register them in the job queues.
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        Mobile["Mobile App"]
+    end
+
+    subgraph API["API Layer (NestJS)"]
+        GraphQL["Apollo GraphQL (14 resolvers)"]
+        REST["REST Controllers"]
+        WS["Socket.IO Gateway"]
+    end
+
+    subgraph Core["Core Modules (15)"]
+        Auth["Authentication"]
+        User["User"]
+        Donation["Donation"]
+        Reservation["Reservation"]
+        Chat["Chat"]
+        Verification["Verification Request"]
+        Gamification["Gamification"]
+        Leaderboard["Leaderboard"]
+        Reporting["Reporting"]
+        Notification["Notification"]
+        Stats["Stats"]
+        Presence["Presence"]
+        Category["Category"]
+    end
+
+    subgraph Infra["Infrastructure"]
+        DB["TypeORM + PostgreSQL"]
+        Redis["Redis (ioredis)"]
+        ES["Elasticsearch"]
+        Cloudinary["Cloudinary"]
+        Firebase["Firebase (FCM)"]
+        BullMQ["BullMQ Queues"]
+    end
+
+    Mobile -->|"GraphQL queries/mutations"| GraphQL
+    Mobile -->|"WebSocket events"| WS
+    GraphQL --> Auth
+    GraphQL --> Donation
+    GraphQL --> Reservation
+    GraphQL --> Chat
+    GraphQL --> Verification
+    GraphQL --> Gamification
+    GraphQL --> Leaderboard
+    GraphQL --> Reporting
+    GraphQL --> Notification
+    GraphQL --> Stats
+    GraphQL --> User
+    GraphQL --> Category
+
+    Chat --> WS
+    Presence --> WS
+
+    Auth --> DB
+    User --> DB
+    Donation --> DB
+    Reservation --> DB
+    Reservation --> BullMQ
+    Chat --> DB
+    Chat --> Redis
+    Verification --> DB
+    Gamification --> DB
+    Leaderboard --> DB
+    Reporting --> DB
+    Notification --> DB
+    Notification --> Firebase
+    Notification --> BullMQ
+
+    Donation --> ES
+    Donation --> Cloudinary
+    Notification --> BullMQ
+    Gamification --> BullMQ
+```
+
+
 
 ---
 
-## 🧠 Redis Usage
+## WebSockets
 
-You can use Redis for:
-
-* Caching
-* Pub/Sub (real-time messaging)
-* Redis Streams (event queues)
-* WebSocket scaling
-
-The previous Redis module was extracted to an independent package: [nestjs-redis-module](https://www.npmjs.com/package/nestjs-redis-client)
+- **Single-user messaging** via authenticated Socket.IO rooms
+- **Distributed scaling** via `@socket.io/redis-adapter`
+- Base WebSocket gateway in `src/core/websocket/` with auth guards
+- Chat state machine in `src/core/chat/`
 
 ---
 
-## 🌐 WebSockets
+## Security
 
-Supports **single-user messaging** and **distributed WebSocket server** setup using Redis adapter. Define events in `common/utils/webSocket/`.
-Authentication is done using extending the base WebSocket gateway located in `core/websocket/`.
-For more details on this pattern, check out this article: [WebSocket Authentication in NestJs](https://medium.com/devops-dev/nestjs-websocket-authentication-304082fb969c)
-
----
-
-## 🔒 Security
-
-This starter includes:
-
-* Helmet for HTTP header protection
-* Double CSRF strategy using cookie and token
-* Rate limiting using `@nestjs/throttler`
+- **Helmet** for HTTP security headers (CSP configured for Scalar UI)
+- **CSRF** via double-submit cookie strategy
+- **Rate limiting** via `@nestjs/throttler`
+- **Validation** with `class-validator` + global `ValidationPipe`
 
 ---
 
-## ❤️ Health Checks
+## Health Checks
 
-* Powered by `@nestjs/terminus`
-* Endpoint: `/health`
-* Checks Redis, Elasticsearch, Database, etc.
-
----
-
-## 🐳 Docker Compose
-
-Use `docker-compose.yml` to spin up:
-
-* Redis
-* Elasticsearch
-* (Add other services like Postgres, Mailhog, etc.)
+Powered by `@nestjs/terminus` at:
+```
+GET /health
+```
+Checks: PostgreSQL, Redis, Elasticsearch, and more.
 
 ---
 
-## 🚄 Fastify Support
-
-This project includes a `fastify` branch which provides the same feature set using NestJS with [Fastify](https://www.fastify.io/) instead of Express.
-
-### 📘 How to Choose
-
-Refer to [`CHOOSE.md`](CHOOSE.md) to decide whether to use the default (Express) or Fastify branch. It outlines:
-
-* Pros and cons of each adapter
-* Performance and ecosystem differences
-* Compatibility notes
-
 ---
 
-## 📦 License
+## License
 
 MIT © 2025 Mouloud Hasrane
 
-## 🤝 Contributing
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this project.
-**ps**: this folder will also include commits practices docuemnted here [COMMIT.md](COMMIT.md)
-
-## 🧑‍💻 Author
+## Author
 
 Mouloud Hasrane
 
-## 📬 Contact
+## Contact
 
-If you have any questions or suggestions, feel free to reach out via: [mouloudhasrane@gmail.com](mailto:mouloudhasrane@gmail.com)
+[mouloudhasrane@gmail.com](mailto:mouloudhasrane@gmail.com)
