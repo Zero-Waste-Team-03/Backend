@@ -136,7 +136,7 @@ export class UserResolver {
     return this.userService.deleteUser(user.id);
   }
   @UseGuards(AccessTokenGuard)
-  @Query(() => PaginatedUsersResponse)
+  @Query(() => PaginatedUsersResponse,{description:"Get Food savers from the same neighborhood (same zip code) with pagination and optional search by name or email"})
   async getUsersFromSameNeighborhood(
     @USER('id') userId: string,
     @Args('pagination', { type: () => PaginationInput })
