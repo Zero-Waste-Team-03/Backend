@@ -25,6 +25,10 @@ import { ReportStatsInput } from './graphql/inputs/report-stats.input';
 import { ReportStatsType } from './graphql/types/report-stats.type';
 import { UserType } from '../authentication/graphql/types/user.type';
 import { IDataLoaders } from 'src/common/modules/dataloader/dataloader.interface';
+import { ReportedRecord } from './graphql/types/reported-record.union';
+import { ReportTargetTypeValues } from './entities/report.entity';
+import { Donation } from '../donation/entities/donation.entity';
+import { Message } from '../chat/entities/message.entity';
 
 @UseGuards(AccessTokenGuard)
 @Resolver(() => ReportType)
@@ -97,12 +101,26 @@ export class ReportingResolver {
   ): Promise<ReportStatsType> {
     return this.reportingService.getReportStats(input);
   }
-  @ResolveField(() => UserType)
+  @ResolveField(() => UserType, { nullable: true })
   async reporter(
     @Parent() report: ReportType,
     @Context() { loaders }: { loaders: IDataLoaders },
   ): Promise<User | null> {
-    if (report.reporterId) return null;
+    if (!report.reporterId) return null;
     return loaders.userLoader.load(report.reporterId);
+  }
+
+  @ResolveField(() => ReportedRecord, { nullable: true })
+  async reportedRecord(
+    @Parent() report: ReportType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<Donation | Message | User | null> {
+    if (report.targetType === ReportTargetTypeValues.DONATION) {
+      return loaders.donationLoader.load(report.targetId);
+    }
+    if (report.targetType === ReportTargetTypeValues.MESSAGE) {
+      return loaders.messageLoader.load(report.targetId);
+    }
+    return loaders.userLoader.load(report.targetId);
   }
 }
