@@ -148,7 +148,7 @@ export class ReservationService {
   }
 
   public async cancelExpiryJob(reservationId: string): Promise<void> {
-    const jobId = `expire-reservation:${reservationId}`;
+    const jobId = `expire-reservation-${reservationId}`;
     const job = await this.reservationQueue.getJob(jobId);
     if (job) {
       await job.remove();
@@ -479,7 +479,7 @@ export class ReservationService {
       { reservationId: result.reservation.id },
       {
         delay: RESERVATION_EXPIRY_MS,
-        jobId: `expire-reservation:${result.reservation.id}`,
+        jobId: `expire-reservation-${result.reservation.id}`,
         removeOnComplete: true,
       },
     );
