@@ -688,6 +688,9 @@ export class ReservationService {
           result[donationId] = false;
           return result;
         }
+        if (donation.userId === beneficiaryId) {
+          result[donationId] = false;
+        }
 
         if (donation.quantity <= 0) {
           result[donationId] = false;
