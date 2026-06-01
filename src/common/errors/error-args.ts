@@ -36,4 +36,5 @@ export interface ErrorArgsMap {
   'report.duplicate_open': { targetType: string; targetId: string };
   'report.status_invalid': { status: string };
   'report.export_dataset_invalid': { dataset: string };
+  'auth.account_locked': { remainingSeconds: number };
 }

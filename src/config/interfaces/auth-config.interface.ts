@@ -11,4 +11,8 @@ export interface AuthConfig {
   oauth: {
     google: StrategyOptionsGoogle;
   };
+  loginLockout: {
+    maxAttempts: number;
+    lockoutSeconds: number;
+  };
 }

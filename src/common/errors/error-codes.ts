@@ -56,6 +56,13 @@ export const ERROR_CODES = {
     httpStatus: 401,
     message: 'Refresh token is invalid or expired.',
   },
+  AUTH_ACCOUNT_LOCKED: {
+    code: 'auth.account_locked',
+    httpStatus: 429,
+    message:
+      'Account temporarily locked due to too many failed login attempts.',
+    args: { remainingSeconds: 'number' } as const,
+  },
 
   // ── User ────────────────────────────────────────────────────────────
   USER_NOT_FOUND: {

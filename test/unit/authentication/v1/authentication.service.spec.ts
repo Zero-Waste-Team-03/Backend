@@ -9,6 +9,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { AttachmentService } from 'src/common/modules/attachment/attachment.service';
 import appConfig from 'src/config/app.config';
+import { LoginAttemptService } from 'src/core/authentication/services/login-attempt.service';
 
 describe('AuthenticationService', () => {
   let service: AuthenticationService;
@@ -23,6 +24,11 @@ describe('AuthenticationService', () => {
   let mailQueue: {
     add: jest.Mock;
   };
+  let loginAttemptService: {
+    isAccountLocked: jest.Mock;
+    recordFailedAttempt: jest.Mock;
+    resetAttempts: jest.Mock;
+  };
 
   beforeEach(async () => {
     userService = {
@@ -35,6 +41,11 @@ describe('AuthenticationService', () => {
     };
     mailQueue = {
       add: jest.fn(),
+    };
+    loginAttemptService = {
+      isAccountLocked: jest.fn().mockResolvedValue({ locked: false, remainingSeconds: 0 }),
+      recordFailedAttempt: jest.fn(),
+      resetAttempts: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -61,6 +72,7 @@ describe('AuthenticationService', () => {
         },
         { provide: RedisService, useValue: redisService },
         { provide: AttachmentService, useValue: {} },
+        { provide: LoginAttemptService, useValue: loginAttemptService },
         { provide: getQueueToken(QUEUE_NAME.MAIL), useValue: mailQueue },
         { provide: getQueueToken(QUEUE_NAME.UPLOAD), useValue: {} },
       ],
