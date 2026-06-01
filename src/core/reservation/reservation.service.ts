@@ -410,6 +410,9 @@ export class ReservationService {
           throwAppError('DONATION_NOT_FOUND', { id: donationId });
         }
 
+        if (beneficiaryId==donation.userId){
+          throwAppError('RESERVATION_OWNERSHIP_INVALID');
+        }
         if (donation.status !== DonationStatusValues.PUBLISHED) {
           throwAppError('DONATION_NOT_AVAILABLE', {
             id: donationId,
@@ -684,6 +687,9 @@ export class ReservationService {
         if (donation.status !== DonationStatusValues.PUBLISHED) {
           result[donationId] = false;
           return result;
+        }
+        if (donation.userId === beneficiaryId) {
+          result[donationId] = false;
         }
 
         if (donation.quantity <= 0) {
