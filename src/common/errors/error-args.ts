@@ -27,6 +27,8 @@ export interface ErrorArgsMap {
   'reservation.status_invalid': { status: string };
   'reservation.quantity_invalid': { quantity: number };
   'reservation.already_active': { donationId: string; beneficiaryId: string };
+  'reservation.expired': { id: string };
+  'reservation.already_cancelled': { id: string };
   'chat.conversation_not_found': { id: string };
   'chat.message_not_found': { id: string };
   'chat.message_read_only': { status: string };

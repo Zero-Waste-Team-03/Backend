@@ -19,6 +19,7 @@ export const ReservationStatusValues = {
   CONFIRMED: 'Confirmed',
   CANCELLED: 'Cancelled',
   COMPLETED: 'Completed',
+  EXPIRED: 'Expired',
 } as const;
 
 export type ReservationStatus =

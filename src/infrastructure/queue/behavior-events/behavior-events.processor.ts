@@ -97,7 +97,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
   ): Promise<void> {
     const donation = await this.donationRepository.findOne({
       where: { id: job.donationId },
-      relations: { location: true },
+      relations: { category: true, location: true },
     });
 
     if (!donation) {
@@ -116,7 +116,7 @@ export class BehaviorEventsProcessor extends WorkerHost {
       donorId: job.donorId,
       donationId: job.donationId,
       donationTitle: job.donationTitle,
-      category: job.category,
+      category: donation.category?.name ?? '',
       urgency: job.urgency,
       safetyChecklistCompleted: job.safetyChecklistCompleted,
       quantity: donation.quantity,

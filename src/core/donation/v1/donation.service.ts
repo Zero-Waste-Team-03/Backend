@@ -654,8 +654,6 @@ export class DonationService {
       await this.smartBehaviorPublisher.safePublishDonationPublished({
         donorId: userId,
         donationId: savedDonation.id,
-        categoryId: savedDonation.categoryId,
-        category: savedDonation.category?.name ?? '',
         donationTitle: savedDonation.title,
         urgency: savedDonation.urgency,
         safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,
@@ -1089,8 +1087,6 @@ export class DonationService {
     await this.smartBehaviorPublisher.safePublishDonationPublished({
       donorId: savedDonation.userId,
       donationId: savedDonation.id,
-      categoryId: savedDonation.categoryId,
-      category: savedDonation.category?.name ?? '',
       donationTitle: savedDonation.title,
       urgency: savedDonation.urgency,
       safetyChecklistCompleted: savedDonation.safetyChecklistCompleted,

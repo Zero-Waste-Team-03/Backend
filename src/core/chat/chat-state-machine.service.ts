@@ -13,7 +13,8 @@ export class ChatStateMachineService {
   ): Conversation {
     if (
       reservationStatus === ReservationStatusValues.CANCELLED ||
-      reservationStatus === ReservationStatusValues.COMPLETED
+      reservationStatus === ReservationStatusValues.COMPLETED ||
+      reservationStatus === ReservationStatusValues.EXPIRED
     ) {
       conversation.status = ConversationStatusValues.ARCHIVED;
       return conversation;
