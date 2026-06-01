@@ -28,5 +28,9 @@ export default registerAs(
         scope: ['email', 'profile'],
       },
     },
+    loginLockout: {
+      maxAttempts: parseInt(process.env.LOGIN_MAX_ATTEMPTS || '5', 10),
+      lockoutSeconds: parseInt(process.env.LOGIN_LOCKOUT_SECONDS || '900', 10),
+    },
   }),
 );
