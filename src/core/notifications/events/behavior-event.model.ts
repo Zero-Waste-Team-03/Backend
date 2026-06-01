@@ -61,7 +61,7 @@ export type LikedDonationJobPayload = BehaviorEventBase &
 export type DonationPublishedJobPayload = BehaviorEventBase &
   Omit<
     DonationPublishedEvent,
-    keyof BehaviorEventBase | 'eventName' | 'quantity' | 'location'
+    keyof BehaviorEventBase | 'eventName' | 'quantity' | 'location' | 'category'
   >;
 
 export type BeneficiarySearchJobPayload = BehaviorEventBase &

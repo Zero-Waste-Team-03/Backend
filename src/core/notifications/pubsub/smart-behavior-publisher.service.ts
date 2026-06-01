@@ -33,8 +33,6 @@ type DonationPublishedPayload = {
   donorId: string;
   donationId: string;
   donationTitle: string;
-  categoryId: string;
-  category: string;
   urgency: string;
   safetyChecklistCompleted: boolean;
 };
@@ -105,7 +103,6 @@ export class SmartBehaviorPublisherService {
       donorId: payload.donorId,
       donationId: payload.donationId,
       donationTitle: payload.donationTitle,
-      category: payload.category,
       urgency: payload.urgency,
       safetyChecklistCompleted: payload.safetyChecklistCompleted,
     };

@@ -92,6 +92,17 @@ export class ReservationResolver {
 
   @UseGuards(AccessTokenGuard)
   @Mutation(() => ReservationType, {
+    description: 'Cancel a confirmed reservation. Available to donor or beneficiary.',
+  })
+  async cancelReservation(
+    @Args('id', { type: () => ID }) id: string,
+    @USER('id') userId: string,
+  ): Promise<ReservationType> {
+    return this.reservationService.cancelReservation(id, userId) as any;
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Mutation(() => ReservationType, {
     description:
       'Confirm reservation (deprecated: reservations are auto-confirmed)',
     deprecationReason: 'Reservations are confirmed automatically on creation.',
