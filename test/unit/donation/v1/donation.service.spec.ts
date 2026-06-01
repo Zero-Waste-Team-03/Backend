@@ -182,9 +182,7 @@ describe('DonationService', () => {
       ).toHaveBeenCalledWith({
         donorId: 'u1',
         donationId: createdEntity.id,
-        categoryId: createdEntity.categoryId,
         donationTitle: createdEntity.title,
-        category: '',
         urgency: createdEntity.urgency,
         safetyChecklistCompleted: createdEntity.safetyChecklistCompleted,
       });
