@@ -19,5 +19,6 @@ export interface IDataLoaders {
   donationLoader: DataLoader<string, Donation | null>;
   presenceLoader: DataLoader<string, boolean>;
   donationReservableLoader?: DataLoader<string, boolean>;
+  donationDeletableLoader?: DataLoader<string, boolean>;
   messageLoader: DataLoader<string, Message | null>;
 }

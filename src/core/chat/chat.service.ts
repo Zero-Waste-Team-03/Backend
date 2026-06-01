@@ -746,7 +746,7 @@ export class ChatService {
   private async cancelReservationExpiryJob(
     reservationId: string,
   ): Promise<void> {
-    const jobId = `expire-reservation:${reservationId}`;
+    const jobId = `expire-reservation-${reservationId}`;
     const job = await this.reservationQueue.getJob(jobId);
     if (job) {
       await job.remove();

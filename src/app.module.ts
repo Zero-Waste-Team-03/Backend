@@ -23,6 +23,7 @@ import { CategoryDataLoader } from './common/modules/dataloader/category.dataloa
 import { DonationDataLoader } from './common/modules/dataloader/donation.dataloader';
 import { PresenceDataLoader } from './common/modules/dataloader/presence.dataloader';
 import { DonationReservableDataLoader } from './common/modules/dataloader/donation-reservable.dataloader';
+import { DonationDeletableDataLoader } from './common/modules/dataloader/donation-deletable.dataloader';
 import { MessageDataLoader } from './common/modules/dataloader/message.dataloader';
 import { IDataLoaders } from './common/modules/dataloader/dataloader.interface';
 import dbConfig from './config/db.config';
@@ -60,6 +61,7 @@ import { DatabaseExceptionFilter } from './common/filter/db.filer';
         donationDataLoader: DonationDataLoader,
         presenceDataLoader: PresenceDataLoader,
         donationReservableDataLoader: DonationReservableDataLoader,
+        donationDeletableDataLoader: DonationDeletableDataLoader,
         messageDataLoader: MessageDataLoader,
       ) => ({
         ...graphqlConfiguration,
@@ -76,6 +78,13 @@ import { DatabaseExceptionFilter } from './common/filter/db.filer';
             donationReservableLoader: req?.user?.id
               ? donationReservableDataLoader.createLoader(req.user.id)
               : undefined,
+            donationDeletableLoader:
+              req?.user?.id
+                ? donationDeletableDataLoader.createLoader(
+                    req.user.id,
+                    req.user.role === 'Administrator',
+                  )
+                : undefined,
             messageLoader: messageDataLoader.createLoader(),
           };
           return { req, res, loaders };
@@ -90,6 +99,7 @@ import { DatabaseExceptionFilter } from './common/filter/db.filer';
         DonationDataLoader,
         PresenceDataLoader,
         DonationReservableDataLoader,
+        DonationDeletableDataLoader,
         MessageDataLoader,
       ],
     }),
