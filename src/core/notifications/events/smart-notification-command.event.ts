@@ -78,6 +78,8 @@ export class SmartNotificationCommandEvent {
     }
 
     const errors = validateSync(this, {
+      forbidNonWhitelisted: false,
+      whitelist:true,
     });
 
     if (errors.length > 0) {
