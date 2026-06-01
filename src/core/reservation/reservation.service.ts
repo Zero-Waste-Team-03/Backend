@@ -569,6 +569,70 @@ export class ReservationService {
     return true;
   }
 
+  async canDeleteDonations(
+    donationIds: readonly string[],
+    viewerUserId: string,
+    isAdmin: boolean,
+  ): Promise<Record<string, boolean>> {
+    if (!donationIds.length) {
+      return {};
+    }
+
+    const donations = await this.reservationRepository.manager.find(Donation, {
+      where: { id: In([...donationIds]) },
+      select: { id: true, userId: true },
+    });
+
+    const donationMap = new Map(
+      donations.map((donation) => [donation.id, donation]),
+    );
+
+    const donationsWithActiveReservations = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .where('reservation.donationId IN (:...donationIds)', {
+        donationIds,
+      })
+      .andWhere('reservation.status IN (:...activeStatuses)', {
+        activeStatuses: [
+          ReservationStatusValues.PENDING,
+          ReservationStatusValues.CONFIRMED,
+        ],
+      })
+      .select('reservation.donationId', 'donationId')
+      .groupBy('reservation.donationId')
+      .getRawMany<{ donationId: string }>();
+
+    const blockedDonationIds = new Set(
+      donationsWithActiveReservations.map((row) => row.donationId),
+    );
+
+    return donationIds.reduce(
+      (result, donationId) => {
+        const donation = donationMap.get(donationId);
+
+        if (!donation) {
+          result[donationId] = false;
+          return result;
+        }
+
+        const isOwner = donation.userId === viewerUserId;
+        if (!isOwner && !isAdmin) {
+          result[donationId] = false;
+          return result;
+        }
+
+        if (blockedDonationIds.has(donationId)) {
+          result[donationId] = false;
+          return result;
+        }
+
+        result[donationId] = true;
+        return result;
+      },
+      {} as Record<string, boolean>,
+    );
+  }
+
   async canUserReserveDonations(
     donationIds: readonly string[],
     beneficiaryId: string,

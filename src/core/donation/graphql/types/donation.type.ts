@@ -167,6 +167,13 @@ export class DonationType {
   })
   isReservable?: boolean;
 
+  @Field(() => Boolean, {
+    description:
+      'Whether the authenticated user can delete this donation (owner or admin, and no active reservations)',
+    nullable: true,
+  })
+  isDeletable?: boolean;
+
   @Field(() => Date)
   createdAt: Date;
 

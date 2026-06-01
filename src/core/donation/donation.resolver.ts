@@ -194,6 +194,23 @@ export class DonationResolver {
 
     return loaders.donationReservableLoader.load(donation.id);
   }
+
+  @ResolveField(() => Boolean, {
+    description:
+      'Whether the authenticated user can delete this donation',
+    nullable: true,
+  })
+  async isDeletable(
+    @Parent() donation: DonationType,
+    @Context() { loaders }: { loaders: IDataLoaders },
+  ): Promise<boolean | null> {
+    if (!loaders?.donationDeletableLoader) {
+      return null;
+    }
+
+    return loaders.donationDeletableLoader.load(donation.id);
+  }
+
   @Mutation(() => DonationType, {
     description:
       'Create a donation listing for the authenticated user, including required foodWeightKg',

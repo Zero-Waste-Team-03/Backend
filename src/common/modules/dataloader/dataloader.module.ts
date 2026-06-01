@@ -16,6 +16,7 @@ import { DonationReservableDataLoader } from './donation-reservable.dataloader';
 import { ReservationModule } from '../../../core/reservation/reservation.module';
 import { MessageDataLoader } from './message.dataloader';
 import { Message } from '../../../core/chat/entities/message.entity';
+import { DonationDeletableDataLoader } from './donation-deletable.dataloader';
 
 /**
  * DataLoader Module
@@ -43,6 +44,7 @@ import { Message } from '../../../core/chat/entities/message.entity';
     DonationDataLoader,
     PresenceDataLoader,
     DonationReservableDataLoader,
+    DonationDeletableDataLoader,
     MessageDataLoader,
   ],
   exports: [
@@ -53,6 +55,7 @@ import { Message } from '../../../core/chat/entities/message.entity';
     DonationDataLoader,
     PresenceDataLoader,
     DonationReservableDataLoader,
+    DonationDeletableDataLoader,
     MessageDataLoader,
   ],
 })
