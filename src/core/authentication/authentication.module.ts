@@ -13,6 +13,7 @@ import { UserModule } from '../user/user.module';
 import { AuthenticationController } from './v1/authentication.controller';
 import { AuthenticationService } from './v1/authentication.service';
 import { AuthenticationResolver } from './authentication.resolver';
+import { LoginAttemptService } from './services/login-attempt.service';
 import { AttachmentModule } from 'src/common/modules/attachment/attachment.module';
 import { ConfigType } from '@nestjs/config';
 import authConfig from 'src/config/auth.config';
@@ -61,6 +62,7 @@ import { QUEUE_NAME } from 'src/common/constants/queues';
     GoogleStrategy,
     RefreshTokenGuard,
     RolesGuard,
+    LoginAttemptService,
   ],
   exports: [AccessTokenGuard, RolesGuard, JwtModule],
 })

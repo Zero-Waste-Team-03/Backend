@@ -23,6 +23,7 @@ import { AccessTokenPayload } from '../interfaces/access-token-payload.interface
 import { RefreshTokenPayload } from '../interfaces/refresh-token.dto';
 import { throwAppError } from 'src/common/errors';
 import appConfig from 'src/config/app.config';
+import { LoginAttemptService } from '../services/login-attempt.service';
 
 @Injectable()
 export class AuthenticationService {
@@ -36,10 +37,17 @@ export class AuthenticationService {
     private readonly applicationConfig: ConfigType<typeof appConfig>,
     private readonly redisService: RedisService,
     private readonly attachmentService: AttachmentService,
+    private readonly loginAttemptService: LoginAttemptService,
     @InjectQueue(QUEUE_NAME.MAIL) private readonly mailQueue: Queue,
     @InjectQueue(QUEUE_NAME.UPLOAD) private readonly uploadQueue: Queue,
   ) {}
   async validateUser(email: string, password: string): Promise<User> {
+    const { locked, remainingSeconds } =
+      await this.loginAttemptService.isAccountLocked(email);
+    if (locked) {
+      throwAppError('AUTH_ACCOUNT_LOCKED', { remainingSeconds });
+    }
+
     const user = await this.userService.findBasicAuthedUserByEmail(email);
     if (!user) {
       throwAppError('AUTH_INVALID_CREDENTIALS');
@@ -49,8 +57,16 @@ export class AuthenticationService {
     }
     const isPasswordValid = await compareHash(password, user.passwordHash);
     if (!isPasswordValid) {
+      await this.loginAttemptService.recordFailedAttempt(email);
+      const { locked: nowLocked, remainingSeconds: remaining } =
+        await this.loginAttemptService.isAccountLocked(email);
+      if (nowLocked) {
+        throwAppError('AUTH_ACCOUNT_LOCKED', { remainingSeconds: remaining });
+      }
       throwAppError('AUTH_INVALID_CREDENTIALS');
     }
+
+    await this.loginAttemptService.resetAttempts(email);
     return user;
   }
   async changePassword(
