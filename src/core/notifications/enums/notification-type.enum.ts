@@ -7,6 +7,8 @@ export const NOTIFICATION_TYPE = {
   TEST: 'Test',
   NEW_ACHIEVEMENT: 'New_achievement',
   RESERVATION_ALERT: 'Reservation_alert',
+  RESERVATION_EXPIRED: 'Reservation_expired',
+  RESERVATION_CANCELLED: 'Reservation_cancelled',
   REPORT_ALERT: 'Report_alert',
   ACCOUNT_STATUS_ALERT: 'Account_status_alert',
 } as const;

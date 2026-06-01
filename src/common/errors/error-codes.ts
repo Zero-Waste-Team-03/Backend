@@ -218,6 +218,18 @@ export const ERROR_CODES = {
     message: 'You already have an active reservation for this donation.',
     args: { donationId: 'string', beneficiaryId: 'string' } as const,
   },
+  RESERVATION_EXPIRED: {
+    code: 'reservation.expired',
+    httpStatus: 400,
+    message: 'This reservation has expired.',
+    args: { id: 'string' } as const,
+  },
+  RESERVATION_ALREADY_CANCELLED: {
+    code: 'reservation.already_cancelled',
+    httpStatus: 400,
+    message: 'This reservation has already been cancelled.',
+    args: { id: 'string' } as const,
+  },
   VERIFICATION_REQUEST_ALREADY_EXISTS: {
     code: 'verification_request.already_exists',
     httpStatus: 409,

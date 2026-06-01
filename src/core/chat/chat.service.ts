@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { FindOptionsWhere, Repository } from 'typeorm';
+import { Queue } from 'bullmq';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { Reservation } from '../reservation/entities/reservation.entity';
@@ -21,7 +22,6 @@ import {
 import { ApproveSensitiveMessageDto } from './v1/dto/approve-sensitive-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NOTIFICATION_TYPE } from '../notifications/enums/notification-type.enum';
-import { Queue } from 'bullmq';
 import { QUEUE_NAME } from 'src/common/constants/queues';
 import { CHAT_JOBS, GAMIFICATION_JOBS } from 'src/common/constants/jobs';
 import {
@@ -66,6 +66,8 @@ export class ChatService {
     private readonly chatQueue: Queue,
     @InjectQueue(QUEUE_NAME.GAMIFICATION)
     private readonly gamificationQueue: Queue,
+    @InjectQueue(QUEUE_NAME.RESERVATION)
+    private readonly reservationQueue: Queue,
     private readonly leaderboardService: LeaderboardService,
   ) {}
 
@@ -674,14 +676,9 @@ export class ChatService {
             reservation.status = ReservationStatusValues.COMPLETED;
             await manager.save(Reservation, reservation);
 
-            donation.quantity = Math.max(
-              donation.quantity - reservation.quantity,
-              0,
-            );
-
             if (donation.quantity <= 0) {
               donation.status = DonationStatusValues.COMPLETED;
-            } else if (donation.status !== DonationStatusValues.COMPLETED) {
+            } else {
               donation.status = DonationStatusValues.PUBLISHED;
             }
 
@@ -739,7 +736,21 @@ export class ChatService {
         return manager.save(Conversation, lockedConversation);
       });
 
+    await this.cancelReservationExpiryJob(
+      updatedConversation.reservationId,
+    );
+
     return updatedConversation;
+  }
+
+  private async cancelReservationExpiryJob(
+    reservationId: string,
+  ): Promise<void> {
+    const jobId = `expire-reservation:${reservationId}`;
+    const job = await this.reservationQueue.getJob(jobId);
+    if (job) {
+      await job.remove();
+    }
   }
 
   private async requireAuthorizedReservation(
