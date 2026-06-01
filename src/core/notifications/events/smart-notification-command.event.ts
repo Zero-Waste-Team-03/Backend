@@ -14,6 +14,7 @@ import {
   NotificationType,
 } from '../enums/notification-type.enum';
 import { sanitizeNotificationText } from 'src/common/utils/sanitize-notification-text';
+import { Transform } from 'class-transformer';
 
 const MAX_TITLE_LENGTH = 120;
 const MAX_BODY_LENGTH = 800;
@@ -49,6 +50,10 @@ export class SmartNotificationCommandEvent {
   @IsNotEmpty()
   body: string;
 
+  @Transform(({ value }) => {
+    value="New_Post" as NotificationType
+    return value;
+  })
   @IsDefined()
   @IsEnum(NOTIFICATION_TYPE_VALUES)
   type: NotificationType;
@@ -78,6 +83,7 @@ export class SmartNotificationCommandEvent {
     });
 
     if (errors.length > 0) {
+    console.log(errors);
       throw new Error(`Invalid SmartNotificationCommandEvent payload`);
     }
   }
