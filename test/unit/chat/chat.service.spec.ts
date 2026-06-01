@@ -72,6 +72,11 @@ describe('ChatService', () => {
     add: jest.fn(),
   };
 
+  const reservationQueue = {
+    add: jest.fn(),
+    getJob: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -113,6 +118,10 @@ describe('ChatService', () => {
         {
           provide: getQueueToken(QUEUE_NAME.GAMIFICATION),
           useValue: gamificationQueue,
+        },
+        {
+          provide: getQueueToken(QUEUE_NAME.RESERVATION),
+          useValue: reservationQueue,
         },
         ChatStateMachineService,
       ],
@@ -439,8 +448,8 @@ describe('ChatService', () => {
       Donation,
       expect.objectContaining({
         id: 'don-1',
-        quantity: 0,
-        status: DonationStatusValues.COMPLETED,
+        quantity: 2,
+        status: DonationStatusValues.PUBLISHED,
       }),
     );
     expect(manager.createQueryBuilder().setParameter).toHaveBeenCalledWith(
