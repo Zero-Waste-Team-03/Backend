@@ -37,9 +37,7 @@ export class LeaderboardService {
   }
 
   async getTopUsersLastMonth(limit: number): Promise<LeaderboardEntry[]> {
-    const now = new Date();
-    now.setMonth(now.getMonth() - 1);
-    return this.getLeaderboard(this.getMonthlyKey(now), limit);
+    return this.getLeaderboard(this.getMonthlyKey(new Date()), limit);
   }
 
   async getUserRankAllTime(userId: string): Promise<LeaderboardEntry | null> {
@@ -47,9 +45,7 @@ export class LeaderboardService {
   }
 
   async getUserRankLastMonth(userId: string): Promise<LeaderboardEntry | null> {
-    const now = new Date();
-    now.setMonth(now.getMonth() - 1);
-    return this.getUserRank(this.getMonthlyKey(now), userId);
+    return this.getUserRank(this.getMonthlyKey(new Date()), userId);
   }
 
   private async getUserRank(
