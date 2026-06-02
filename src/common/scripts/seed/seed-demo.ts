@@ -1465,14 +1465,14 @@ async function seedDemo(): Promise<void> {
   }
   console.log(`   ${TOKENS.length} tokens processed`);
 
-  // ─── 14. Reputation Logs (spread across 3 months, tied to donations) ──
+  // ─── 14. Reputation Logs (dense this month + 2 prior months for leaderboard) ──
   console.log('\n⭐ Seeding reputation logs...');
   let logsCreated = 0;
 
   // Clear all existing logs first
   await reputationLogRepo.query('TRUNCATE TABLE "reputation_logs" RESTART IDENTITY CASCADE;');
 
-  // Completed reservations → donation_completed + pickup_completed logs with referenceId
+  // Completed reservations → live donation_completed + pickup_completed with referenceId
   const completedReservations = RESERVATIONS.filter(r =>
     r.status === ReservationStatusValues.COMPLETED,
   );
@@ -1483,15 +1483,14 @@ async function seedDemo(): Promise<void> {
     const donationId = donationIds.get(`${res.donorEmail}::${res.donationTitle}`);
     if (!donorId || !beneficiaryId || !donationId) continue;
 
-    const resEntity = await reservationRepo.findOne({
+    const reservation = await reservationRepo.findOne({
       where: { donationId, beneficiaryId },
     });
-    if (!resEntity) continue;
+    if (!reservation) continue;
 
     const confirmedAt = res.confirmedAt ?? new Date(Date.now() - 1000 * 60 * 60 * 24 * 3);
 
-    // Donor gets DONATION_COMPLETED points
-    const donorPoints = 15 + Math.floor(Math.random() * 25); // 15–40
+    const donorPoints = 15 + Math.floor(Math.random() * 25);
     await reputationLogRepo.save(reputationLogRepo.create({
       userId: donorId,
       pointsGained: donorPoints,
@@ -1501,77 +1500,136 @@ async function seedDemo(): Promise<void> {
     }));
     logsCreated++;
 
-    // Beneficiary gets PICKUP_COMPLETED points
-    const pickupPoints = 10 + Math.floor(Math.random() * 15); // 10–25
+    const pickupPoints = 10 + Math.floor(Math.random() * 15);
     await reputationLogRepo.save(reputationLogRepo.create({
       userId: beneficiaryId,
       pointsGained: pickupPoints,
       source: ReputationLogSourceValues.PICKUP_COMPLETED,
       referenceId: donationId,
-      createdAt: new Date(confirmedAt.getTime() + 1000 * 60 * 30), // 30 min after confirm
+      createdAt: new Date(confirmedAt.getTime() + 1000 * 60 * 30),
     }));
     logsCreated++;
   }
 
-  // Additional historical logs distributed across 90 days to fill out the leaderboard
-  // These represent past activity before the current seed data
-  const historicalDonors = [
-    { email: 'admin@gaspzero.local', totalPoints: 200 },
-    { email: 'ngo@gaspzero.local', totalPoints: 350 },
-    { email: 'boulangerie@gaspzero.local', totalPoints: 180 },
-    { email: 'supermarche@gaspzero.local', totalPoints: 150 },
-    { email: 'mosque@gaspzero.local', totalPoints: 280 },
-    { email: 'hospital@gaspzero.local', totalPoints: 170 },
-    { email: 'hopital@gaspzero.local', totalPoints: 120 },
+  // Helper: produce N entries spread across a date range
+  const spreadPoints = (totalPoints: number, count: number, startDaysAgo: number, endDaysAgo: number): Array<{ points: number; daysAgo: number }> => {
+    const entries: Array<{ points: number; daysAgo: number }> = [];
+    let remaining = totalPoints;
+    for (let i = 0; i < count && remaining > 0; i++) {
+      const points = i === count - 1 ? remaining : Math.max(5, Math.floor(remaining / (count - i) * (0.5 + Math.random())));
+      if (points <= 0) continue;
+      remaining -= points;
+      const daysAgo = Math.floor(endDaysAgo + ((startDaysAgo - endDaysAgo) * i) / count + Math.random() * 3);
+      entries.push({ points, daysAgo });
+    }
+    return entries;
+  };
+
+  // ── June (this month) — dense coverage for dashboard visualisation ──
+  const juneDonations: Array<{ email: string; totalPoints: number; count: number; source: typeof ReputationLogSourceValues.DONATION_COMPLETED | typeof ReputationLogSourceValues.PICKUP_COMPLETED }> = [
+    // Donors — DONATION_COMPLETED
+    { email: 'ngo@gaspzero.local', totalPoints: 120, count: 6, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'mosque@gaspzero.local', totalPoints: 100, count: 5, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'boulangerie@gaspzero.local', totalPoints: 90, count: 5, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'supermarche@gaspzero.local', totalPoints: 75, count: 4, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'hopital@gaspzero.local', totalPoints: 60, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'nour@gaspzero.local', totalPoints: 55, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'hotel@gaspzero.local', totalPoints: 45, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'epicerie@gaspzero.local', totalPoints: 40, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    // Beneficiaries — PICKUP_COMPLETED
+    { email: 'karim@gaspzero.local', totalPoints: 85, count: 5, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'salima@gaspzero.local', totalPoints: 80, count: 5, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'fatima@gaspzero.local', totalPoints: 70, count: 4, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'yassine@gaspzero.local', totalPoints: 50, count: 4, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'leila@gaspzero.local', totalPoints: 35, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'reda@gaspzero.local', totalPoints: 25, count: 2, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'sara@gaspzero.local', totalPoints: 40, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'admin@gaspzero.local', totalPoints: 30, count: 2, source: ReputationLogSourceValues.PICKUP_COMPLETED },
   ];
 
-  const historicalBeneficiaries = [
-    { email: 'karim@gaspzero.local', totalPoints: 160 },
-    { email: 'salima@gaspzero.local', totalPoints: 260 },
-    { email: 'fatima@gaspzero.local', totalPoints: 140 },
-    { email: 'yassine@gaspzero.local', totalPoints: 90 },
-    { email: 'nour@gaspzero.local', totalPoints: 200 },
-    { email: 'leila@gaspzero.local', totalPoints: 70 },
-    { email: 'reda@gaspzero.local', totalPoints: 50 },
-    { email: 'sara@gaspzero.local', totalPoints: 110 },
+  // June days: spread across days 0–28 of this month
+  for (const entry of juneDonations) {
+    const userId = userIds.get(entry.email);
+    if (!userId) continue;
+
+    const entries = spreadPoints(entry.totalPoints, entry.count, 0, 28);
+    for (const e of entries) {
+      const createdAt = new Date(Date.now() - e.daysAgo * 24 * 60 * 60 * 1000);
+      await reputationLogRepo.save(reputationLogRepo.create({
+        userId,
+        pointsGained: e.points,
+        source: entry.source,
+        createdAt,
+      }));
+      logsCreated++;
+    }
+  }
+
+  // ── May (last month) — moderate coverage ──
+  const mayEntries: Array<{ email: string; totalPoints: number; count: number; source: typeof ReputationLogSourceValues.DONATION_COMPLETED | typeof ReputationLogSourceValues.PICKUP_COMPLETED }> = [
+    { email: 'ngo@gaspzero.local', totalPoints: 150, count: 5, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'mosque@gaspzero.local', totalPoints: 130, count: 5, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'boulangerie@gaspzero.local', totalPoints: 110, count: 4, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'supermarche@gaspzero.local', totalPoints: 90, count: 4, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'hopital@gaspzero.local', totalPoints: 80, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'nour@gaspzero.local', totalPoints: 70, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'karim@gaspzero.local', totalPoints: 100, count: 5, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'salima@gaspzero.local', totalPoints: 90, count: 4, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'fatima@gaspzero.local', totalPoints: 80, count: 4, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'yassine@gaspzero.local', totalPoints: 55, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'admin@gaspzero.local', totalPoints: 50, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'leila@gaspzero.local', totalPoints: 40, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
   ];
 
-  for (const group of [historicalDonors, historicalBeneficiaries]) {
-    const source = group === historicalDonors
-      ? ReputationLogSourceValues.DONATION_COMPLETED
-      : ReputationLogSourceValues.PICKUP_COMPLETED;
+  // May days: 31–58 days ago
+  for (const entry of mayEntries) {
+    const userId = userIds.get(entry.email);
+    if (!userId) continue;
 
-    for (const entry of group) {
-      const userId = userIds.get(entry.email);
-      if (!userId) continue;
+    const entries = spreadPoints(entry.totalPoints, entry.count, 31, 58);
+    for (const e of entries) {
+      const createdAt = new Date(Date.now() - e.daysAgo * 24 * 60 * 60 * 1000);
+      await reputationLogRepo.save(reputationLogRepo.create({
+        userId,
+        pointsGained: e.points,
+        source: entry.source,
+        createdAt,
+      }));
+      logsCreated++;
+    }
+  }
 
-      // Split points across 3 months (roughly every 4-10 days)
-      let remaining = entry.totalPoints;
-      const entryCount = 4 + Math.floor(Math.random() * 5); // 4–8 entries
-      for (let i = 0; i < entryCount && remaining > 0; i++) {
-        const points = i === entryCount - 1
-          ? remaining
-          : Math.max(5, Math.floor(remaining / (entryCount - i) * (0.5 + Math.random())));
-        if (points <= 0) continue;
-        remaining -= points;
+  // ── April (2 months ago) — lighter coverage ──
+  const aprilEntries: Array<{ email: string; totalPoints: number; count: number; source: typeof ReputationLogSourceValues.DONATION_COMPLETED | typeof ReputationLogSourceValues.PICKUP_COMPLETED }> = [
+    { email: 'ngo@gaspzero.local', totalPoints: 80, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'boulangerie@gaspzero.local', totalPoints: 70, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'mosque@gaspzero.local', totalPoints: 60, count: 3, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'supermarche@gaspzero.local', totalPoints: 50, count: 2, source: ReputationLogSourceValues.DONATION_COMPLETED },
+    { email: 'karim@gaspzero.local', totalPoints: 60, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'salima@gaspzero.local', totalPoints: 55, count: 3, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+    { email: 'fatima@gaspzero.local', totalPoints: 40, count: 2, source: ReputationLogSourceValues.PICKUP_COMPLETED },
+  ];
 
-        // Spread across ~90 days, one entry every 4-10 days
-        const daysAgo = Math.floor(90 - (i * (90 / entryCount)) + Math.random() * 5);
-        const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+  // April days: 61–88 days ago
+  for (const entry of aprilEntries) {
+    const userId = userIds.get(entry.email);
+    if (!userId) continue;
 
-        await reputationLogRepo.save(reputationLogRepo.create({
-          userId,
-          pointsGained: points,
-          source,
-          createdAt,
-        }));
-        logsCreated++;
-      }
+    const entries = spreadPoints(entry.totalPoints, entry.count, 61, 88);
+    for (const e of entries) {
+      const createdAt = new Date(Date.now() - e.daysAgo * 24 * 60 * 60 * 1000);
+      await reputationLogRepo.save(reputationLogRepo.create({
+        userId,
+        pointsGained: e.points,
+        source: entry.source,
+        createdAt,
+      }));
+      logsCreated++;
     }
   }
 
   console.log(`   ${logsCreated} reputation logs created`);
-  console.log(`   (Including ${completedReservations.length * 2} from completed reservations + historical)`);
+  console.log(`   Breakdown: ${completedReservations.length * 2} from reservations + June/May/April historical`);
 
   await dataSource.destroy();
   console.log('\n✅ Demo seed completed!');

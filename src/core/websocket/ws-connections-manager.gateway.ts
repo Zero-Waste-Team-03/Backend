@@ -13,7 +13,7 @@ export class WsConnectionsManagerGateway
 {
   private readonly logger = new Logger(WsConnectionsManagerGateway.name);
   @Inject(UserService)
-  private readonly userService: UserService;
+  protected readonly userService: UserService;
   @Inject(JwtService)
   private readonly jwtService: JwtService;
   @Inject(PresenceService)
