@@ -164,6 +164,7 @@ describe('ChatGateway (e2e)', () => {
       email: 'user@test.com',
       role: 'User',
       resetVersion: 0,
+      displayName: 'Test User',
     });
 
     mockChatService.requireConversationMember.mockResolvedValue({
@@ -297,7 +298,7 @@ describe('ChatGateway (e2e)', () => {
       },
     );
 
-    expect(ack).toEqual({ ok: true, data: { status: 'Archived' } });
+    expect(ack).toEqual({ ok: true, data: { status: 'Archived', completedBy: { id: 'user-1', displayName: 'Test User' } } });
     expect(mockChatService.markTransactionCompleted).toHaveBeenCalledWith({
       conversationId,
       userId: 'user-1',
