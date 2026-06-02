@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AccessTokenPayload } from '../interfaces/access-token-payload.interface';
 import authConfig from 'src/config/auth.config';
-import { RedisService } from 'nestjs-redis-client';
+import { UserService } from 'src/core/user/v1/user.service';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
@@ -13,7 +13,7 @@ export class AccessTokenStrategy extends PassportStrategy(
 ) {
   constructor(
     @Inject(authConfig.KEY) configService: ConfigType<typeof authConfig>,
-    private readonly redisService: RedisService,
+    private readonly userService: UserService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -23,15 +23,12 @@ export class AccessTokenStrategy extends PassportStrategy(
   }
 
   async validate(payload: AccessTokenPayload): Promise<AccessTokenPayload> {
-    const currentVersionStr = await this.redisService.get<string>(
-      `user:${payload.id}:stateVersion`,
-    );
-    const currentVersion = currentVersionStr ? parseInt(currentVersionStr, 10) : 0;
-
-if (payload.stateVersion !== currentVersion) {
-      throw new UnauthorizedException();
+    const user=await this.userService.findById(payload.id);
+    if  (!user){
+      throw new UnauthorizedException('User not found');
     }
-
-    return payload;
+    return {
+      ...user
+    };
   }
 }
