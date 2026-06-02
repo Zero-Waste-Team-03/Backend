@@ -864,8 +864,8 @@ async function seedDemo(): Promise<void> {
   }
   console.log(`   ${CATEGORIES.length} categories processed`);
 
-  // ─── 2. Users + Avatars ──────────────────────────────────────────────
-  console.log('\n👤 Seeding users with avatars...');
+  // ─── 2. Users (create/get IDs first, avatars linked afterwards) ──────
+  console.log('\n👤 Seeding users...');
   for (let i = 0; i < USERS.length; i++) {
     const seed = USERS[i];
     const existingUser = await userRepo.findOne({ where: { email: seed.email }, relations: { location: true, settings: true } });
@@ -876,32 +876,6 @@ async function seedDemo(): Promise<void> {
       ? locationRepo.merge(existingUser.location, seed.location)
       : locationRepo.create(seed.location);
     const savedLoc = await locationRepo.save(loc);
-
-    let avatarAttachmentId: string | undefined;
-    const photo = portraitPhotos[i % portraitPhotos.length];
-    if (photo) {
-      const fileName = `avatar-${seed.email.replace('@gaspzero.local', '')}.jpg`;
-      const existingAtt = existingUser?.avatarAttachmentId
-        ? await attachmentRepo.findOne({ where: { id: existingUser.avatarAttachmentId } })
-        : await attachmentRepo.findOne({ where: { fileName } });
-
-      if (existingAtt) {
-        attachmentRepo.merge(existingAtt, { url: photo.url, fileType: 'image/jpeg', fileSize: 0, uploadStatus: UploadStatusValues.COMPLETED });
-        await attachmentRepo.save(existingAtt);
-        avatarAttachmentId = existingAtt.id;
-      } else {
-        const att = attachmentRepo.create({
-          fileName,
-          fileType: 'image/jpeg',
-          fileSize: 0,
-          url: photo.url,
-          uploadStatus: UploadStatusValues.COMPLETED,
-          uploadedById: existingUser?.id ?? 'pending',
-        });
-        const savedAtt = await attachmentRepo.save(att);
-        avatarAttachmentId = savedAtt.id;
-      }
-    }
 
     if (existingUser) {
       userRepo.merge(existingUser, {
@@ -914,7 +888,6 @@ async function seedDemo(): Promise<void> {
         passwordHash,
         location: savedLoc,
         locationId: savedLoc.id,
-        ...(avatarAttachmentId ? { avatarAttachmentId } : {}),
       });
       const savedUser = await userRepo.save(existingUser);
       userIds.set(seed.email, savedUser.id);
@@ -930,15 +903,9 @@ async function seedDemo(): Promise<void> {
         passwordHash,
         location: savedLoc,
         locationId: savedLoc.id,
-        ...(avatarAttachmentId ? { avatarAttachmentId } : {}),
       });
       const savedUser = await userRepo.save(user);
       userIds.set(seed.email, savedUser.id);
-
-      // fix avatar uploadedById now that we have the user id
-      if (avatarAttachmentId) {
-        await attachmentRepo.update(avatarAttachmentId, { uploadedById: savedUser.id });
-      }
 
       // create settings manually if not auto-created
       const existingSettings = await userSettingsRepo.findOne({ where: { userId: savedUser.id } });
@@ -947,12 +914,54 @@ async function seedDemo(): Promise<void> {
         await userSettingsRepo.save(settings);
       }
     }
-
-    if (avatarAttachmentId) {
-      userAvatarIds.set(seed.email, avatarAttachmentId);
-    }
   }
   console.log(`   ${USERS.length} users processed`);
+
+  // ─── 2b. Avatar attachments ─────────────────────────────────────────
+  console.log('\n🖼️ Seeding avatar attachments...');
+  for (let i = 0; i < USERS.length; i++) {
+    const seed = USERS[i];
+    const userId = userIds.get(seed.email);
+    if (!userId) continue;
+
+    const photo = portraitPhotos[i % portraitPhotos.length];
+    if (!photo) continue;
+
+    const fileName = `avatar-${seed.email.replace('@gaspzero.local', '')}.jpg`;
+
+    // Try to find existing avatar attachment by fileName or by user's current avatarAttachmentId
+    const currentUser = await userRepo.findOne({ where: { email: seed.email } });
+    let existingAtt: Attachment | null = null;
+    if (currentUser?.avatarAttachmentId) {
+      existingAtt = await attachmentRepo.findOne({ where: { id: currentUser.avatarAttachmentId } });
+    }
+    if (!existingAtt) {
+      existingAtt = await attachmentRepo.findOne({ where: { fileName, uploadedById: userId } });
+    }
+
+    if (existingAtt) {
+      attachmentRepo.merge(existingAtt, { url: photo.url, fileType: 'image/jpeg', fileSize: 0, uploadStatus: UploadStatusValues.COMPLETED, uploadedById: userId });
+      await attachmentRepo.save(existingAtt);
+      userAvatarIds.set(seed.email, existingAtt.id);
+      // Link avatar to user if not already linked
+      if (!currentUser?.avatarAttachmentId || currentUser.avatarAttachmentId !== existingAtt.id) {
+        await userRepo.update(userId, { avatarAttachmentId: existingAtt.id });
+      }
+    } else {
+      const att = attachmentRepo.create({
+        fileName,
+        fileType: 'image/jpeg',
+        fileSize: 0,
+        url: photo.url,
+        uploadStatus: UploadStatusValues.COMPLETED,
+        uploadedById: userId,
+      });
+      const savedAtt = await attachmentRepo.save(att);
+      userAvatarIds.set(seed.email, savedAtt.id);
+      await userRepo.update(userId, { avatarAttachmentId: savedAtt.id });
+    }
+  }
+  console.log(`   ${USERS.length} avatar attachments processed`);
 
   // ─── 3. Food-photo attachments ────────────────────────────────────────
   console.log('\n🍜 Seeding food-photo attachments...');
