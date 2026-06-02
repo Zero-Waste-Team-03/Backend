@@ -19,6 +19,7 @@ import {
 import {
   ApproveSensitiveMessagePayload,
   ChatAck,
+  CompletedByPayload,
   JoinConversationPayload,
   LeaveConversationPayload,
   MarkTransactionCompletedPayload,
@@ -53,7 +54,9 @@ export class ChatGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly chatService: ChatService) {
+  constructor(
+    private readonly chatService: ChatService,
+  ) {
     super();
   }
 
@@ -140,20 +143,30 @@ export class ChatGateway
   async handleMarkTransactionCompleted(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: MarkTransactionCompletedPayload,
-  ): Promise<ChatAck<{ status: string }>> {
-    const conversation = await this.chatService.markTransactionCompleted({
-      conversationId: payload.conversationId,
-      userId: client.user.id,
-    });
+  ): Promise<ChatAck<{ status: string; completedBy: CompletedByPayload }>> {
+    const [conversation, user] = await Promise.all([
+      this.chatService.markTransactionCompleted({
+        conversationId: payload.conversationId,
+        userId: client.user.id,
+      }),
+      this.userService.findById(client.user.id),
+    ]);
+
+    if (!user) {
+      return { ok: false, error: { message: 'User not found' } };
+    }
+
+    const completedBy: CompletedByPayload = { id: user.id, displayName: user.displayName };
 
     client
       .to(this.getConversationRoom(payload.conversationId))
       .emit(CHAT_EMITTED_EVENTS.TRANSACTION_COMPLETED, {
         conversationId: payload.conversationId,
         status: conversation.status,
+        completedBy,
       });
 
-    return { ok: true, data: { status: conversation.status } };
+    return { ok: true, data: { status: conversation.status, completedBy } };
   }
 
   private getConversationRoom(conversationId: string): string {

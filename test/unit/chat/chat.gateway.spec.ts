@@ -164,6 +164,10 @@ describe('ChatGateway', () => {
       id: 'conv-1',
       status: 'Archived',
     });
+    userService.findById.mockResolvedValue({
+      id: 'u-1',
+      displayName: 'Test User',
+    });
 
     await gateway.handleMarkTransactionCompleted(client, {
       conversationId: 'conv-1',
@@ -173,10 +177,12 @@ describe('ChatGateway', () => {
       conversationId: 'conv-1',
       userId: 'u-1',
     });
+    expect(userService.findById).toHaveBeenCalledWith('u-1');
     expect(client.to).toHaveBeenCalledWith('conversation_conv-1');
     expect(emit).toHaveBeenCalledWith('chat:transaction-completed', {
       conversationId: 'conv-1',
       status: 'Archived',
+      completedBy: { id: 'u-1', displayName: 'Test User' },
     });
   });
 });

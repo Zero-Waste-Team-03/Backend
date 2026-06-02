@@ -52,3 +52,14 @@ export type AckError = {
 };
 
 export type ChatAck<T = Record<string, unknown>> = AckSuccess<T> | AckError;
+
+export type CompletedByPayload = {
+  id: string;
+  displayName: string;
+};
+
+export type TransactionCompletedEmittedPayload = {
+  conversationId: string;
+  status: string;
+  completedBy: CompletedByPayload;
+};
