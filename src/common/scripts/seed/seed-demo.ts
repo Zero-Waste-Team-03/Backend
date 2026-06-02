@@ -631,52 +631,158 @@ const DONATIONS: SeedDonation[] = [
 ];
 
 const RESERVATIONS: SeedReservation[] = [
+  // ── Active (current) reservations ──
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.PENDING, quantity: 5, confirmedAt: null },
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ReservationStatusValues.CONFIRMED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 30) },
   { donationTitle: 'Couscous royal — simmered vegetables & lamb', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.CONFIRMED, quantity: 3, confirmedAt: new Date(Date.now() - 1000 * 60 * 45) },
-  { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 5, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24) },
   { donationTitle: 'Yogurt cups — assorted flavors', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ReservationStatusValues.CONFIRMED, quantity: 15, confirmedAt: new Date(Date.now() - 1000 * 60 * 20) },
-  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 48) },
   { donationTitle: 'Mint tea & orange juice — beverage surplus', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', status: ReservationStatusValues.PENDING, quantity: 6, confirmedAt: null },
   { donationTitle: 'Croissants & pains au chocolat', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', status: ReservationStatusValues.PENDING, quantity: 10, confirmedAt: null },
   { donationTitle: 'Chorba soup — large batch', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ReservationStatusValues.CONFIRMED, quantity: 4, confirmedAt: new Date(Date.now() - 1000 * 60 * 15) },
   { donationTitle: 'Fresh tomatoes, peppers & zucchini', donorEmail: 'epicerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.CONFIRMED, quantity: 10, confirmedAt: new Date(Date.now() - 1000 * 60 * 60) },
   { donationTitle: 'Fresh orange juice — 2L bottles', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ReservationStatusValues.PENDING, quantity: 4, confirmedAt: null },
   { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ReservationStatusValues.PENDING, quantity: 12, confirmedAt: null },
+  // ── Historical COMPLETED reservations (for reputation & leaderboard) ──
+  { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 5, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2) },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 48) },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 10, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45) },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 10, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3) },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 15, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4) },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 12, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10) },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 20, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5) },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 15, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6) },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 6, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8) },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12) },
+  { donationTitle: 'Coffee & herbal tea set', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'medecins@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 10, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14) },
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 15, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20) },
+  { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 10, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30) },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 12, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15) },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ReservationStatusValues.COMPLETED, quantity: 8, confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18) },
 ];
 
 const CONVERSATIONS: SeedConversation[] = [
+  // Active conversations
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.LOCKED, lastMessage: 'I\'d like to reserve 5 baguettes please.' },
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ConversationStatusValues.ACTIVE, lastMessage: 'Pickup confirmed for 2 PM at the bakery.' },
   { donationTitle: 'Couscous royal — simmered vegetables & lamb', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.ACTIVE, lastMessage: 'On my way! ETA 15 minutes.' },
   { donationTitle: 'Yogurt cups — assorted flavors', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ConversationStatusValues.ACTIVE, lastMessage: 'Can we arrange cold-chain transport?' },
-  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Pickup completed. Thank you!' },
   { donationTitle: 'Mint tea & orange juice — beverage surplus', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', status: ConversationStatusValues.LOCKED, lastMessage: 'I can pick these up this afternoon.' },
   { donationTitle: 'Chorba soup — large batch', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ConversationStatusValues.ACTIVE, lastMessage: 'How many containers should I bring?' },
+  { donationTitle: 'Fresh tomatoes, peppers & zucchini', donorEmail: 'epicerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.ACTIVE, lastMessage: 'Great, I\'ll be there in 30 minutes.' },
+  { donationTitle: 'Fresh orange juice — 2L bottles', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ConversationStatusValues.LOCKED, lastMessage: 'Can I reserve 4 bottles?' },
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ConversationStatusValues.LOCKED, lastMessage: '12 portions would be perfect.' },
+  // Archived conversations (completed reservations)
   { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'All picked up, thanks!' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Pickup completed. Thank you!' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Delivered to the community center, all good!' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Cheese picked up, everyone loved it!' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Delivery confirmed. Great quality!' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'All 12 kits distributed to families. Thank you!' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Picked up 8 kits, heading to the shelter.' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'All distributed to families in need. Barakallah!' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Picked up 15 boxes for the dorm. Jazakallah!' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Soup was delicious, everyone enjoyed it. Thank you!' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Distributed to 8 families. Wonderful initiative!' },
+  { donationTitle: 'Coffee & herbal tea set', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'medecins@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'The tea and coffee were a hit at the health center. Thanks!' },
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'All 15 portions delivered to the food bank successfully.' },
+  { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: '10 baguettes delivered to the shelter. Thank you!' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'Picked up 12 tubs of labneh. Cold chain maintained.' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', status: ConversationStatusValues.ARCHIVED, lastMessage: 'All delivered safely. Families appreciated it!' },
 ];
 
 const MESSAGES: SeedMessage[] = [
+  // Fresh baguettes — karim (active)
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'Hi! I\'d like to reserve some baguettes for our community center.' },
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'boulangerie@gaspzero.local', content: 'Of course! How many do you need?' },
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: '5 would be great. Can I pick them up around noon?' },
+  // Fresh baguettes — salima (active)
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'salima@gaspzero.local', content: 'Hello! I\'d like 8 baguettes for the food bank.' },
   { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'boulangerie@gaspzero.local', content: 'Sure thing! Pickup confirmed for 2 PM at the bakery.' },
+  // Couscous — karim (active)
   { donationTitle: 'Couscous royal — simmered vegetables & lamb', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'This looks amazing! Can I reserve 3 portions?' },
   { donationTitle: 'Couscous royal — simmered vegetables & lamb', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'nour@gaspzero.local', content: 'Absolutely! It\'s still warm. On my way! ETA 15 minutes.' },
+  // Yogurt — salima (active)
   { donationTitle: 'Yogurt cups — assorted flavors', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'salima@gaspzero.local', content: 'Can we arrange cold-chain transport for the yogurt cups?' },
   { donationTitle: 'Yogurt cups — assorted flavors', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'hopital@gaspzero.local', content: 'Yes, they\'re currently at 4°C. Bring a cooler bag if you can.' },
-  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'I can pick these up after my afternoon class.' },
-  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Great, we\'re open until 6 PM today. See you then!' },
-  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'Pickup completed. Thank you!' },
+  // Mint tea — reda (active)
+  { donationTitle: 'Mint tea & orange juice — beverage surplus', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', senderEmail: 'reda@gaspzero.local', content: 'I can pick these up this afternoon. Where are you located?' },
+  // Chorba — leila (active)
   { donationTitle: 'Chorba soup — large batch', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'leila@gaspzero.local', content: 'How many containers should I bring for the chorba?' },
   { donationTitle: 'Chorba soup — large batch', donorEmail: 'nour@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'nour@gaspzero.local', content: 'I have 4 sealed containers ready. Bring a bag just in case.' },
+  // Tomatoes — karim (active)
+  { donationTitle: 'Fresh tomatoes, peppers & zucchini', donorEmail: 'epicerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'Can I reserve 10 portions of the vegetables?' },
+  { donationTitle: 'Fresh tomatoes, peppers & zucchini', donorEmail: 'epicerie@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'epicerie@gaspzero.local', content: 'Great, I\'ll be there in 30 minutes.' },
+  // Orange juice — fatima (active)
+  { donationTitle: 'Fresh orange juice — 2L bottles', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'Can I reserve 4 bottles of the orange juice?' },
+  // Msemen — yassine (active)
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: '12 portions would be perfect for the student dorm. Reserve for me?' },
+
+  // ── Archived conversations (completed) ──
+  // Seasonal fruit — fatima (completed)
   { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'I\'m at the entrance of the supermarket. Where should I pick up?' },
   { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'supermarche@gaspzero.local', content: 'Side door, loading dock. The crate is labeled "Gasp Zero".' },
   { donationTitle: 'Seasonal fruit crate — oranges, apples & bananas', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'All picked up, thanks!' },
-  { donationTitle: 'Mint tea & orange juice — beverage surplus', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', senderEmail: 'reda@gaspzero.local', content: 'I can pick these up this afternoon. Where are you located?' },
-  { donationTitle: 'Fresh orange juice — 2L bottles', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'Can I reserve 4 bottles of the orange juice?' },
-  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: '12 portions would be perfect for the student dorm. Reserve for me?' },
+  // Semolina — yassine (completed)
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'I can pick these up after my afternoon class.' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Great, we\'re open until 6 PM today. See you then!' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'Pickup completed. Thank you!' },
+  // Semolina — leila (completed)
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'leila@gaspzero.local', content: 'Can I get 10 portions for the community center?' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Absolutely, they\'re packed and ready for pickup.' },
+  { donationTitle: 'Semolina & pasta — dry goods bundle', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'leila@gaspzero.local', content: 'Delivered to the community center, all good!' },
+  // Cheese — karim (completed)
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'I\'ll take 10 packs of cheese for the shelter.' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'supermarche@gaspzero.local', content: 'They\'re at the fridge section. Ask for the "Gasp Zero" basket.' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'Cheese picked up, everyone loved it!' },
+  // Cheese — sara (completed)
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', senderEmail: 'sara@gaspzero.local', content: 'Need 15 packs for the nutrition program. Possible?' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', senderEmail: 'supermarche@gaspzero.local', content: 'Yes! All 15 are yours. Pick up anytime before closing.' },
+  { donationTitle: 'Cheese slices — assorted', donorEmail: 'supermarche@gaspzero.local', beneficiaryEmail: 'sara@gaspzero.local', senderEmail: 'sara@gaspzero.local', content: 'Delivery confirmed. Great quality!' },
+  // Rice — fatima (completed)
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'We need 12 food kits for the families in our neighborhood.' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'They\'re ready at our warehouse. Open weekdays 9-5.' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'All 12 kits distributed to families. Thank you!' },
+  // Rice — reda (completed)
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', senderEmail: 'reda@gaspzero.local', content: 'I can transport 8 kits in my van to the shelter.' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Perfect. Call me when you arrive.' },
+  { donationTitle: 'Rice & chickpeas — emergency food kit', donorEmail: 'ngo@gaspzero.local', beneficiaryEmail: 'reda@gaspzero.local', senderEmail: 'reda@gaspzero.local', content: 'Picked up 8 kits, heading to the shelter.' },
+  // Dates — karim (completed)
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'We\'d love 20 boxes of dates for the community iftar.' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'mosque@gaspzero.local', content: 'Mashallah! We have plenty. Come pick them up after Asr prayer.' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'All distributed to families in need. Barakallah!' },
+  // Dates — yassine (completed)
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'Can the student dorm get 15 boxes of dates?' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'mosque@gaspzero.local', content: 'Yes, they\'re packed and ready. Stop by the mosque office.' },
+  { donationTitle: 'Dates & dried figs — Ramadan surplus', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'yassine@gaspzero.local', senderEmail: 'yassine@gaspzero.local', content: 'Picked up 15 boxes for the dorm. Jazakallah!' },
+  // Lentil — salima (completed)
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'salima@gaspzero.local', content: 'How many containers of lentil soup are available?' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'mosque@gaspzero.local', content: 'We have 6 containers ready. Still warm!' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'salima@gaspzero.local', senderEmail: 'salima@gaspzero.local', content: 'Soup was delicious, everyone enjoyed it. Thank you!' },
+  // Lentil — ngo (completed)
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Can we collect 8 containers for distribution?' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'mosque@gaspzero.local', content: 'Of course, we\'ll set them aside for you.' },
+  { donationTitle: 'Lentil soup — donated by mosque', donorEmail: 'mosque@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'Distributed to 8 families. Wonderful initiative!' },
+  // Coffee — medecins (completed)
+  { donationTitle: 'Coffee & herbal tea set', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'medecins@gaspzero.local', senderEmail: 'medecins@gaspzero.local', content: 'We\'d love 10 sets for the health center\'s waiting room.' },
+  { donationTitle: 'Coffee & herbal tea set', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'medecins@gaspzero.local', senderEmail: 'hotel@gaspzero.local', content: 'Packed and waiting at reception. Mention Gasp Zero at the desk.' },
+  { donationTitle: 'Coffee & herbal tea set', donorEmail: 'hotel@gaspzero.local', beneficiaryEmail: 'medecins@gaspzero.local', senderEmail: 'medecins@gaspzero.local', content: 'The tea and coffee were a hit at the health center. Thanks!' },
+  // Msemen — fatima (completed)
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'Could we get 15 portions for the food bank breakfast?' },
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'boulangerie@gaspzero.local', content: 'Freshly made this morning. They\'ll be ready at 7 AM.' },
+  { donationTitle: 'M\'semen & baghrir — breakfast pastries', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'fatima@gaspzero.local', senderEmail: 'fatima@gaspzero.local', content: 'All 15 portions delivered to the food bank successfully.' },
+  // Baguettes — ngo (completed)
+  { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: 'We need 10 baguettes for the shelter families.' },
+  { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'boulangerie@gaspzero.local', content: 'They\'ll be ready after the morning bake. See you at 11.' },
+  { donationTitle: 'Fresh baguettes — this morning\'s batch', donorEmail: 'boulangerie@gaspzero.local', beneficiaryEmail: 'ngo@gaspzero.local', senderEmail: 'ngo@gaspzero.local', content: '10 baguettes delivered to the shelter. Thank you!' },
+  // Labneh — karim (completed)
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'Can we collect 12 tubs of labneh for the community?' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'hopital@gaspzero.local', content: 'Yes, they\'re at the cafeteria fridge. Bring ID.' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'karim@gaspzero.local', senderEmail: 'karim@gaspzero.local', content: 'Picked up 12 tubs of labneh. Cold chain maintained.' },
+  // Labneh — leila (completed)
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'leila@gaspzero.local', content: 'We can use 8 tubs for the school lunch program.' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'hopital@gaspzero.local', content: 'Perfect. They expire tomorrow so please pick up today.' },
+  { donationTitle: 'Labneh & milk — surplus dairy', donorEmail: 'hopital@gaspzero.local', beneficiaryEmail: 'leila@gaspzero.local', senderEmail: 'leila@gaspzero.local', content: 'All delivered safely. Families appreciated it!' },
 ];
 
 const REPORTS: SeedReport[] = [
@@ -1359,38 +1465,113 @@ async function seedDemo(): Promise<void> {
   }
   console.log(`   ${TOKENS.length} tokens processed`);
 
-  // ─── 14. Reputation Logs ──────────────────────────────────────────────
+  // ─── 14. Reputation Logs (spread across 3 months, tied to donations) ──
   console.log('\n⭐ Seeding reputation logs...');
-  const reputationSources = [ReputationLogSourceValues.DONATION_COMPLETED, ReputationLogSourceValues.PICKUP_COMPLETED, ReputationLogSourceValues.MANUAL_ADJUSTMENT];
   let logsCreated = 0;
 
-  for (const [email, id] of Array.from(userIds.entries())) {
-    const user = USERS.find(u => u.email === email);
-    if (!user || user.reputationScore <= 0) continue;
+  // Clear all existing logs first
+  await reputationLogRepo.query('TRUNCATE TABLE "reputation_logs" RESTART IDENTITY CASCADE;');
 
-    // clear old logs for this user
-    await reputationLogRepo.delete({ userId: id });
+  // Completed reservations → donation_completed + pickup_completed logs with referenceId
+  const completedReservations = RESERVATIONS.filter(r =>
+    r.status === ReservationStatusValues.COMPLETED,
+  );
 
-    const logCount = 3 + Math.floor(Math.random() * 4); // 3–6 logs per user
-    let remaining = user.reputationScore;
-    for (let l = 0; l < logCount && remaining > 0; l++) {
-      const points = l === logCount - 1 ? remaining : Math.floor(remaining / (logCount - l) * (0.5 + Math.random()));
-      if (points <= 0) continue;
-      remaining -= points;
+  for (const res of completedReservations) {
+    const donorId = userIds.get(res.donorEmail);
+    const beneficiaryId = userIds.get(res.beneficiaryEmail);
+    const donationId = donationIds.get(`${res.donorEmail}::${res.donationTitle}`);
+    if (!donorId || !beneficiaryId || !donationId) continue;
 
-      const daysAgo = Math.floor(Math.random() * 60);
-      const source = reputationSources[Math.floor(Math.random() * reputationSources.length)];
+    const resEntity = await reservationRepo.findOne({
+      where: { donationId, beneficiaryId },
+    });
+    if (!resEntity) continue;
 
-      await reputationLogRepo.save(reputationLogRepo.create({
-        userId: id,
-        pointsGained: points,
-        source,
-        createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
-      }));
-      logsCreated++;
+    const confirmedAt = res.confirmedAt ?? new Date(Date.now() - 1000 * 60 * 60 * 24 * 3);
+
+    // Donor gets DONATION_COMPLETED points
+    const donorPoints = 15 + Math.floor(Math.random() * 25); // 15–40
+    await reputationLogRepo.save(reputationLogRepo.create({
+      userId: donorId,
+      pointsGained: donorPoints,
+      source: ReputationLogSourceValues.DONATION_COMPLETED,
+      referenceId: donationId,
+      createdAt: confirmedAt,
+    }));
+    logsCreated++;
+
+    // Beneficiary gets PICKUP_COMPLETED points
+    const pickupPoints = 10 + Math.floor(Math.random() * 15); // 10–25
+    await reputationLogRepo.save(reputationLogRepo.create({
+      userId: beneficiaryId,
+      pointsGained: pickupPoints,
+      source: ReputationLogSourceValues.PICKUP_COMPLETED,
+      referenceId: donationId,
+      createdAt: new Date(confirmedAt.getTime() + 1000 * 60 * 30), // 30 min after confirm
+    }));
+    logsCreated++;
+  }
+
+  // Additional historical logs distributed across 90 days to fill out the leaderboard
+  // These represent past activity before the current seed data
+  const historicalDonors = [
+    { email: 'admin@gaspzero.local', totalPoints: 200 },
+    { email: 'ngo@gaspzero.local', totalPoints: 350 },
+    { email: 'boulangerie@gaspzero.local', totalPoints: 180 },
+    { email: 'supermarche@gaspzero.local', totalPoints: 150 },
+    { email: 'mosque@gaspzero.local', totalPoints: 280 },
+    { email: 'hospital@gaspzero.local', totalPoints: 170 },
+    { email: 'hopital@gaspzero.local', totalPoints: 120 },
+  ];
+
+  const historicalBeneficiaries = [
+    { email: 'karim@gaspzero.local', totalPoints: 160 },
+    { email: 'salima@gaspzero.local', totalPoints: 260 },
+    { email: 'fatima@gaspzero.local', totalPoints: 140 },
+    { email: 'yassine@gaspzero.local', totalPoints: 90 },
+    { email: 'nour@gaspzero.local', totalPoints: 200 },
+    { email: 'leila@gaspzero.local', totalPoints: 70 },
+    { email: 'reda@gaspzero.local', totalPoints: 50 },
+    { email: 'sara@gaspzero.local', totalPoints: 110 },
+  ];
+
+  for (const group of [historicalDonors, historicalBeneficiaries]) {
+    const source = group === historicalDonors
+      ? ReputationLogSourceValues.DONATION_COMPLETED
+      : ReputationLogSourceValues.PICKUP_COMPLETED;
+
+    for (const entry of group) {
+      const userId = userIds.get(entry.email);
+      if (!userId) continue;
+
+      // Split points across 3 months (roughly every 4-10 days)
+      let remaining = entry.totalPoints;
+      const entryCount = 4 + Math.floor(Math.random() * 5); // 4–8 entries
+      for (let i = 0; i < entryCount && remaining > 0; i++) {
+        const points = i === entryCount - 1
+          ? remaining
+          : Math.max(5, Math.floor(remaining / (entryCount - i) * (0.5 + Math.random())));
+        if (points <= 0) continue;
+        remaining -= points;
+
+        // Spread across ~90 days, one entry every 4-10 days
+        const daysAgo = Math.floor(90 - (i * (90 / entryCount)) + Math.random() * 5);
+        const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+
+        await reputationLogRepo.save(reputationLogRepo.create({
+          userId,
+          pointsGained: points,
+          source,
+          createdAt,
+        }));
+        logsCreated++;
+      }
     }
   }
+
   console.log(`   ${logsCreated} reputation logs created`);
+  console.log(`   (Including ${completedReservations.length * 2} from completed reservations + historical)`);
 
   await dataSource.destroy();
   console.log('\n✅ Demo seed completed!');

@@ -57,7 +57,44 @@ Channel: `smart.notifications.command.v1`
 - `save` (required, boolean):
   - `true`: backend sends notification and persists record
   - `false`: backend sends notification only (no DB notification record)
-- `meta` (optional, object): free-form JSON object attached as notification metadata
+- `meta` (optional, object): JSON object attached as notification metadata. When `meta.action` is present, the backend validates that required fields for that action are included (see **Meta action contract** below). If validation fails, the message is rejected.
+
+### Meta action contract
+
+When `meta.action` is set, the backend validates that the required fields for that action are present. If any required field is missing, the message is rejected with an error.
+
+| `meta.action`       | Required fields                                  | Optional fields                                                          |
+| -------------------- | ------------------------------------------------ | ------------------------------------------------------------------------ |
+| `chat.open`          | `chatId`, `conversationId`, `messageId`, `senderId` | `senderName`, `senderAvatarUrl`                                       |
+| `donation.open`      | `donationId`                                     | `donationTitle`, `donationImageUrl`, `donorId`                          |
+| `reservation.open`   | `reservationId`, `donationId`, `status`         | `beneficiaryName`, `donationTitle`, `donationImageUrl`, `senderAvatarUrl`, `quantity` |
+| `report.open`        | `reportId`, `targetType`, `targetId`            | `status`                                                                 |
+| `account.open`       | `userId`, `status`                               | —                                                                        |
+| `achievement.open`   | `achievementId`, `badgeCode`                    | —                                                                        |
+| `post.open`          | `postId`                                         | `commentId`, `authorId`                                                  |
+| `message.open`       | `threadId` **or** `senderId` (at least one)     | —                                                                        |
+| `notification.open`  | —                                                | —                                                                        |
+
+If `meta.action` is not set or is not a recognized action, it defaults to `notification.open` (no required fields).
+
+#### Example: `post.open`
+
+```json
+{
+  "eventId": "6e57ce83-c965-4b4f-bc2b-3341f9409c6d",
+  "userId": "68a9c74f-53fb-45d7-b9f8-f8e1833737d8",
+  "title": "New comment on your post",
+  "body": "John commented: Great donation!",
+  "type": "New_post",
+  "save": true,
+  "meta": {
+    "action": "post.open",
+    "postId": "dbe6f4ce-172f-4e91-9930-3dcc5f334f0f",
+    "commentId": "a1b2c3d4-5678-9012-abcd-ef0123456789",
+    "authorId": "12345678-1234-1234-1234-123456789012"
+  }
+}
+```
 
 ### Validation and sanitization behavior
 
@@ -179,4 +216,5 @@ If strict durability is required later, migration to Redis Streams can be done w
 - Use only allowed notification `type` enum values.
 - Send `save=true/false` explicitly.
 - Do not include unknown top-level keys (backend rejects them).
+- When including `meta.action`, ensure all required fields for that action are present (see **Meta action contract** above).
 - Subscribe to `smart.behavior.events.v1` for learning events.
