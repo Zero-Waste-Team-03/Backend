@@ -48,7 +48,7 @@
     "@bull-board/api": "^6.21.3",
     "@bull-board/express": "^6.21.3",
     "@bull-board/nestjs": "^6.21.3",
-    "@css-inline/css-inline": "^0.14.3",
+    "@css-inline/css-inline": "^0.20.2",
     "@nestjs-modules/mailer": "^2.3.6",
     "@nestjs/apollo": "^13.4.2",
     "@nestjs/axios": "^4.0.1",
